@@ -4,10 +4,23 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 기본값(:default)을 설정하여 로딩 실패 방지
-    url: jdbc:mysql://localhost:${DB_LOCAL_PORT:3306}/${DB_NAME:dodo_db}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: ${DB_USERNAME:dodo_user}
-    password: ${DB_PASSWORD:dodo_password}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_LOCAL_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: profile, email
 
   jpa:
     hibernate:
@@ -16,5 +29,17 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        # Dialect를 명시하여 Hibernate가 DB 종류를 바로 알 수 있게 함
         dialect: org.hibernate.dialect.MySQLDialect
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration:
+    access: ${JWT_EXPIRATION_ACCESS}
+    refresh: ${JWT_EXPIRATION_REFRESH}
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.results: TRACE
+    com.dodo.dodoserver: DEBUG
