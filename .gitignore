@@ -54,3 +54,10 @@ logs/
 ### Temp files ###
 tmp/
 temp/
+/spec/
+
+### Redis ###
+
+*.rdb
+
+# End of https://www.toptal.com/developers/gitignore/api/redis
