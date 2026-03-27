@@ -1,6 +1,10 @@
 package com.dodo.dodoserver.security;
 
+import com.dodo.dodoserver.dto.ApiResponse;
+import com.dodo.dodoserver.dto.TokenResponseDto;
 import com.dodo.dodoserver.service.AuthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +27,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
+    private final ObjectMapper objectMapper; // JSON 변환용
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        // 1. 인증된 사용자 정보를 가져옵니다.
+        // 인증된 사용자 정보를 가져
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
         String role = authentication.getAuthorities().stream()
@@ -34,21 +39,30 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .map(GrantedAuthority::getAuthority)
                 .orElse("ROLE_USER");
 
-        // 2. Access Token과 Refresh Token을 생성합니다.
+        // Access Token과 Refresh Token을 생성
         String accessToken = tokenProvider.createAccessToken(email, role);
         String refreshToken = tokenProvider.createRefreshToken(email);
 
-        // 3. 보안을 위해 Refresh Token을 Redis에 저장합니다 (만료 시 재발급에 사용).
+        // 보안을 위해 Refresh Token을 Redis에 저장
         authService.saveRefreshToken(email, refreshToken);
 
-        // 4. 클라이언트(프론트엔드/앱)로 토큰을 전달하기 위해 리다이렉트 URL을 구성합니다.
-        // 실무에서는 보안을 위해 쿠키에 담거나 별도의 처리를 할 수 있지만, 여기서는 쿼리 파라미터로 전달합니다.
-        String targetUrl = UriComponentsBuilder.fromUriString("/login/success")
-                .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
-                .build().toUriString();
+        // 리다이렉트 대신 JSON Body 응답
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(HttpServletResponse.SC_OK);
 
-        // 5. 지정된 URL로 리다이렉트 실행
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+
+        String result = objectMapper.writeValueAsString(ApiResponse.success(
+            TokenResponseDto.of(accessToken, refreshToken, 1800L)
+        ));
+
+        response.getWriter().write(result);
+
+        // String targetUrl = UriComponentsBuilder.fromUriString("/login/success")
+        //         .queryParam("accessToken", accessToken)
+        //         .queryParam("refreshToken", refreshToken)
+        //         .build().toUriString();
+        //
+        // // 5. 지정된 URL로 리다이렉트 실행
+        // getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
