@@ -19,19 +19,30 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --default-authentication-plugin=mysql_native_password
 
+  redis:
+    image: redis:7.0-alpine
+    container_name: dodo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+    networks:
+      - dodo-network
   app:
     image: gnsehs/dodo-server:latest
     container_name: dodo-app
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     depends_on:
       - db
+      - redis
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:${DB_CONTAINER_PORT}/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      REDIS_HOST: redis
     networks:
-      - dodo-network
+        - dodo-network
 
 networks:
   dodo-network:
