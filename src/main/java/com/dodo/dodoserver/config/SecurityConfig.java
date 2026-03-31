@@ -25,10 +25,15 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	private final String[] WHITE_LIST = new String[] {
+		"/",
 		"/login/**",
 		"/oauth2/**",
 		"/api/auth/reissue",
-		"/error"
+		"/error",
+		"/v3/api-docs/**",
+		"/swagger-ui/**",
+		"/swagger-ui.html",
+		"/api/test/**"
 	};
 
 	@Bean
