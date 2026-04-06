@@ -1,8 +1,8 @@
-package com.dodo.dodoserver.config;
+package com.dodo.dodoserver.global.config;
 
-import com.dodo.dodoserver.security.CustomOAuth2UserService;
-import com.dodo.dodoserver.security.JwtAuthenticationFilter;
-import com.dodo.dodoserver.security.OAuth2AuthenticationSuccessHandler;
+import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
+import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
+import com.dodo.dodoserver.global.security.OAuth2AuthenticationSuccessHandler;
 
 import lombok.RequiredArgsConstructor;
 

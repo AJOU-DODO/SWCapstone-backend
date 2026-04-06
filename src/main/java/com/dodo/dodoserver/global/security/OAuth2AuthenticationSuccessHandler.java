@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.security;
+package com.dodo.dodoserver.global.security;
 
 import com.dodo.dodoserver.dto.ApiResponse;
 import com.dodo.dodoserver.dto.TokenResponseDto;
@@ -13,7 +13,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 

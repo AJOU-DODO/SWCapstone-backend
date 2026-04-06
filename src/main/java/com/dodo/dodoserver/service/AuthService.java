@@ -4,7 +4,7 @@ import com.dodo.dodoserver.entity.RefreshToken;
 import com.dodo.dodoserver.entity.User;
 import com.dodo.dodoserver.repository.RefreshTokenRepository;
 import com.dodo.dodoserver.repository.UserRepository;
-import com.dodo.dodoserver.security.JwtTokenProvider;
+import com.dodo.dodoserver.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

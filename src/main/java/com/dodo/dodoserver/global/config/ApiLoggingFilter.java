@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.config;
+package com.dodo.dodoserver.global.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
