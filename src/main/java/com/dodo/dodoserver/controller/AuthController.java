@@ -1,6 +1,6 @@
 package com.dodo.dodoserver.controller;
 
-import com.dodo.dodoserver.dto.ApiResponse;
+import com.dodo.dodoserver.dto.ApiResponseDto;
 import com.dodo.dodoserver.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -23,9 +23,9 @@ public class AuthController {
      * 비로그인(인증 없이) 상태에서도 접근 가능하도록 SecurityConfig에 설정되어 있습니다.
      */
     @PostMapping("/reissue")
-    public ApiResponse<Map<String, String>> reissue(@RequestBody Map<String, String> request) {
+    public ApiResponseDto<Map<String, String>> reissue(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-        return ApiResponse.success(authService.reissue(refreshToken));
+        return ApiResponseDto.success(authService.reissue(refreshToken));
     }
 
     /**
@@ -33,10 +33,10 @@ public class AuthController {
      * 인증 필터를 거친 후 SecurityContext에 담긴 Authentication 객체에서 이메일을 추출합니다.
      */
     @PostMapping("/logout")
-    public ApiResponse<String> logout(Authentication authentication) {
+    public ApiResponseDto<String> logout(Authentication authentication) {
         // JwtAuthenticationFilter에서 저장한 인증 정보 중 이메일(Principal)을 가져옵니다.
         String email = (String) authentication.getPrincipal();
         authService.logout(email);
-        return ApiResponse.success("성공적으로 로그아웃되었습니다.");
+        return ApiResponseDto.success("성공적으로 로그아웃되었습니다.");
     }
 }
