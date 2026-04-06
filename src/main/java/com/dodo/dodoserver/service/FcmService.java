@@ -20,14 +20,14 @@ public class FcmService {
 	private final FirebaseMessaging firebaseMessaging;
 
 	@Async("fcmExecutor")
-	public void sendNotification(NotificationEvent eventDto) {
+	public void sendNotification(NotificationEvent event) {
 		Message message = Message.builder()
-			.setToken(eventDto.getToken())
+			.setToken(event.token())
 			.setNotification(Notification.builder()
-				.setTitle(eventDto.getTitle())
-				.setBody(eventDto.getBody())
+				.setTitle(event.title())
+				.setBody(event.body())
 				.build())
-			.putAllData(eventDto.getData())
+			.putAllData(event.data())
 			.setAndroidConfig(AndroidConfig.builder()
 				.setPriority(AndroidConfig.Priority.HIGH)
 				.build())
@@ -35,7 +35,7 @@ public class FcmService {
 
 		try {
 			firebaseMessaging.send(message);
-			log.info("FCM Sent Successfully: {}", eventDto.getToken());
+			log.info("FCM Sent Successfully: {}", event.token());
 		} catch (FirebaseMessagingException e) {
 			log.error("FCM Send Failed: {}", e.getMessage());
 		}
