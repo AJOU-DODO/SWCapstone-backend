@@ -61,3 +61,4 @@ temp/
 *.rdb
 
 /deploy.sh
+/src/main/resources/firebase/
