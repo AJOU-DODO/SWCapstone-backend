@@ -30,7 +30,7 @@ public class ApiLoggingFilter extends OncePerRequestFilter {
         long duration = System.currentTimeMillis() - startTime;
         int status = response.getStatus();
 
-        // [GET] /api/hello (200) - 12ms 형식으로 출력
+        // [GET] /api/v1/hello (200) - 12ms 형식으로 출력
         log.info(">>> [API LOG] [{}] {} ({}) - {}ms", method, uri, status, duration);
     }
 }

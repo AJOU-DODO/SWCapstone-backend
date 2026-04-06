@@ -12,7 +12,7 @@ import java.util.Map;
  * 인증 및 토큰 관리 관련 API 요청을 처리하는 컨트롤러입니다.
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
