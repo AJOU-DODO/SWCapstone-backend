@@ -44,6 +44,9 @@ public class User {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false; // Soft Delete용 플래그
 
+    @Column(name = "is_onboarded", nullable = false)
+    private boolean isOnboarded = false; // 상세 정보 회원 가입
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
