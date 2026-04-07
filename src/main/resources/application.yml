@@ -43,3 +43,8 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.results: TRACE
     com.dodo.dodoserver: DEBUG
+
+
+firebase:
+  service-account:
+    path: "/firebase/service-account.json"

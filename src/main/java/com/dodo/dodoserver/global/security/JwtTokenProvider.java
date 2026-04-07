@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.security;
+package com.dodo.dodoserver.global.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

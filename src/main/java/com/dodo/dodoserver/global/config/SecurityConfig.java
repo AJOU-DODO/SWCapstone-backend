@@ -1,8 +1,8 @@
-package com.dodo.dodoserver.config;
+package com.dodo.dodoserver.global.config;
 
-import com.dodo.dodoserver.security.CustomOAuth2UserService;
-import com.dodo.dodoserver.security.JwtAuthenticationFilter;
-import com.dodo.dodoserver.security.OAuth2AuthenticationSuccessHandler;
+import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
+import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
+import com.dodo.dodoserver.global.security.OAuth2AuthenticationSuccessHandler;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,12 +28,12 @@ public class SecurityConfig {
 		"/",
 		"/login/**",
 		"/oauth2/**",
-		"/api/auth/reissue",
+		"/api/v1/auth/reissue",
 		"/error",
 		"/v3/api-docs/**",
 		"/swagger-ui/**",
 		"/swagger-ui.html",
-		"/api/test/**"
+		"/api/v1/test/**"
 	};
 
 	@Bean

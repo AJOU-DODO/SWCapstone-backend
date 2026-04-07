@@ -1,6 +1,6 @@
-package com.dodo.dodoserver.security;
+package com.dodo.dodoserver.global.security;
 
-import com.dodo.dodoserver.dto.ApiResponse;
+import com.dodo.dodoserver.dto.ApiResponseDto;
 import com.dodo.dodoserver.dto.TokenResponseDto;
 import com.dodo.dodoserver.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +13,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -51,7 +50,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         response.setStatus(HttpServletResponse.SC_OK);
 
 
-        String result = objectMapper.writeValueAsString(ApiResponse.success(
+        String result = objectMapper.writeValueAsString(ApiResponseDto.success(
             TokenResponseDto.of(accessToken, refreshToken, 1800L)
         ));
 

@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.security;
+package com.dodo.dodoserver.global.security;
 
 import com.dodo.dodoserver.entity.Role;
 import com.dodo.dodoserver.entity.User;
