@@ -13,6 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.BatchResponse;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -21,8 +25,13 @@ public class FcmService {
 
 	@Async("fcmExecutor")
 	public void sendNotification(NotificationEvent event) {
-		Message message = Message.builder()
-			.setToken(event.token())
+		if (event.tokens() == null || event.tokens().isEmpty()) {
+			log.warn("FCM tokens are empty for the event: {}", event.title());
+			return;
+		}
+
+		MulticastMessage message = MulticastMessage.builder()
+			.addAllTokens(event.tokens())
 			.setNotification(Notification.builder()
 				.setTitle(event.title())
 				.setBody(event.body())
@@ -34,12 +43,12 @@ public class FcmService {
 			.build();
 
 		try {
-			firebaseMessaging.send(message);
-			log.info("FCM Sent Successfully: {}", event.token());
+			BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
+			log.info("FCM Sent Successfully. Success count: {}, Failure count: {}", 
+				response.getSuccessCount(), response.getFailureCount());
 		} catch (FirebaseMessagingException e) {
-			log.error("FCM Send Failed: {}", e.getMessage());
+			log.error("FCM Multicast Send Failed: {}", e.getMessage());
 		}
-
 	}
 
 	// public void sendNotification(String title, String body, String fcmToken) {
