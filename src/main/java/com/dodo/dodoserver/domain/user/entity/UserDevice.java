@@ -38,8 +38,9 @@ public class UserDevice {
     @Column(name = "fcm_token", nullable = false, length = 512)
     private String fcmToken;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "device_type")
-    private String deviceType; // 예: "ANDROID", "IOS", "WEB"
+    private DeviceType deviceType; 
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

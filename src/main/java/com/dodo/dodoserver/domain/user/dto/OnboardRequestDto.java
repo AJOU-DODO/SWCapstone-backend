@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.user.dto;
 
+import com.dodo.dodoserver.domain.user.entity.DeviceType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -27,5 +28,5 @@ public class OnboardRequestDto {
     @NotBlank(message = "FCM 토큰은 필수입니다.")
     private String fcmToken;
 
-    private String deviceType; // "ANDROID", "IOS" 등
+    private DeviceType deviceType; // 수정됨
 }
