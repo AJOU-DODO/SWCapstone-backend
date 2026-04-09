@@ -54,5 +54,14 @@ public class S3Service {
         return UUID.randomUUID().toString() + "_" + fileName;
     }
 
+    /**
+     * 여러 개의 파일 업로드를 위한 Presigned URL 리스트를 생성합니다.
+     */
+    public java.util.List<PresignedUrlResponse> getPresignedUrls(String prefix, java.util.List<String> fileNames) {
+        return fileNames.stream()
+                .map(fileName -> getPresignedUrl(prefix, fileName))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public record PresignedUrlResponse(String presignedUrl, String fileUrl) {}
 }
