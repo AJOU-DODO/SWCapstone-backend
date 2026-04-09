@@ -10,17 +10,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenResponseDto {
-	private String accessToken;
-	private String refreshToken;
-	private Long accessTokenExpiresIn;
+    private String accessToken;
+    private String refreshToken;
+    private Long accessTokenExpiresIn;
+    private boolean isOnboarded; // 추가: 온보딩 완료 여부
 
-	public static TokenResponseDto of(String accessToken, String refreshToken, Long expiresIn) {
-		return TokenResponseDto.builder()
-			.accessToken(accessToken)
-			.refreshToken(refreshToken)
-			.accessTokenExpiresIn(expiresIn)
-			.build();
-	}
-
-
+    public static TokenResponseDto of(String accessToken, String refreshToken, Long expiresIn, boolean isOnboarded) {
+        return TokenResponseDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .accessTokenExpiresIn(expiresIn)
+                .isOnboarded(isOnboarded)
+                .build();
+    }
 }

@@ -26,20 +26,20 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        // 1. 기본 OAuth2UserService를 통해 소셜 사용자 정보(Attributes)를 가져옵니다.
+        // 기본 OAuth2UserService를 통해 소셜 사용자 정보(Attributes)를 가져옵니다.
         OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
         OAuth2User oAuth2User = delegate.loadUser(userRequest);
 
-        // 2. 서비스 구분(google, kakao 등) 및 필수 정보 추출
+        // 서비스 구분(google, kakao 등) 및 필수 정보 추출
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String providerId = oAuth2User.getAttribute("sub"); // 구글 사용자 식별 pk
         String email = oAuth2User.getAttribute("email");
         String nickname = oAuth2User.getAttribute("name");
 
-        // 3. 사용자 정보를 DB에 저장하거나 업데이트합니다 (최초 로그인 시 회원가입 처리).
+        // 사용자 정보를 DB에 저장하거나 업데이트합니다 (최초 로그인 시 회원가입 처리).
         User user = saveOrUpdate(provider, providerId, email, nickname);
 
-        // 4. Spring Security에서 사용할 인증 객체를 생성하여 반환합니다.
+        // Spring Security에서 사용할 인증 객체를 생성하여 반환합니다.
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority(user.getRole().getKey())),
                 oAuth2User.getAttributes(),
