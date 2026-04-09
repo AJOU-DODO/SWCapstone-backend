@@ -19,8 +19,8 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     * Access Token이 만료되었을 때, Refresh Token을 사용하여 새로운 토큰 쌍을 요청하는 엔드포인트입니다.
-     * 비로그인(인증 없이) 상태에서도 접근 가능하도록 SecurityConfig에 설정되어 있습니다.
+     * Access Token이 만료되었을 때, Refresh Token을 사용하여 새로운 토큰 쌍을 요청하는 엔드포인트
+     * 비로그인(인증 없이) 상태에서도 접근 가능하도록 SecurityConfig에 설정
      */
     @PostMapping("/reissue")
     public ApiResponseDto<Map<String, String>> reissue(@RequestBody Map<String, String> request) {
@@ -29,8 +29,8 @@ public class AuthController {
     }
 
     /**
-     * 현재 로그인한 사용자의 세션을 만료(토큰 삭제)시키는 엔드포인트입니다.
-     * 인증 필터를 거친 후 SecurityContext에 담긴 Authentication 객체에서 이메일을 추출합니다.
+     * 현재 로그인한 사용자의 세션을 만료(토큰 삭제)시키는 엔드포인트
+     * 인증 필터를 거친 후 SecurityContext에 담긴 Authentication 객체에서 이메일을 추출
      */
     @PostMapping("/logout")
     public ApiResponseDto<String> logout(Authentication authentication) {

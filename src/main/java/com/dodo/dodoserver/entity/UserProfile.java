@@ -8,8 +8,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 유저의 상세 활동 정보와 푸시 알림 토큰을 관리하는 엔티티입니다.
- * User 엔티티와 1:1 관계를 가집니다.
+ * 유저의 상세 활동 정보와 푸시 알림 토큰을 관리하는 엔티티
+ * User 엔티티와 1:1 관계를 가짐
  */
 @Entity
 @Getter
