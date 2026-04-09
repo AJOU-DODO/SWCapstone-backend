@@ -1,8 +1,8 @@
 package com.dodo.dodoserver.global.security;
 
-import com.dodo.dodoserver.entity.Role;
-import com.dodo.dodoserver.entity.User;
-import com.dodo.dodoserver.repository.UserRepository;
+import com.dodo.dodoserver.domain.user.entity.Role;
+import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

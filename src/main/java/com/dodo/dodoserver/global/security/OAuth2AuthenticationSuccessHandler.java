@@ -1,8 +1,8 @@
 package com.dodo.dodoserver.global.security;
 
-import com.dodo.dodoserver.dto.ApiResponseDto;
-import com.dodo.dodoserver.dto.TokenResponseDto;
-import com.dodo.dodoserver.service.AuthService;
+import com.dodo.dodoserver.global.common.ApiResponseDto;
+import com.dodo.dodoserver.domain.auth.dto.TokenResponseDto;
+import com.dodo.dodoserver.domain.auth.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,8 +19,8 @@ import java.io.IOException;
 /*
   소셜 로그인(OAuth2)이 최종 성공했을 때 실행되는 핸들러
  */
-import com.dodo.dodoserver.entity.User;
-import com.dodo.dodoserver.repository.UserRepository;
+import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 
 @Component
 @RequiredArgsConstructor
