@@ -1,5 +1,7 @@
 package com.dodo.dodoserver.global.common;
 
+import org.apache.http.HttpStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,20 +14,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiResponseDto<T> {
     private String status;
-    private T data;         // 실제 데이터 내용 (오류 시 null)
+    private String code;
     private String message;
+    private T data;         // 실제 데이터 내용 (오류 시 null)
 
 
     public static <T> ApiResponseDto<T> success(T data) {
-        return new ApiResponseDto<>("SUCCESS", data, null);
+        return new ApiResponseDto<>("SUCCESS", String.valueOf(HttpStatus.SC_OK), null, data);
     }
 
     public static <T> ApiResponseDto<T> success(T data, String message) {
-        return new ApiResponseDto<>("SUCCESS", data, message);
+        return new ApiResponseDto<>("SUCCESS",String.valueOf(HttpStatus.SC_OK), message, data);
     }
 
 
-    public static <T> ApiResponseDto<T> error(String message) {
-        return new ApiResponseDto<>("ERROR", null, message);
+    public static <T> ApiResponseDto<T> error(String code, String message) {
+        return new ApiResponseDto<>("ERROR", code,message,null);
     }
 }
