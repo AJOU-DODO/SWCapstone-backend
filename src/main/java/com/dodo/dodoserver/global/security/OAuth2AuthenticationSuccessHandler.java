@@ -1,5 +1,7 @@
 package com.dodo.dodoserver.global.security;
 
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.domain.auth.dto.TokenResponseDto;
 import com.dodo.dodoserver.domain.auth.service.AuthService;
@@ -37,7 +39,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String email = oAuth2User.getAttribute("email");
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         String role = authentication.getAuthorities().stream()
                 .findFirst()

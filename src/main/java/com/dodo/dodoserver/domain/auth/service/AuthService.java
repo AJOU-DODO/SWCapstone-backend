@@ -4,6 +4,8 @@ import com.dodo.dodoserver.domain.auth.entity.RefreshToken;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.auth.dao.RefreshTokenRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import com.dodo.dodoserver.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,17 +32,17 @@ public class AuthService {
     public Map<String, String> reissue(String refreshToken) {
         // 1. 전달받은 Refresh Token의 유효성(서명, 만료시간 등)을 검증합니다.
         if (!tokenProvider.validateToken(refreshToken)) {
-            throw new RuntimeException("유효하지 않은 Refresh Token입니다.");
+            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
         // 2. Redis에 해당 토큰이 실제로 존재하는지 확인합니다 (보안 강화).
         // 존재하지 않는다면 이미 로그아웃했거나 탈취된 토큰일 가능성이 있습니다.
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new RuntimeException("DB에 존재하지 않는 토큰입니다. 다시 로그인해주세요."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         // 3. 토큰의 주인(User)이 존재하는지 확인합니다.
         User user = userRepository.findByEmail(storedToken.getEmail())
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 4. 새로운 토큰 쌍(Access, Refresh)을 생성합니다 (Refresh Token Rotation - RTR).
         String newAccessToken = tokenProvider.createAccessToken(user.getEmail(), user.getRole().getKey());

@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 
 import com.dodo.dodoserver.domain.category.dto.CategoryResponseDto;
 import com.dodo.dodoserver.domain.user.entity.UserInterest;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 
 /**
  * 유저의 관심 카테고리 등록 및 수정을 관리하는 서비스
@@ -35,7 +37,7 @@ public class UserInterestService {
     @Transactional(readOnly = true)
     public List<CategoryResponseDto> getMyInterests(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return userInterestRepository.findByUserId(user.getId()).stream()
                 .map(userInterest -> CategoryResponseDto.from(userInterest.getCategory()))
@@ -48,7 +50,7 @@ public class UserInterestService {
     @Transactional
     public void updateInterests(String email, UserInterestRequestDto requestDto) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 
         userInterestRepository.deleteByUserId(user.getId());
@@ -58,7 +60,7 @@ public class UserInterestService {
         List<UserInterest> newInterests = requestDto.getCategoryIds().stream()
                 .map(categoryId -> {
                     Category category = categoryRepository.findById(categoryId)
-                            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리 ID입니다: " + categoryId));
+                            .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
                     return UserInterest.builder()
                             .user(user)
                             .category(category)

@@ -4,6 +4,9 @@ import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.dto.CategoryRequestDto;
 import com.dodo.dodoserver.domain.category.dto.CategoryResponseDto;
 import com.dodo.dodoserver.domain.category.entity.Category;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +23,7 @@ public class CategoryService {
     @Transactional
     public CategoryResponseDto createCategory(CategoryRequestDto requestDto) {
         if (categoryRepository.findByName(requestDto.getName()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 카테고리 이름입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
         Category category = Category.builder()
@@ -40,10 +43,10 @@ public class CategoryService {
     @Transactional
     public CategoryResponseDto updateCategory(Long id, CategoryRequestDto requestDto) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 카테고리를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
 
         if (categoryRepository.findByName(requestDto.getName()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 카테고리 이름입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
         category.setName(requestDto.getName());
@@ -53,7 +56,7 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("해당 카테고리를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
         
         categoryRepository.delete(category);
     }
