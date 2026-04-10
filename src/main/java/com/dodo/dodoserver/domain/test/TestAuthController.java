@@ -28,11 +28,16 @@ public class TestAuthController {
     public ApiResponseDto<TokenResponseDto> createTestToken(
             @RequestParam String email,
             @RequestParam(defaultValue = "ROLE_USER") String role) {
-        
+
         String accessToken = jwtTokenProvider.createAccessToken(email, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(email);
-        
+
         // 만료 시간은 임의로 1시간(3600L)으로 표시
         return ApiResponseDto.success(TokenResponseDto.of(accessToken, refreshToken, 3600L, false));
+    }
+
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hello, Dodo! API is working.";
     }
 }

@@ -1,7 +1,10 @@
 package com.dodo.dodoserver.domain.auth.controller;
 
+import com.dodo.dodoserver.domain.auth.dto.TokenReissueRequestDto;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.domain.auth.service.AuthService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +26,8 @@ public class AuthController {
      * 비로그인(인증 없이) 상태에서도 접근 가능하도록 SecurityConfig에 설정
      */
     @PostMapping("/reissue")
-    public ApiResponseDto<Map<String, String>> reissue(@RequestBody Map<String, String> request) {
-        String refreshToken = request.get("refreshToken");
-        return ApiResponseDto.success(authService.reissue(refreshToken));
+    public ApiResponseDto<Map<String, String>> reissue(@Valid @RequestBody TokenReissueRequestDto reissueRequestDto) {
+        return ApiResponseDto.success(authService.reissue(reissueRequestDto.getRefreshToken()));
     }
 
     /**
