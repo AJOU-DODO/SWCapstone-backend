@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.user.controller;
 
+import com.dodo.dodoserver.domain.user.dto.UserProfileResponseDto;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.domain.user.dto.OnboardRequestDto;
 import com.dodo.dodoserver.domain.user.service.UserService;
@@ -22,6 +23,23 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+    /**
+     * 현재 로그인된 유저의 상세 정보를 조회
+     */
+    @GetMapping("/me")
+    public ApiResponseDto<UserProfileResponseDto> getMyProfile(Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
+        return ApiResponseDto.success(userService.getUserProfileByEmail(email));
+    }
+
+    /**
+     * 특정 유저의 상세 정보를 이메일로 조회
+     */
+    @GetMapping("/profile/detail")
+    public ApiResponseDto<UserProfileResponseDto> getUserProfile(@RequestParam String email) {
+        return ApiResponseDto.success(userService.getUserProfileByEmail(email));
+    }
 
     /**
      * 닉네임 중복 여부를 확인
@@ -47,7 +65,6 @@ public class UserController {
 
     /**
      * 구글 로그인 후 상세 정보(프로필, 기기 등)를 등록하고 회원가입을 완료
-...
      */
     @PostMapping("/profile")
     public ApiResponseDto<String> postProfile(

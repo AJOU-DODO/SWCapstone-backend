@@ -4,10 +4,13 @@ import com.dodo.dodoserver.domain.user.dto.DeviceRequestDto;
 import com.dodo.dodoserver.domain.user.dto.OnboardRequestDto;
 import com.dodo.dodoserver.domain.user.dto.ProfileUpdateRequestDto;
 import com.dodo.dodoserver.domain.user.dto.UserInterestRequestDto;
+import com.dodo.dodoserver.domain.user.dto.UserProfileResponseDto;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserProfile;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,16 +43,16 @@ public class UserService {
     @Transactional
     public void updateProfile(String email, ProfileUpdateRequestDto requestDto) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         UserProfile userProfile = userProfileRepository.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("사용자 프로필을 찾을 수 없습니다."));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_PROFILE_NOT_FOUND));
 
         if (requestDto.getNickname() != null) {
             // 본인 닉네임이 아닌데 이미 존재하면 중복 예외
-            if (!requestDto.getNickname().equals(user.getNickname()) && 
+            if (!requestDto.getNickname().equals(user.getNickname()) &&
                 userRepository.existsByNickname(requestDto.getNickname())) {
-                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+                throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
             }
             user.setNickname(requestDto.getNickname());
             userProfile.setNickname(requestDto.getNickname());
@@ -75,30 +78,30 @@ public class UserService {
     public void onboard(String email, OnboardRequestDto requestDto) {
         // 유저 조회 및 상태 확인
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (user.isOnboarded()) {
-            throw new IllegalStateException("이미 온보딩이 완료된 사용자입니다.");
+            throw new BusinessException(ErrorCode.ALREADY_ONBOARDED);
         }
 
         // 닉네임 중복 체크
         if (userRepository.existsByNickname(requestDto.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
 
         // UserProfile 생성 및 저장
         UserProfile userProfile = UserProfile.builder()
-                .user(user)
-                .nickname(requestDto.getNickname())
-                .profileImageUrl(requestDto.getProfileImageUrl())
-                .bio(requestDto.getBio())
-                .build();
+            .user(user)
+            .nickname(requestDto.getNickname())
+            .profileImageUrl(requestDto.getProfileImageUrl())
+            .bio(requestDto.getBio())
+            .build();
         userProfileRepository.save(userProfile);
 
         // 기기 정보(FCM 토큰) 등록
         DeviceRequestDto deviceRequest = new DeviceRequestDto(
-                requestDto.getFcmToken(), 
-                requestDto.getDeviceType()
+            requestDto.getFcmToken(),
+            requestDto.getDeviceType()
         );
         userDeviceService.registerOrUpdateDevice(email, deviceRequest);
 
@@ -111,7 +114,25 @@ public class UserService {
         // 온보딩 상태 완료 처리
         user.setOnboarded(true);
         user.setNickname(requestDto.getNickname());
-        
+
         log.info("온보딩 성공: {}", email);
+    }
+
+    /**
+     * 사용자 상세 프로필 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponseDto getUserProfileByEmail(String email) {
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.isOnboarded()) {
+            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED);
+        }
+
+        UserProfile userProfile = userProfileRepository.findByUser(user).orElse(null);
+
+        return UserProfileResponseDto.from(user, userProfile);
     }
 }
