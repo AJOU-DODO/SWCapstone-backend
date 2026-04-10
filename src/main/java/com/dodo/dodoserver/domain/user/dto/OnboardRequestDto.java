@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * 최초 로그인 후 상세 정보(온보딩) 입력을 위한 DTO
  */
@@ -20,13 +22,15 @@ public class OnboardRequestDto {
     @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
     private String nickname;
 
-    private String profileImageUrl;
+    @NotBlank(message = "FCM 토큰은 필수입니다.")
+    private String fcmToken;
 
     @Size(max = 100, message = "자기소개는 100자 이내로 입력해주세요.")
     private String bio;
 
-    @NotBlank(message = "FCM 토큰은 필수입니다.")
-    private String fcmToken;
+    private String profileImageUrl;
 
-    private DeviceType deviceType; // 수정됨
+    private DeviceType deviceType;
+
+    private List<Long> categoryIds;
 }

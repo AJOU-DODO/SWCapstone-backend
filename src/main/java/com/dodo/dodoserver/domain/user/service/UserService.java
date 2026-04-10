@@ -2,6 +2,8 @@ package com.dodo.dodoserver.domain.user.service;
 
 import com.dodo.dodoserver.domain.user.dto.DeviceRequestDto;
 import com.dodo.dodoserver.domain.user.dto.OnboardRequestDto;
+import com.dodo.dodoserver.domain.user.dto.ProfileUpdateRequestDto;
+import com.dodo.dodoserver.domain.user.dto.UserInterestRequestDto;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserProfile;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
@@ -10,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.dodo.dodoserver.domain.user.dto.ProfileUpdateRequestDto;
 
 /**
  * 유저 가입 및 온보딩 관리를 담당하는 서비스
@@ -23,6 +24,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserDeviceService userDeviceService;
+    private final UserInterestService userInterestService;
 
     /**
      * 특정 닉네임이 이미 존재하는지 확인
@@ -66,9 +68,8 @@ public class UserService {
 
     /**
      * 구글 로그인 후 상세 정보(프로필, 기기 등)를 등록하고 가입
-...
      * @param email 사용자 이메일
-     * @param requestDto 온보딩 정보 (닉네임, 이미지, 소개, FCM 토큰)
+     * @param requestDto 온보딩 정보 (닉네임, 이미지, 소개, FCM 토큰, 관심 카테고리)
      */
     @Transactional
     public void onboard(String email, OnboardRequestDto requestDto) {
@@ -80,7 +81,7 @@ public class UserService {
             throw new IllegalStateException("이미 온보딩이 완료된 사용자입니다.");
         }
 
-        // 닉네임 중복 체크 (선택 사항: 이미 있으면 에러)
+        // 닉네임 중복 체크
         if (userRepository.existsByNickname(requestDto.getNickname())) {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
@@ -101,9 +102,14 @@ public class UserService {
         );
         userDeviceService.registerOrUpdateDevice(email, deviceRequest);
 
+        // 관심 카테고리 등록 (선택한 게 있을 경우)
+        if (requestDto.getCategoryIds() != null && !requestDto.getCategoryIds().isEmpty()) {
+            UserInterestRequestDto interestRequest = new UserInterestRequestDto(requestDto.getCategoryIds());
+            userInterestService.updateInterests(email, interestRequest);
+        }
+
         // 온보딩 상태 완료 처리
         user.setOnboarded(true);
-        // User 엔티티의 nickname 필드도 업데이트 (동기화)
         user.setNickname(requestDto.getNickname());
         
         log.info("온보딩 성공: {}", email);
