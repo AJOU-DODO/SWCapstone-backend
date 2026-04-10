@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.global.error;
+package com.dodo.dodoserver.error;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,7 @@ public enum ErrorCode {
     USER_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "U002", "사용자 프로필을 찾을 수 없습니다."),
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "U003", "이미 사용 중인 닉네임입니다."),
     ALREADY_ONBOARDED(HttpStatus.BAD_REQUEST, "U004", "이미 온보딩이 완료된 사용자입니다."),
+    ONBOARDING_REQUIRED(HttpStatus.BAD_REQUEST, "U005", "온보딩이 완료되지 않은 사용자입니다."),
 
     // Category
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "카테고리를 찾을 수 없습니다.");

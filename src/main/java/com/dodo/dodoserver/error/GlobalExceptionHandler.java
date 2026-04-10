@@ -1,9 +1,9 @@
-package com.dodo.dodoserver.global.error;
+package com.dodo.dodoserver.error;
 
 import java.util.Objects;
 
 import com.dodo.dodoserver.global.common.ApiResponseDto;
-import com.dodo.dodoserver.global.error.exception.BusinessException;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;

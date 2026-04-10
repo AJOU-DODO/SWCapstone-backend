@@ -1,6 +1,6 @@
-package com.dodo.dodoserver.global.error.exception;
+package com.dodo.dodoserver.error.exception;
 
-import com.dodo.dodoserver.global.error.ErrorCode;
+import com.dodo.dodoserver.error.ErrorCode;
 import lombok.Getter;
 
 /**
