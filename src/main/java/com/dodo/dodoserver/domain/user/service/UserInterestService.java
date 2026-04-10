@@ -52,6 +52,7 @@ public class UserInterestService {
 
 
         userInterestRepository.deleteByUserId(user.getId());
+        userInterestRepository.flush();
 
 
         List<UserInterest> newInterests = requestDto.getCategoryIds().stream()
