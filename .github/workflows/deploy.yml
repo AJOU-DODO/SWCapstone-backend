@@ -18,6 +18,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Create Firebase Directory
+        run: mkdir -p src/main/resources/firebase
       # 2. Firebase 서비스 계정 키 생성
       - name: Create Firebase Service Account JSON
         uses: jsdaniell/create-json@v1.2.3
