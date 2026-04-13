@@ -49,6 +49,9 @@ public class SecurityConfig {
 
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(WHITE_LIST).permitAll()
+				.requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/categories/**").hasRole("ADMIN")
+				.requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/categories/**").hasRole("ADMIN")
+				.requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/categories/**").hasRole("ADMIN")
 				.anyRequest().authenticated()
 			)
 

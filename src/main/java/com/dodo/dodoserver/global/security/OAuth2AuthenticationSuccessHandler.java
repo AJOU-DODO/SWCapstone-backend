@@ -1,8 +1,10 @@
 package com.dodo.dodoserver.global.security;
 
-import com.dodo.dodoserver.dto.ApiResponseDto;
-import com.dodo.dodoserver.dto.TokenResponseDto;
-import com.dodo.dodoserver.service.AuthService;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
+import com.dodo.dodoserver.global.common.ApiResponseDto;
+import com.dodo.dodoserver.domain.auth.dto.TokenResponseDto;
+import com.dodo.dodoserver.domain.auth.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,52 +18,46 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * 소셜 로그인(OAuth2)이 최종 성공했을 때 실행되는 핸들러입니다.
- * JWT 토큰을 발급하고 클라이언트를 특정 URL로 리다이렉트시킵니다.
+/*
+  소셜 로그인(OAuth2)이 최종 성공했을 때 실행되는 핸들러
  */
+import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
+
 @Component
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
-    private final ObjectMapper objectMapper; // JSON 변환용
+    private final UserRepository userRepository; // 추가: 유저 조회를 위함
+    private final ObjectMapper objectMapper;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        // 인증된 사용자 정보를 가져
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
         String role = authentication.getAuthorities().stream()
                 .findFirst()
                 .map(GrantedAuthority::getAuthority)
                 .orElse("ROLE_USER");
 
-        // Access Token과 Refresh Token을 생성
         String accessToken = tokenProvider.createAccessToken(email, role);
         String refreshToken = tokenProvider.createRefreshToken(email);
-
-        // 보안을 위해 Refresh Token을 Redis에 저장
         authService.saveRefreshToken(email, refreshToken);
 
-        // 리다이렉트 대신 JSON Body 응답
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);
 
-
+        // TokenResponseDto 생성 시 isOnboarded 값을 함께 전달
         String result = objectMapper.writeValueAsString(ApiResponseDto.success(
-            TokenResponseDto.of(accessToken, refreshToken, 1800L)
+            TokenResponseDto.of(accessToken, refreshToken, 1800L, user.isOnboarded())
         ));
 
         response.getWriter().write(result);
-
-        // String targetUrl = UriComponentsBuilder.fromUriString("/login/success")
-        //         .queryParam("accessToken", accessToken)
-        //         .queryParam("refreshToken", refreshToken)
-        //         .build().toUriString();
-        //
-        // // 5. 지정된 URL로 리다이렉트 실행
-        // getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
