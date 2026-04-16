@@ -1,9 +1,6 @@
 package com.dodo.dodoserver.domain.nest.controller;
 
-import com.dodo.dodoserver.domain.nest.dto.NestCreateRequestDto;
-import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestSummaryResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestUnlockRequestDto;
+import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.nest.service.NestService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
@@ -24,6 +21,18 @@ import java.util.List;
 public class NestController {
 
     private final NestService nestService;
+
+    /**
+     * 둥지 상세 정보를 조회합니다.
+     */
+    @GetMapping("/{id}")
+    public ApiResponseDto<NestDetailResponseDto> getNestDetail(
+            Authentication authentication,
+            @PathVariable Long id) {
+
+        String email = authentication.getName();
+        return ApiResponseDto.success(nestService.getNestDetail(email, id));
+    }
 
     /**
      * 사용자의 현재 위치를 검증하여 둥지를 해금합니다.

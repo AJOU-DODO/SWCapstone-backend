@@ -3,13 +3,12 @@ package com.dodo.dodoserver.domain.nest.service;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
-import com.dodo.dodoserver.domain.nest.dto.NestCreateRequestDto;
-import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestSummaryResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestUnlockRequestDto;
+import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
+import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.domain.user.entity.UserProfile;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -37,6 +37,8 @@ public class NestService {
     private final NestCategoryRepository nestCategoryRepository;
     private final UnlockHistoryRepository unlockHistoryRepository;
     private final NestReactionRepository nestReactionRepository;
+    private final NestCommentRepository nestCommentRepository;
+    private final UserProfileRepository userProfileRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -95,6 +97,62 @@ public class NestService {
     }
 
     /**
+     * 둥지 상세 정보를 조회합니다. (해금 여부에 따라 내용 제한 가능)
+     */
+    @Transactional
+    public NestDetailResponseDto getNestDetail(String email, Long nestId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        // 1. 조회수 증가
+        nest.setViewCount(nest.getViewCount() + 1);
+
+        // 2. 해금 여부 확인
+        boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
+                || nest.getCreator().equals(user);
+
+        // 3. 작성자 프로필 정보 조회
+        UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
+
+        // 4. 리액션 수 집계
+        long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
+        long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
+
+        // 5. 카테고리 이름 목록 추출
+        List<String> categoryNames = nestCategoryRepository.findAll().stream()
+                .filter(nc -> nc.getNest().equals(nest))
+                .map(nc -> nc.getCategory().getName())
+                .collect(Collectors.toList());
+
+        // 6. 댓글 트리 구조 생성
+        List<CommentResponseDto> comments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)
+                .stream()
+                .map(CommentResponseDto::from)
+                .collect(Collectors.toList());
+
+        return NestDetailResponseDto.builder()
+                .id(nest.getId())
+                .title(nest.getTitle())
+                .content(isUnlocked ? nest.getContent() : "해금이 필요한 콘텐츠입니다.")
+                .unlockRadius(nest.getUnlockRadius())
+                .viewCount(nest.getViewCount())
+                .isAd(nest.isAd())
+                .createdAt(nest.getCreatedAt())
+                .creatorNickname(nest.getCreator().getNickname())
+                .creatorProfileImageUrl(creatorProfile != null ? creatorProfile.getProfileImageUrl() : null)
+                .categoryNames(categoryNames)
+                .imageUrls(nest.getImages().stream().map(NestImage::getImageUrl).collect(Collectors.toList()))
+                .likeCount(likeCount)
+                .dislikeCount(dislikeCount)
+                .isUnlocked(isUnlocked)
+                .comments(comments)
+                .build();
+    }
+
+    /**
      * 현재 위치 기반 반경 내의 모든 둥지 핀 정보를 조회합니다.
      */
     @Transactional(readOnly = true)
@@ -129,12 +187,10 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 1. 이미 해금했는지 확인
         if (unlockHistoryRepository.existsByUserAndNest(user, nest)) {
             throw new BusinessException(ErrorCode.ALREADY_UNLOCKED);
         }
 
-        // 2. 거리 계산 및 검증
         Point userPoint = geometryFactory.createPoint(new Coordinate(requestDto.getLongitude(), requestDto.getLatitude()));
         Double distance = nestRepository.calculateDistance(nestId, userPoint);
 
@@ -143,7 +199,6 @@ public class NestService {
             throw new BusinessException(ErrorCode.OUT_OF_UNLOCK_RADIUS);
         }
 
-        // 3. 해금 이력 저장
         UnlockHistory history = UnlockHistory.builder()
                 .user(user)
                 .nest(nest)
@@ -165,9 +220,8 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 해금 여부 확인 (해금된 둥지에 대해서만 리액션 가능)
-        if (!unlockHistoryRepository.existsByUserAndNest(user, nest)) {
-            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); // 명세에 맞는 적절한 에러 코드로 대체 가능
+        if (!unlockHistoryRepository.existsByUserAndNest(user, nest) && !nest.getCreator().equals(user)) {
+            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); 
         }
 
         NestReaction reaction = nestReactionRepository.findByUserAndNest(user, nest)
