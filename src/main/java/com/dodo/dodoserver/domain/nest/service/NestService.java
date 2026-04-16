@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -370,13 +371,13 @@ public class NestService {
     }
 
     /**
-     * 둥지 리액션(좋아요/싫어요) 등록 및 수정
+     * 둥지에 대한 리액션(좋아요/싫어요) 등록, 수정 또는 취소
      */
     @Transactional
     public void handleReaction(String email, Long nestId, ReactionType type) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        
+
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -384,10 +385,28 @@ public class NestService {
             throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); 
         }
 
-        NestReaction reaction = nestReactionRepository.findByUserAndNest(user, nest)
-                .orElse(NestReaction.builder().user(user).nest(nest).build());
-        
-        reaction.setReactionType(type);
-        nestReactionRepository.save(reaction);
+        Optional<NestReaction> existingReaction = nestReactionRepository.findByUserAndNest(user, nest);
+
+        if (existingReaction.isPresent()) {
+            NestReaction reaction = existingReaction.get();
+            if (reaction.getReactionType() == type) {
+                // 동일한 타입이면 취소(삭제)
+                nestReactionRepository.delete(reaction);
+                log.info("리액션 취소 완료: User={}, Nest={}, Type={}", email, nestId, type);
+            } else {
+                // 다른 타입이면 수정
+                reaction.setReactionType(type);
+                log.info("리액션 수정 완료: User={}, Nest={}, Type={}", email, nestId, type);
+            }
+        } else {
+            // 없으면 신규 등록
+            NestReaction reaction = NestReaction.builder()
+                    .user(user)
+                    .nest(nest)
+                    .reactionType(type)
+                    .build();
+            nestReactionRepository.save(reaction);
+            log.info("리액션 등록 완료: User={}, Nest={}, Type={}", email, nestId, type);
+        }
     }
 }
