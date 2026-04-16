@@ -170,4 +170,49 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("카테고리가 성공적으로 삭제되었습니다."));
     }
+
+    @Test
+    @DisplayName("카테고리 생성 실패 - 유효성 검증 오류 (이름 누락)")
+    @WithMockUser(roles = "ADMIN")
+    void createCategory_fail_invalidInput() throws Exception {
+        // given
+        CategoryRequestDto requestDto = new CategoryRequestDto("");
+
+        // when & then
+        mockMvc.perform(post("/api/v1/categories")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("G005"));
+    }
+
+    @Test
+    @DisplayName("카테고리 수정 실패 - 권한 없음(USER)")
+    @WithMockUser(roles = "USER")
+    void updateCategory_fail_forbidden() throws Exception {
+        // given
+        Long categoryId = 1L;
+        CategoryRequestDto requestDto = new CategoryRequestDto("독서");
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/categories/{id}", categoryId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("카테고리 삭제 실패 - 권한 없음(USER)")
+    @WithMockUser(roles = "USER")
+    void deleteCategory_fail_forbidden() throws Exception {
+        // given
+        Long categoryId = 1L;
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/categories/{id}", categoryId)
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
 }

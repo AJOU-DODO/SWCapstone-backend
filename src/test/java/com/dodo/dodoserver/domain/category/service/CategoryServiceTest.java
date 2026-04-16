@@ -119,17 +119,33 @@ class CategoryServiceTest {
     }
 
     @Test
-    @DisplayName("카테고리 삭제 성공")
-    void deleteCategory_success() {
+    @DisplayName("카테고리 수정 실패 - 중복된 이름")
+    void updateCategory_fail_duplicateName() {
         // given
         Long categoryId = 1L;
-        Category category = Category.builder().id(categoryId).name("운동").build();
+        CategoryRequestDto requestDto = new CategoryRequestDto("중복이름");
+        Category category = Category.builder().id(categoryId).name("기존이름").build();
+        Category existingCategory = Category.builder().id(2L).name("중복이름").build();
+
         given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
+        given(categoryRepository.findByName("중복이름")).willReturn(Optional.of(existingCategory));
 
-        // when
-        categoryService.deleteCategory(categoryId);
+        // when & then
+        assertThatThrownBy(() -> categoryService.updateCategory(categoryId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.DUPLICATE_CATEGORY_NAME.getMessage());
+    }
 
-        // then
-        verify(categoryRepository, times(1)).delete(category);
+    @Test
+    @DisplayName("카테고리 삭제 실패 - 존재하지 않는 카테고리")
+    void deleteCategory_fail_notFound() {
+        // given
+        Long categoryId = 99L;
+        given(categoryRepository.findById(categoryId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> categoryService.deleteCategory(categoryId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.CATEGORY_NOT_FOUND.getMessage());
     }
 }
