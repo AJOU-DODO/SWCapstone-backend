@@ -23,7 +23,45 @@ public class NestController {
     private final NestService nestService;
 
     /**
-     * 둥지에 댓글을 작성합니다.
+     * 새로운 둥지(Nest) 생성
+     */
+    @PostMapping
+    public ApiResponseDto<NestSummaryResponseDto> createNest(
+            Authentication authentication,
+            @RequestBody @Valid NestCreateRequestDto requestDto) {
+        
+        String email = authentication.getName();
+        return ApiResponseDto.success(nestService.createNest(email, requestDto));
+    }
+
+    /**
+     * 둥지 정보 수정 (작성자 전용)
+     */
+    @PatchMapping("/{id}")
+    public ApiResponseDto<NestSummaryResponseDto> updateNest(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestBody @Valid NestUpdateRequestDto requestDto) {
+        
+        String email = authentication.getName();
+        return ApiResponseDto.success(nestService.updateNest(email, id, requestDto));
+    }
+
+    /**
+     * 둥지 삭제 (작성자 전용)
+     */
+    @DeleteMapping("/{id}")
+    public ApiResponseDto<String> deleteNest(
+            Authentication authentication,
+            @PathVariable Long id) {
+        
+        String email = authentication.getName();
+        nestService.deleteNest(email, id);
+        return ApiResponseDto.success("둥지가 성공적으로 삭제되었습니다.");
+    }
+
+    /**
+     * 둥지 댓글 작성
      */
     @PostMapping("/{id}/comments")
     public ApiResponseDto<String> createComment(
@@ -37,7 +75,7 @@ public class NestController {
     }
 
     /**
-     * 댓글을 수정합니다.
+     * 댓글 수정
      */
     @PatchMapping("/comments/{commentId}")
     public ApiResponseDto<String> updateComment(
@@ -51,7 +89,7 @@ public class NestController {
     }
 
     /**
-     * 댓글을 삭제합니다.
+     * 댓글 삭제
      */
     @DeleteMapping("/comments/{commentId}")
     public ApiResponseDto<String> deleteComment(
@@ -64,7 +102,7 @@ public class NestController {
     }
 
     /**
-     * 둥지 상세 정보를 조회합니다.
+     * 둥지 상세 정보 조회
      */
     @GetMapping("/{id}")
     public ApiResponseDto<NestDetailResponseDto> getNestDetail(
@@ -76,7 +114,7 @@ public class NestController {
     }
 
     /**
-     * 사용자의 현재 위치를 검증하여 둥지를 해금합니다.
+     * 사용자 현재 위치 검증을 통한 둥지 해금
      */
     @PostMapping("/{id}/unlock")
     public ApiResponseDto<String> unlockNest(
@@ -90,7 +128,7 @@ public class NestController {
     }
 
     /**
-     * 둥지에 대한 리액션(좋아요/싫어요)을 등록하거나 수정합니다.
+     * 둥지 리액션(좋아요/싫어요) 등록 및 수정
      */
     @PostMapping("/{id}/reaction")
     public ApiResponseDto<String> handleReaction(
@@ -104,7 +142,7 @@ public class NestController {
     }
 
     /**
-     * 특정 ID 리스트에 해당하는 둥지 요약 정보들을 조회합니다. (클러스터링 클릭 시 사용)
+     * 특정 ID 리스트 둥지 요약 정보 조회 (클러스터링 클릭 시 사용)
      */
     @GetMapping("/summaries")
     public ApiResponseDto<List<NestSummaryResponseDto>> getNestsByIds(
@@ -116,7 +154,7 @@ public class NestController {
     }
 
     /**
-     * 현재 위치 기반 반경 내의 카테고리별 둥지 리스트를 조회합니다.
+     * 현재 위치 기반 반경 내 카테고리별 둥지 리스트 조회
      * 정렬 기준 예시: sort=createdAt,desc / sort=viewCount,desc
      */
     @GetMapping
@@ -133,7 +171,7 @@ public class NestController {
     }
 
     /**
-     * 현재 위치 기반 반경 내의 모든 둥지 핀 정보를 조회합니다.
+     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
      */
     @GetMapping("/pins")
     public ApiResponseDto<List<NestPinResponseDto>> getNearbyPins(
@@ -142,17 +180,5 @@ public class NestController {
             @RequestParam(required = false) Double radiusMeter) {
 
         return ApiResponseDto.success(nestService.getNearbyPins(latitude, longitude, radiusMeter));
-    }
-
-    /**
-     * 새로운 둥지(Nest)를 생성합니다.
-     */
-    @PostMapping
-    public ApiResponseDto<NestSummaryResponseDto> createNest(
-            Authentication authentication,
-            @RequestBody @Valid NestCreateRequestDto requestDto) {
-        
-        String email = authentication.getName();
-        return ApiResponseDto.success(nestService.createNest(email, requestDto));
     }
 }

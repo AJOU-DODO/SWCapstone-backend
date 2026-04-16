@@ -28,7 +28,7 @@ public class NestLocation {
 
     /**
      * SRID 4326: GPS 좌표계 (WGS84)
-     * POINT(longitude, latitude) 순서로 저장됨에 주의
+     * POINT(longitude, latitude) 순서 저장 주의
      */
     @Column(nullable = false, columnDefinition = "POINT SRID 4326")
     private Point point;
@@ -37,12 +37,12 @@ public class NestLocation {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
     
-    // 편의 메서드: 위도 추출
+    // 위도 추출 편의 메서드
     public Double getLatitude() {
         return point != null ? point.getY() : null;
     }
 
-    // 편의 메서드: 경도 추출
+    // 경도 추출 편의 메서드
     public Double getLongitude() {
         return point != null ? point.getX() : null;
     }

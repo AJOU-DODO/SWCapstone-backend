@@ -39,11 +39,12 @@ public class NestService {
     private final NestReactionRepository nestReactionRepository;
     private final NestCommentRepository nestCommentRepository;
     private final UserProfileRepository userProfileRepository;
+    private final NestImageRepository nestImageRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
     /**
-     * 새로운 둥지(Nest)를 생성합니다.
+     * 새로운 둥지(Nest) 생성
      */
     @Transactional
     public NestSummaryResponseDto createNest(String email, NestCreateRequestDto requestDto) {
@@ -97,7 +98,82 @@ public class NestService {
     }
 
     /**
-     * 둥지에 댓글을 작성합니다.
+     * 둥지 정보 수정
+     */
+    @Transactional
+    public NestSummaryResponseDto updateNest(String email, Long nestId, NestUpdateRequestDto requestDto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        if (!nest.getCreator().equals(user)) {
+            throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
+        }
+
+        // 기본 정보 수정
+        if (requestDto.getTitle() != null) nest.setTitle(requestDto.getTitle());
+        if (requestDto.getContent() != null) nest.setContent(requestDto.getContent());
+        if (requestDto.getUnlockRadius() != null) nest.setUnlockRadius(requestDto.getUnlockRadius());
+
+        // 이미지 수정 (기존 이미지 삭제 후 새로 등록)
+        if (requestDto.getImageUrls() != null) {
+            nest.getImages().clear();
+            List<String> urls = requestDto.getImageUrls();
+            IntStream.range(0, urls.size()).forEach(i -> {
+                NestImage image = NestImage.builder()
+                        .nest(nest)
+                        .imageUrl(urls.get(i))
+                        .sortOrder(i + 1)
+                        .build();
+                nest.addImage(image);
+            });
+        }
+
+        // 카테고리 수정
+        if (requestDto.getCategoryIds() != null) {
+            // 기존 매핑 삭제 (이 방법은 쿼리 효율을 위해 수동으로 처리하거나 orphanRemoval 사용 가능)
+            // 여기서는 수동 삭제 후 재생성 방식을 취함
+            nestCategoryRepository.deleteByNest(nest);
+            
+            requestDto.getCategoryIds().forEach(categoryId -> {
+                Category category = categoryRepository.findById(categoryId)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+                
+                NestCategory nestCategory = NestCategory.builder()
+                        .nest(nest)
+                        .category(category)
+                        .build();
+                nestCategoryRepository.save(nestCategory);
+            });
+        }
+
+        log.info("둥지 수정 완료: ID={}", nestId);
+        return NestSummaryResponseDto.from(nest, true);
+    }
+
+    /**
+     * 둥지 삭제 (Soft Delete)
+     */
+    @Transactional
+    public void deleteNest(String email, Long nestId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        if (!nest.getCreator().equals(user)) {
+            throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
+        }
+
+        nestRepository.delete(nest);
+        log.info("둥지 삭제 완료: ID={}", nestId);
+    }
+
+    /**
+     * 둥지 댓글 작성
      */
     @Transactional
     public void createComment(String email, Long nestId, CommentCreateRequestDto requestDto) {
@@ -107,9 +183,8 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 해금 여부 확인 (작성자이거나 해금 이력이 있어야 함)
         if (!nest.getCreator().equals(user) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
-            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); // 임시: 상세 내용 미해금 시 댓글 작성 불가
+            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); 
         }
 
         NestComment parent = null;
@@ -130,7 +205,7 @@ public class NestService {
     }
 
     /**
-     * 댓글을 수정합니다.
+     * 댓글 수정
      */
     @Transactional
     public void updateComment(String email, Long commentId, CommentUpdateRequestDto requestDto) {
@@ -148,7 +223,7 @@ public class NestService {
     }
 
     /**
-     * 댓글을 삭제합니다. (Soft Delete)
+     * 댓글 삭제 (Soft Delete)
      */
     @Transactional
     public void deleteComment(String email, Long commentId) {
@@ -166,7 +241,7 @@ public class NestService {
     }
 
     /**
-     * ID 리스트에 해당하는 둥지 요약 정보들을 조회합니다.
+     * ID 리스트 둥지 요약 정보 조회
      */
     @Transactional(readOnly = true)
     public List<NestSummaryResponseDto> getNestsByIds(String email, List<Long> nestIds) {
@@ -183,7 +258,7 @@ public class NestService {
     }
 
     /**
-     * 둥지 상세 정보를 조회합니다.
+     * 둥지 상세 정보 조회
      */
     @Transactional
     public NestDetailResponseDto getNestDetail(String email, Long nestId) {
@@ -202,8 +277,7 @@ public class NestService {
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
         long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
 
-        List<String> categoryNames = nestCategoryRepository.findAll().stream()
-                .filter(nc -> nc.getNest().equals(nest))
+        List<String> categoryNames = nestCategoryRepository.findAllByNest(nest).stream()
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
@@ -232,7 +306,7 @@ public class NestService {
     }
 
     /**
-     * 현재 위치 기반 반경 내의 모든 둥지 핀 정보를 조회합니다.
+     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
      */
     @Transactional(readOnly = true)
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter) {
@@ -242,7 +316,7 @@ public class NestService {
     }
 
     /**
-     * 현재 위치 기반 반경 내의 카테고리별 둥지 리스트를 조회합니다.
+     * 현재 위치 기반 반경 내 카테고리별 둥지 리스트 조회
      */
     @Transactional(readOnly = true)
     public Page<NestSummaryResponseDto> getNearbyNests(
@@ -263,7 +337,7 @@ public class NestService {
     }
 
     /**
-     * 사용자의 현재 위치를 검증하여 둥지를 해금합니다.
+     * 사용자 현재 위치 검증을 통한 둥지 해금
      */
     @Transactional
     public void unlockNest(String email, Long nestId, NestUnlockRequestDto requestDto) {
@@ -296,7 +370,7 @@ public class NestService {
     }
 
     /**
-     * 둥지에 대한 리액션(좋아요/싫어요)을 등록하거나 수정합니다.
+     * 둥지 리액션(좋아요/싫어요) 등록 및 수정
      */
     @Transactional
     public void handleReaction(String email, Long nestId, ReactionType type) {
