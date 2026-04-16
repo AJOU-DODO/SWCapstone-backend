@@ -93,11 +93,97 @@ public class NestService {
         }
 
         log.info("새로운 둥지 생성 완료: ID={}, Title={}", savedNest.getId(), savedNest.getTitle());
-        return NestSummaryResponseDto.from(savedNest);
+        return NestSummaryResponseDto.from(savedNest, true);
     }
 
     /**
-     * 둥지 상세 정보를 조회합니다. (해금 여부에 따라 내용 제한 가능)
+     * 둥지에 댓글을 작성합니다.
+     */
+    @Transactional
+    public void createComment(String email, Long nestId, CommentCreateRequestDto requestDto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        // 해금 여부 확인 (작성자이거나 해금 이력이 있어야 함)
+        if (!nest.getCreator().equals(user) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); // 임시: 상세 내용 미해금 시 댓글 작성 불가
+        }
+
+        NestComment parent = null;
+        if (requestDto.getParentId() != null) {
+            parent = nestCommentRepository.findById(requestDto.getParentId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+        }
+
+        NestComment comment = NestComment.builder()
+                .nest(nest)
+                .user(user)
+                .parent(parent)
+                .content(requestDto.getContent())
+                .build();
+
+        nestCommentRepository.save(comment);
+        log.info("댓글 작성 완료: Nest={}, User={}", nestId, email);
+    }
+
+    /**
+     * 댓글을 수정합니다.
+     */
+    @Transactional
+    public void updateComment(String email, Long commentId, CommentUpdateRequestDto requestDto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        NestComment comment = nestCommentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+
+        if (!comment.getUser().equals(user)) {
+            throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
+        }
+
+        comment.setContent(requestDto.getContent());
+    }
+
+    /**
+     * 댓글을 삭제합니다. (Soft Delete)
+     */
+    @Transactional
+    public void deleteComment(String email, Long commentId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        NestComment comment = nestCommentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+
+        if (!comment.getUser().equals(user)) {
+            throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
+        }
+
+        nestCommentRepository.delete(comment);
+    }
+
+    /**
+     * ID 리스트에 해당하는 둥지 요약 정보들을 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public List<NestSummaryResponseDto> getNestsByIds(String email, List<Long> nestIds) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        List<Nest> nests = nestRepository.findAllById(nestIds);
+
+        return nests.stream().map(nest -> {
+            boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest)
+                    || nest.getCreator().equals(user);
+            return NestSummaryResponseDto.from(nest, isUnlocked);
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 둥지 상세 정보를 조회합니다.
      */
     @Transactional
     public NestDetailResponseDto getNestDetail(String email, Long nestId) {
@@ -107,27 +193,20 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 1. 조회수 증가
         nest.setViewCount(nest.getViewCount() + 1);
 
-        // 2. 해금 여부 확인
         boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user);
 
-        // 3. 작성자 프로필 정보 조회
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
-
-        // 4. 리액션 수 집계
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
         long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
 
-        // 5. 카테고리 이름 목록 추출
         List<String> categoryNames = nestCategoryRepository.findAll().stream()
                 .filter(nc -> nc.getNest().equals(nest))
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
-        // 6. 댓글 트리 구조 생성
         List<CommentResponseDto> comments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)
                 .stream()
                 .map(CommentResponseDto::from)
@@ -167,13 +246,20 @@ public class NestService {
      */
     @Transactional(readOnly = true)
     public Page<NestSummaryResponseDto> getNearbyNests(
-            Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
+            String email, Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
         
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
         Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
         
-        return nests.map(NestSummaryResponseDto::from);
+        return nests.map(nest -> {
+            boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest)
+                    || nest.getCreator().equals(user);
+            return NestSummaryResponseDto.from(nest, isUnlocked);
+        });
     }
 
     /**
