@@ -37,8 +37,8 @@ services:
       - db
       - redis
     environment:
-      - DB_HOST=db
-      - REDIS_HOST=redis
+      - DB_HOST=${DB_HOST:-db}
+      - REDIS_HOST=${REDIS_HOST:-redis}
       - DB_LOCAL_PORT=${DB_LOCAL_PORT}
       - DB_NAME=${DB_NAME}
       - DB_USERNAME=${DB_USERNAME}
