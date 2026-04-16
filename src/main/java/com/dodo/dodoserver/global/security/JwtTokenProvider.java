@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,10 +27,11 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration.access}")
+    @Getter
+	@Value("${jwt.expiration.access}")
     private long accessTokenExpiration;
 
-    @Value("${jwt.expiration.refresh}")
+	@Value("${jwt.expiration.refresh}")
     private long refreshTokenExpiration;
 
     private SecretKey key;

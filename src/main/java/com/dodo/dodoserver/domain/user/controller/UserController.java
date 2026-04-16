@@ -29,7 +29,7 @@ public class UserController {
      */
     @GetMapping("/me")
     public ApiResponseDto<UserProfileResponseDto> getMyProfile(Authentication authentication) {
-        String email = (String) authentication.getPrincipal();
+        String email = authentication.getName();
         return ApiResponseDto.success(userService.getUserProfileByEmail(email));
     }
 
@@ -57,7 +57,7 @@ public class UserController {
             Authentication authentication,
             @RequestBody @Valid ProfileUpdateRequestDto requestDto) {
 
-        String email = (String) authentication.getPrincipal();
+        String email = authentication.getName();
         userService.updateProfile(email, requestDto);
 
         return ApiResponseDto.success("프로필 정보가 성공적으로 수정되었습니다.");
@@ -71,7 +71,7 @@ public class UserController {
             Authentication authentication,
             @RequestBody @Valid OnboardRequestDto requestDto) {
         
-        String email = (String) authentication.getPrincipal();
+        String email = authentication.getName();
         userService.onboard(email, requestDto);
         
         return ApiResponseDto.success("온보딩이 완료되었습니다.");
