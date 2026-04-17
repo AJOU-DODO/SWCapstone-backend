@@ -19,7 +19,7 @@ public interface NestRepository extends JpaRepository<Nest, Long> {
      * 특정 좌표(Point) 기준 반경(radiusMeter) 내 모든 둥지 핀 정보 조회
      * Native Query 사용: ST_X, ST_Y, ST_Distance_Sphere 직접 호출
      */
-    @Query(value = "SELECT nest_id AS id, ST_Y(point) AS latitude, ST_X(point) AS longitude " +
+    @Query(value = "SELECT nest_id AS id, ST_Latitude(point) AS latitude, ST_Longitude(point) AS longitude " +
                    "FROM nest_locations " +
                    "WHERE ST_Distance_Sphere(point, :point) <= :radiusMeter",
            nativeQuery = true)

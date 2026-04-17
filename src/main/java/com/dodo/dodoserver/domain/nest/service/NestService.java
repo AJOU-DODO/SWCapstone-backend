@@ -312,7 +312,7 @@ public class NestService {
     @Transactional(readOnly = true)
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter) {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
-        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
         return nestRepository.findNearbyPins(point, radius).stream()
                 .map(NestPinResponseDto::from)
                 .collect(Collectors.toList());
