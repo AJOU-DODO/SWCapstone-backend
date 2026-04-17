@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.nest.dao;
 
+import com.dodo.dodoserver.domain.nest.dto.NestPinProjection;
 import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import org.locationtech.jts.geom.Point;
@@ -13,14 +14,16 @@ import java.util.List;
 
 public interface NestRepository extends JpaRepository<Nest, Long> {
 
+
     /**
      * 특정 좌표(Point) 기준 반경(radiusMeter) 내 모든 둥지 핀 정보 조회
-     * ST_Distance_Sphere 미터(m) 단위 거리 계산
+     * Native Query 사용: ST_X, ST_Y, ST_Distance_Sphere 직접 호출
      */
-    @Query(value = "SELECT new com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto(nl.nest.id, ST_Y(nl.point), ST_X(nl.point)) " +
-                   "FROM NestLocation nl " +
-                   "WHERE ST_Distance_Sphere(nl.point, :point) <= :radiusMeter")
-    List<NestPinResponseDto> findNearbyPins(
+    @Query(value = "SELECT nest_id AS id, ST_Y(point) AS latitude, ST_X(point) AS longitude " +
+                   "FROM nest_locations " +
+                   "WHERE ST_Distance_Sphere(point, :point) <= :radiusMeter",
+           nativeQuery = true)
+    List<NestPinProjection> findNearbyPins(
             @Param("point") Point point,
             @Param("radiusMeter") Double radiusMeter);
 
