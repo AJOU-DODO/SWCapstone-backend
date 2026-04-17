@@ -17,26 +17,38 @@ public interface NestRepository extends JpaRepository<Nest, Long> {
 
     /**
      * 특정 좌표(Point) 기준 반경(radiusMeter) 내 모든 둥지 핀 정보 조회
-     * Native Query 사용: ST_X, ST_Y, ST_Distance_Sphere 직접 호출
+     * Native Query 사용: ST_Latitude, ST_Longitude, ST_Distance_Sphere 직접 호출
+     * Soft Delete(deleted_at IS NULL) 반영
      */
-    @Query(value = "SELECT nest_id AS id, ST_Latitude(point) AS latitude, ST_Longitude(point) AS longitude " +
-                   "FROM nest_locations " +
-                   "WHERE ST_Distance_Sphere(point, :point) <= :radiusMeter",
+    @Query(value = "SELECT n.id AS id, ST_Latitude(nl.point) AS latitude, ST_Longitude(nl.point) AS longitude " +
+                   "FROM nests n " +
+                   "JOIN nest_locations nl ON n.id = nl.nest_id " +
+                   "WHERE ST_Distance_Sphere(nl.point, :point) <= :radiusMeter " +
+                   "AND n.deleted_at IS NULL",
            nativeQuery = true)
     List<NestPinProjection> findNearbyPins(
             @Param("point") Point point,
             @Param("radiusMeter") Double radiusMeter);
 
     /**
-     * 반경 내 및 특정 카테고리 필터링 적용 둥지 목록 조회
+     * 반경 내 및 특정 카테고리 필터링 적용 둥지 목록 조회 (Native Query)
+     * 페이징 지원을 위해 countQuery 별도 작성
      */
-    @Query(value = "SELECT n " +
-                   "FROM Nest n " +
-                   "JOIN n.location nl " +
-                   "LEFT JOIN NestCategory nc ON nc.nest = n " +
+    @Query(value = "SELECT DISTINCT n.* " +
+                   "FROM nests n " +
+                   "JOIN nest_locations nl ON n.id = nl.nest_id " +
+                   "LEFT JOIN nest_categories nc ON n.id = nc.nest_id " +
                    "WHERE ST_Distance_Sphere(nl.point, :point) <= :radiusMeter " +
-                   "AND (:categoryId IS NULL OR nc.category.id = :categoryId) " +
-                   "GROUP BY n.id")
+                   "AND (:categoryId IS NULL OR nc.category_id = :categoryId) " +
+                   "AND n.deleted_at IS NULL",
+           countQuery = "SELECT COUNT(DISTINCT n.id) " +
+                        "FROM nests n " +
+                        "JOIN nest_locations nl ON n.id = nl.nest_id " +
+                        "LEFT JOIN nest_categories nc ON n.id = nc.nest_id " +
+                        "WHERE ST_Distance_Sphere(nl.point, :point) <= :radiusMeter " +
+                        "AND (:categoryId IS NULL OR nc.category_id = :categoryId) " +
+                        "AND n.deleted_at IS NULL",
+           nativeQuery = true)
     Page<Nest> findNearbyNests(
             @Param("point") Point point,
             @Param("radiusMeter") Double radiusMeter,
@@ -44,10 +56,11 @@ public interface NestRepository extends JpaRepository<Nest, Long> {
             Pageable pageable);
 
     /**
-     * 특정 둥지와 주어진 좌표 사이 거리 계산
+     * 특정 둥지와 주어진 좌표 사이 거리 계산 (Native Query)
      */
     @Query(value = "SELECT ST_Distance_Sphere(nl.point, :point) " +
-                   "FROM NestLocation nl " +
-                   "WHERE nl.nest.id = :nestId")
+                   "FROM nest_locations nl " +
+                   "WHERE nl.nest_id = :nestId",
+           nativeQuery = true)
     Double calculateDistance(@Param("nestId") Long nestId, @Param("point") Point point);
 }
