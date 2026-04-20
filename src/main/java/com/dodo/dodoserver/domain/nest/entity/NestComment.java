@@ -4,7 +4,7 @@ import com.dodo.dodoserver.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -21,7 +21,7 @@ import java.util.List;
 @Table(name = "nest_comments")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE nest_comments SET deleted_at = NOW() WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 public class NestComment {
 
     @Id
