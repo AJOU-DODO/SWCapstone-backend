@@ -41,6 +41,7 @@ public class NestService {
     private final NestCommentRepository nestCommentRepository;
     private final UserProfileRepository userProfileRepository;
     private final NestImageRepository nestImageRepository;
+    private final CommentLikeRepository commentLikeRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -304,14 +305,51 @@ public class NestService {
      * 둥지 ID로 댓글 리스트 조회 (트리 구조)
      */
     @Transactional(readOnly = true)
-    public List<CommentResponseDto> getCommentsByNestId(Long nestId) {
+    public List<CommentResponseDto> getCommentsByNestId(String email, Long nestId, String sortBy) {
+        User user = email != null ? userRepository.findByEmail(email).orElse(null) : null;
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        return nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)
-                .stream()
-                .map(this::convertToCommentResponseDto)
+        List<NestComment> topComments;
+        if ("LIKE".equalsIgnoreCase(sortBy)) {
+            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByLikeCountDescCreatedAtDesc(nest);
+        } else if ("LATEST".equalsIgnoreCase(sortBy)) {
+            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtDesc(nest);
+        } else {
+            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest);
+        }
+
+        return topComments.stream()
+                .map(comment -> convertToCommentResponseDto(comment, user))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 댓글 좋아요 처리 (Toggle 방식)
+     */
+    @Transactional
+    public void handleCommentLike(String email, Long commentId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        NestComment comment = nestCommentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+
+        Optional<CommentLike> existingLike = commentLikeRepository.findByUserAndComment(user, comment);
+
+        if (existingLike.isPresent()) {
+            commentLikeRepository.delete(existingLike.get());
+            comment.decreaseLikeCount();
+            log.info("댓글 좋아요 취소: User={}, Comment={}", email, commentId);
+        } else {
+            CommentLike like = CommentLike.builder()
+                    .user(user)
+                    .comment(comment)
+                    .build();
+            commentLikeRepository.save(like);
+            comment.increaseLikeCount();
+            log.info("댓글 좋아요 등록: User={}, Comment={}", email, commentId);
+        }
     }
 
 
@@ -421,8 +459,9 @@ public class NestService {
         }
     }
 
-    private CommentResponseDto convertToCommentResponseDto(NestComment comment) {
+    private CommentResponseDto convertToCommentResponseDto(NestComment comment, User currentUser) {
         UserProfile profile = userProfileRepository.findByUser(comment.getUser()).orElse(null);
+        boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, comment);
 
         return CommentResponseDto.builder()
             .id(comment.getId())
@@ -430,8 +469,10 @@ public class NestService {
             .nickname(comment.getUser().getNickname())
             .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
             .createdAt(comment.getCreatedAt())
+            .likeCount(comment.getLikeCount())
+            .isLiked(isLiked)
             .children(comment.getChildren().stream()
-                .map(this::convertToCommentResponseDto)
+                .map(child -> convertToCommentResponseDto(child, currentUser))
                 .collect(Collectors.toList()))
             .build();
     }
