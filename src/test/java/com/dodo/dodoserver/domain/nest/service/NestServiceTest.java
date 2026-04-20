@@ -208,12 +208,28 @@ class NestServiceTest {
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
-        given(nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)).willReturn(new ArrayList<>());
 
         NestDetailResponseDto response = nestService.getNestDetail(email, nestId);
 
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("둥지 댓글 리스트 조회 성공")
+    void getCommentsByNestId_success() {
+        Long nestId = 1L;
+        Nest nest = Nest.builder().id(nestId).build();
+        NestComment comment = NestComment.builder().id(10L).user(user).content("댓글").children(new ArrayList<>()).build();
+
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)).willReturn(List.of(comment));
+        given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
+
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(nestId);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getContent()).isEqualTo("댓글");
     }
 
     // --- 댓글 (Comment) 테스트 ---

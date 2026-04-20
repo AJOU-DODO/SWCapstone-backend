@@ -104,6 +104,19 @@ class NestPostControllerTest {
     }
 
     @Test
+    @DisplayName("둥지 댓글 리스트 조회 성공")
+    @WithMockUser
+    void getComments_success() throws Exception {
+        Long nestId = 1L;
+        CommentResponseDto comment = CommentResponseDto.builder().id(10L).content("댓글").build();
+        given(nestService.getCommentsByNestId(nestId)).willReturn(List.of(comment));
+
+        mockMvc.perform(get("/api/v1/nests/{id}/comments", nestId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].content").value("댓글"));
+    }
+
+    @Test
     @DisplayName("둥지 수정 성공")
     @WithMockUser
     void updateNest_success() throws Exception {
