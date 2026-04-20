@@ -54,6 +54,8 @@ class NestServiceTest {
     private UserProfileRepository userProfileRepository;
     @Mock
     private NestImageRepository nestImageRepository;
+    @Mock
+    private CommentLikeRepository commentLikeRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User user;
@@ -222,14 +224,49 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).build();
         NestComment comment = NestComment.builder().id(10L).user(user).content("댓글").children(new ArrayList<>()).build();
 
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)).willReturn(List.of(comment));
         given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
+        given(commentLikeRepository.existsByUserAndComment(any(), any())).willReturn(false);
 
-        List<CommentResponseDto> result = nestService.getCommentsByNestId(nestId);
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(email, nestId, "DEFAULT");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getContent()).isEqualTo("댓글");
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 등록 성공")
+    void handleCommentLike_create() {
+        Long commentId = 10L;
+        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(0L).build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
+
+        nestService.handleCommentLike(email, commentId);
+
+        assertThat(comment.getLikeCount()).isEqualTo(1L);
+        verify(commentLikeRepository).save(any(CommentLike.class));
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 취소 성공")
+    void handleCommentLike_cancel() {
+        Long commentId = 10L;
+        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(1L).build();
+        CommentLike like = CommentLike.builder().user(user).comment(comment).build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.of(like));
+
+        nestService.handleCommentLike(email, commentId);
+
+        assertThat(comment.getLikeCount()).isEqualTo(0L);
+        verify(commentLikeRepository).delete(like);
     }
 
     // --- 댓글 (Comment) 테스트 ---
