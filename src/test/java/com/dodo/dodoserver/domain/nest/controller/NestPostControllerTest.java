@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
@@ -109,11 +110,24 @@ class NestPostControllerTest {
     void getComments_success() throws Exception {
         Long nestId = 1L;
         CommentResponseDto comment = CommentResponseDto.builder().id(10L).content("댓글").build();
-        given(nestService.getCommentsByNestId(nestId)).willReturn(List.of(comment));
+        given(nestService.getCommentsByNestId(any(), eq(nestId), anyString())).willReturn(List.of(comment));
 
-        mockMvc.perform(get("/api/v1/nests/{id}/comments", nestId))
+        mockMvc.perform(get("/api/v1/nests/{id}/comments", nestId)
+                        .param("sortBy", "LIKE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].content").value("댓글"));
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 처리 성공")
+    @WithMockUser
+    void handleCommentLike_success() throws Exception {
+        Long commentId = 10L;
+
+        mockMvc.perform(post("/api/v1/nests/comments/{commentId}/like", commentId)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("댓글 좋아요 처리가 완료되었습니다."));
     }
 
     @Test
