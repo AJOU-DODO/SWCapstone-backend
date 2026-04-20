@@ -36,9 +36,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(NestController.class)
+@WebMvcTest(NestPostController.class)
 @Import(SecurityConfig.class)
-class NestControllerTest {
+class NestPostControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -72,7 +72,36 @@ class NestControllerTest {
         }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
     }
 
-    // --- 둥지 (Nest) API 테스트 ---
+    @Test
+    @DisplayName("둥지 생성 성공")
+    @WithMockUser
+    void createNest_success() throws Exception {
+        NestCreateRequestDto requestDto = new NestCreateRequestDto("새둥지", "내용", 37.5, 127.0, 100, List.of(1L), List.of("url"), false);
+        NestSummaryResponseDto responseDto = NestSummaryResponseDto.builder().id(1L).title("새둥지").build();
+
+        given(nestService.createNest(any(), any())).willReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/nests")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("새둥지"));
+    }
+
+    @Test
+    @DisplayName("둥지 상세 조회 성공")
+    @WithMockUser
+    void getNestDetail_success() throws Exception {
+        Long nestId = 1L;
+        NestDetailResponseDto responseDto = NestDetailResponseDto.builder().id(nestId).title("상세조회").build();
+
+        given(nestService.getNestDetail(any(), eq(nestId))).willReturn(responseDto);
+
+        mockMvc.perform(get("/api/v1/nests/{id}", nestId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("상세조회"));
+    }
 
     @Test
     @DisplayName("둥지 수정 성공")
@@ -103,8 +132,6 @@ class NestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("둥지가 성공적으로 삭제되었습니다."));
     }
-
-    // --- 댓글 (Comment) API 테스트 ---
 
     @Test
     @DisplayName("댓글 작성 성공")
@@ -148,8 +175,6 @@ class NestControllerTest {
                 .andExpect(jsonPath("$.data").value("댓글이 성공적으로 삭제되었습니다."));
     }
 
-    // --- 리액션 (Reaction) API 테스트 ---
-
     @Test
     @DisplayName("리액션 처리 성공")
     @WithMockUser
@@ -161,21 +186,5 @@ class NestControllerTest {
                         .param("type", "LIKE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("리액션이 성공적으로 처리되었습니다."));
-    }
-
-    // --- 기존 조회 API 테스트 ---
-
-    @Test
-    @DisplayName("주변 핀 조회 성공")
-    @WithMockUser
-    void getNearbyPins_success() throws Exception {
-        NestPinResponseDto pin = new NestPinResponseDto(1L, 37.5, 127.0);
-        given(nestService.getNearbyPins(any(), any(), any())).willReturn(List.of(pin));
-
-        mockMvc.perform(get("/api/v1/nests/pins")
-                        .param("latitude", "37.5")
-                        .param("longitude", "127.0"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 }
