@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface NestCommentRepository extends JpaRepository<NestComment, Long> {
-    // 둥지 내 최상위 댓글(parent IS NULL) 생성순 조회
+    // 둥지 내 최상위 댓글(parent IS NULL) 조회 (정렬 옵션 대응)
     List<NestComment> findAllByNestAndParentIsNullOrderByCreatedAtAsc(Nest nest);
+    List<NestComment> findAllByNestAndParentIsNullOrderByCreatedAtDesc(Nest nest);
+    List<NestComment> findAllByNestAndParentIsNullOrderByLikeCountDescCreatedAtDesc(Nest nest);
 }
