@@ -272,7 +272,7 @@ public class NestService {
         nest.setViewCount(nest.getViewCount() + 1);
 
         boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
-                || nest.getCreator().equals(user);
+                || nest.getCreator().equals(user); // 자기 자신일 경우 해금
 
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
@@ -290,7 +290,7 @@ public class NestService {
         return NestDetailResponseDto.builder()
                 .id(nest.getId())
                 .title(nest.getTitle())
-                .content(isUnlocked ? nest.getContent() : "해금이 필요한 콘텐츠입니다.")
+                .content(nest.getContent())
                 .unlockRadius(nest.getUnlockRadius())
                 .viewCount(nest.getViewCount())
                 .isAd(nest.isAd())
@@ -322,7 +322,7 @@ public class NestService {
      * 현재 위치 기반 반경 내 카테고리별 둥지 리스트 조회
      */
     @Transactional(readOnly = true)
-    public Page<NestSummaryResponseDto> getNearbyNests(
+    public Page<NestSummaryResponseDto> getNearNestsByCategory(
             String email, Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
         
         User user = userRepository.findByEmail(email)
@@ -350,7 +350,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        if (nest.getCreator().equals(user) || unlockHistoryRepository.existsByUserAndNest(user, nest)) {
             throw new BusinessException(ErrorCode.ALREADY_UNLOCKED);
         }
 

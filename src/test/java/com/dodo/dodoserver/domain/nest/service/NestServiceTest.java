@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -58,7 +57,7 @@ class NestServiceTest {
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User user;
-    private String email = "test@example.com";
+    private final String email = "test@example.com";
 
     @BeforeEach
     void setUp() {
@@ -151,16 +150,50 @@ class NestServiceTest {
     @DisplayName("둥지 해금 성공")
     void unlockNest_success() {
         Long nestId = 1L;
-        Nest nest = Nest.builder().id(nestId).unlockRadius(100).build();
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).unlockRadius(100).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(nestRepository.calculateDistance(eq(nestId), any(Point.class))).willReturn(50.0);
 
         nestService.unlockNest(email, nestId, requestDto);
 
         verify(unlockHistoryRepository).save(any(UnlockHistory.class));
+    }
+
+    @Test
+    @DisplayName("둥지 해금 실패 - 이미 해금됨")
+    void unlockNest_fail_alreadyUnlocked() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).build();
+        NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+
+        assertThatThrownBy(() -> nestService.unlockNest(email, nestId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
+    }
+
+    @Test
+    @DisplayName("둥지 해금 실패 - 작성자 본인")
+    void unlockNest_fail_isCreator() {
+        Long nestId = 1L;
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
+        NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+
+        assertThatThrownBy(() -> nestService.unlockNest(email, nestId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
     }
 
     @Test
@@ -179,7 +212,7 @@ class NestServiceTest {
 
         NestDetailResponseDto response = nestService.getNestDetail(email, nestId);
 
-        assertThat(response.getContent()).isEqualTo("해금이 필요한 콘텐츠입니다.");
+        assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
     }
 
