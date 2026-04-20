@@ -30,7 +30,4 @@ public class NestDetailResponseDto {
     private long likeCount;
     private long dislikeCount;
     private boolean isUnlocked;
-
-    // 댓글 리스트 (트리 구조)
-    private List<CommentResponseDto> comments;
 }

@@ -1,5 +1,7 @@
 package com.dodo.dodoserver.domain.nest.controller;
 
+import java.util.List;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dodo.dodoserver.domain.nest.dto.CommentCreateRequestDto;
+import com.dodo.dodoserver.domain.nest.dto.CommentResponseDto;
 import com.dodo.dodoserver.domain.nest.dto.CommentUpdateRequestDto;
 import com.dodo.dodoserver.domain.nest.dto.NestCreateRequestDto;
 import com.dodo.dodoserver.domain.nest.dto.NestDetailResponseDto;
@@ -93,6 +96,16 @@ public class NestPostController {
 		String email = authentication.getName();
 		nestService.createComment(email, id, requestDto);
 		return ApiResponseDto.success("댓글이 성공적으로 작성되었습니다.");
+	}
+
+	/**
+	 * 둥지 댓글 리스트 조회
+	 */
+	@GetMapping("/{id}/comments")
+	public ApiResponseDto<List<CommentResponseDto>> getComments(
+		@PathVariable Long id) {
+		
+		return ApiResponseDto.success(nestService.getCommentsByNestId(id));
 	}
 
 	/**

@@ -282,11 +282,6 @@ public class NestService {
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
-        List<CommentResponseDto> comments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)
-                .stream()
-                .map(CommentResponseDto::from)
-                .collect(Collectors.toList());
-
         return NestDetailResponseDto.builder()
                 .id(nest.getId())
                 .title(nest.getTitle())
@@ -302,9 +297,23 @@ public class NestService {
                 .likeCount(likeCount)
                 .dislikeCount(dislikeCount)
                 .isUnlocked(isUnlocked)
-                .comments(comments)
                 .build();
     }
+
+    /**
+     * 둥지 ID로 댓글 리스트 조회 (트리 구조)
+     */
+    @Transactional(readOnly = true)
+    public List<CommentResponseDto> getCommentsByNestId(Long nestId) {
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        return nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)
+                .stream()
+                .map(this::convertToCommentResponseDto)
+                .collect(Collectors.toList());
+    }
+
 
     /**
      * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
@@ -411,4 +420,20 @@ public class NestService {
             log.info("리액션 등록 완료: User={}, Nest={}, Type={}", email, nestId, type);
         }
     }
+
+    private CommentResponseDto convertToCommentResponseDto(NestComment comment) {
+        UserProfile profile = userProfileRepository.findByUser(comment.getUser()).orElse(null);
+
+        return CommentResponseDto.builder()
+            .id(comment.getId())
+            .content(comment.getContent())
+            .nickname(comment.getUser().getNickname())
+            .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
+            .createdAt(comment.getCreatedAt())
+            .children(comment.getChildren().stream()
+                .map(this::convertToCommentResponseDto)
+                .collect(Collectors.toList()))
+            .build();
+    }
+
 }
