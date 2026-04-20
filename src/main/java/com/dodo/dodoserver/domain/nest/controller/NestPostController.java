@@ -103,9 +103,25 @@ public class NestPostController {
 	 */
 	@GetMapping("/{id}/comments")
 	public ApiResponseDto<List<CommentResponseDto>> getComments(
-		@PathVariable Long id) {
+		Authentication authentication,
+		@PathVariable Long id,
+		@RequestParam(required = false, defaultValue = "DEFAULT") String sortBy) {
 		
-		return ApiResponseDto.success(nestService.getCommentsByNestId(id));
+		String email = (authentication != null) ? authentication.getName() : null;
+		return ApiResponseDto.success(nestService.getCommentsByNestId(email, id, sortBy));
+	}
+
+	/**
+	 * 댓글 좋아요 처리 (Toggle)
+	 */
+	@PostMapping("/comments/{commentId}/like")
+	public ApiResponseDto<String> handleCommentLike(
+		Authentication authentication,
+		@PathVariable Long commentId) {
+
+		String email = authentication.getName();
+		nestService.handleCommentLike(email, commentId);
+		return ApiResponseDto.success("댓글 좋아요 처리가 완료되었습니다.");
 	}
 
 	/**
