@@ -257,10 +257,15 @@ public class NestService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         List<Nest> nests = nestRepository.findAllById(nestIds);
+        if (nests.isEmpty()) return Collections.emptyList();
+
+        // 해금 이력 일괄 조회
+        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nests).stream()
+                .map(uh -> uh.getNest().getId())
+                .collect(Collectors.toSet());
 
         return nests.stream().map(nest -> {
-            boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest)
-                    || nest.getCreator().equals(user);
+            boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
             return NestSummaryResponseDto.from(nest, isUnlocked);
         }).collect(Collectors.toList());
     }
@@ -342,10 +347,9 @@ public class NestService {
         List<NestComment> topComments = allComments.stream()
                 .filter(c -> c.getParent() == null)
                 .collect(Collectors.toList());
-
         sortComments(topComments, sortBy);
 
-        Set<Long> finalLikedCommentIds = likedCommentIds;
+        Set<Long> finalLikedCommentIds = likedCommentIds; // 람다 Effectively Final
         return topComments.stream()
                 .map(c -> convertToCommentResponseDto(c, childrenMap, profileImageMap, finalLikedCommentIds))
                 .collect(Collectors.toList());
