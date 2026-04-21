@@ -31,6 +31,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.dodo.dodoserver.global.common.constants.NotificationConstants.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -230,16 +232,15 @@ public class NestService {
 
         if (parent == null) {
             targetUser = nest.getCreator();
-            type = "COMMENT";
-            title = "둥지에 새 댓글이 달렸습니다!";
-            body = String.format("%s님이 댓글을 남겼습니다.", commenter.getNickname());
+            type = TYPE_COMMENT;
+            title = TITLE_NEW_COMMENT;
+            body = String.format(BODY_NEW_COMMENT, commenter.getNickname());
         } else {
             targetUser = parent.getUser();
-            type = "REPLY";
-            title = "내 댓글에 답글이 달렸습니다!";
-            body = String.format("%s님이 답글을 남겼습니다.", commenter.getNickname());
+            type = TYPE_REPLY;
+            title = TITLE_NEW_REPLY;
+            body = String.format(BODY_NEW_REPLY, commenter.getNickname());
         }
-
         if (commenter.getId().equals(targetUser.getId())) {
             return;
         }
@@ -254,9 +255,9 @@ public class NestService {
         }
 
         Map<String, String> data = new HashMap<>();
-        data.put("type", type);
-        data.put("nestId", nest.getId().toString());
-        data.put("commentId", savedComment.getId().toString());
+        data.put(KEY_TYPE, type);
+        data.put(KEY_NEST_ID, nest.getId().toString());
+        data.put(KEY_COMMENT_ID, savedComment.getId().toString());
 
         eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
         log.info("댓글 알림 이벤트 발행 완료: TargetUser={}, Type={}", targetUser.getEmail(), type);
