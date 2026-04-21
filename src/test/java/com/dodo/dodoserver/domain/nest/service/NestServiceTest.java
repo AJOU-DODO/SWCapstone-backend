@@ -227,8 +227,8 @@ class NestServiceTest {
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest)).willReturn(List.of(comment));
-        given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
-        given(commentLikeRepository.existsByUserAndComment(any(), any())).willReturn(false);
+        given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
+        given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
 
         List<CommentResponseDto> result = nestService.getCommentsByNestId(email, nestId, "DEFAULT");
 
