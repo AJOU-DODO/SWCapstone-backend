@@ -22,8 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -302,14 +301,15 @@ public class NestService {
     }
 
     /**
-     * 둥지 ID로 댓글 리스트 조회 (트리 구조)
+     * 둥지 ID로 댓글 리스트 조회 (트리 구조, N+1 최적화)
      */
     @Transactional(readOnly = true)
     public List<CommentResponseDto> getCommentsByNestId(String email, Long nestId, String sortBy) {
-        User user = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
+        // 최상위 댓글 조회 (FETCH JOIN으로 User 정보 미리 로딩)
         List<NestComment> topComments;
         if ("LIKE".equalsIgnoreCase(sortBy)) {
             topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByLikeCountDescCreatedAtDesc(nest);
@@ -319,9 +319,60 @@ public class NestService {
             topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest);
         }
 
+        // 전체 댓글 평탄화 (N+1 방지를 위한 유저/좋아요 일괄 조회 준비)
+        List<NestComment> allComments = new ArrayList<>();
+        flattenComments(topComments, allComments);
+
+        // 작성자 프로필 일괄 조회 및 Map 캐싱
+        Set<User> authors = allComments.stream().map(NestComment::getUser).collect(Collectors.toSet());
+        Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream()
+                .filter(p -> p.getUser() != null)
+                .collect(Collectors.toMap(p -> p.getUser().getId(), UserProfile::getProfileImageUrl, (oldV, newV) -> oldV));
+
+        // 로그인 유저의 좋아요 여부 일괄 조회 및 Set 캐싱
+        Set<Long> likedCommentIds = new HashSet<>();
+        if (currentUser != null && !allComments.isEmpty()) {
+            likedCommentIds = commentLikeRepository.findAllByUserAndCommentIn(currentUser, allComments).stream()
+                    .map(cl -> cl.getComment().getId())
+                    .collect(Collectors.toSet());
+        }
+
+        Set<Long> finalLikedCommentIds = likedCommentIds;
         return topComments.stream()
-                .map(comment -> convertToCommentResponseDto(comment, user))
+                .map(comment -> convertToCommentResponseDto(comment, profileImageMap, finalLikedCommentIds))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 댓글 트리를 평탄화하여 리스트로 수집 (재귀)
+     */
+    private void flattenComments(List<NestComment> comments, List<NestComment> result) {
+        for (NestComment comment : comments) {
+            result.add(comment);
+            if (!comment.getChildren().isEmpty()) {
+                flattenComments(comment.getChildren(), result);
+            }
+        }
+    }
+
+    /**
+     * DTO 변환 (재귀, 메모리 맵 활용으로 쿼리 0개 수행)
+     */
+    private CommentResponseDto convertToCommentResponseDto(
+            NestComment comment, Map<Long, String> profileImageMap, Set<Long> likedCommentIds) {
+        
+        return CommentResponseDto.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .nickname(comment.getUser().getNickname())
+                .profileImageUrl(profileImageMap.get(comment.getUser().getId()))
+                .createdAt(comment.getCreatedAt())
+                .likeCount(comment.getLikeCount())
+                .isLiked(likedCommentIds.contains(comment.getId()))
+                .children(comment.getChildren().stream()
+                        .map(child -> convertToCommentResponseDto(child, profileImageMap, likedCommentIds))
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     /**
@@ -458,23 +509,4 @@ public class NestService {
             log.info("리액션 등록 완료: User={}, Nest={}, Type={}", email, nestId, type);
         }
     }
-
-    private CommentResponseDto convertToCommentResponseDto(NestComment comment, User currentUser) {
-        UserProfile profile = userProfileRepository.findByUser(comment.getUser()).orElse(null);
-        boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, comment);
-
-        return CommentResponseDto.builder()
-            .id(comment.getId())
-            .content(comment.getContent())
-            .nickname(comment.getUser().getNickname())
-            .profileImageUrl(profile != null ? profile.getProfileImageUrl() : null)
-            .createdAt(comment.getCreatedAt())
-            .likeCount(comment.getLikeCount())
-            .isLiked(isLiked)
-            .children(comment.getChildren().stream()
-                .map(child -> convertToCommentResponseDto(child, currentUser))
-                .collect(Collectors.toList()))
-            .build();
-    }
-
 }
