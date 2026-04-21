@@ -452,10 +452,15 @@ public class NestService {
 
         Pageable nativePageable = translateToNativePageable(pageable);
         Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, nativePageable);
+
+        if (nests.isEmpty()) return Page.empty(pageable);
+
+        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nests.getContent()).stream()
+                .map(uh -> uh.getNest().getId())
+                .collect(Collectors.toSet());
         
         return nests.map(nest -> {
-            boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest)
-                    || nest.getCreator().equals(user);
+            boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
             return NestSummaryResponseDto.from(nest, isUnlocked);
         });
     }
