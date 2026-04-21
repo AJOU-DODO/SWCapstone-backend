@@ -29,7 +29,7 @@ public class DeviceController {
             Authentication authentication,
             @RequestBody @Valid DeviceRequestDto requestDto) {
         
-        String email = (String) authentication.getPrincipal();
+        String email = authentication.getName();
         userDeviceService.registerOrUpdateDevice(email, requestDto);
         
         return ApiResponseDto.success("기기가 성공적으로 등록되었습니다.");
