@@ -287,6 +287,26 @@ class NestServiceTest {
     }
 
     @Test
+    @DisplayName("댓글 작성 실패 - 부모 댓글이 다른 둥지에 속함")
+    void createComment_fail_parentFromOtherNest() {
+        Long nestId = 1L;
+        Long otherNestId = 2L;
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
+        Nest otherNest = Nest.builder().id(otherNestId).build();
+        
+        NestComment parentComment = NestComment.builder().id(10L).nest(otherNest).build();
+        CommentCreateRequestDto requestDto = new CommentCreateRequestDto("내용", 10L);
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCommentRepository.findById(10L)).willReturn(Optional.of(parentComment));
+
+        assertThatThrownBy(() -> nestService.createComment(email, nestId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
+    }
+
+    @Test
     @DisplayName("댓글 수정 성공")
     void updateComment_success() {
         Long commentId = 10L;
