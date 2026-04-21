@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 인증 관련 비즈니스 로직(재발급, 로그아웃 등)을 처리하는 서비스 클래스입니다.
+ * 인증 관련 비즈니스 로직(재발급, 로그아웃 등) 처리 서비스
  */
 @Service
 @RequiredArgsConstructor
@@ -24,32 +24,32 @@ public class AuthService {
     private final UserRepository userRepository;
 
     /**
-     * Refresh Token을 확인하여 새로운 Access/Refresh 토큰 세트를 발급 (RTR 방식).
+     * Refresh Token 확인 및 새로운 Access/Refresh 토큰 세트 발급 (RTR 방식)
      */
     @Transactional
     public TokenResponseDto reissue(String refreshToken) {
-        // 전달받은 Refresh Token의 유효성(서명, 만료시간 등)을 검증
+        // 전달받은 Refresh Token의 유효성(서명, 만료시간 등) 검증
         if (!tokenProvider.validateToken(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // Redis에 해당 토큰이 실제로 존재하는지 확인(보안 강화).
+        // Redis 내 토큰 존재 여부 확인(보안 강화)
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
-        // 토큰의 주인(User)이 존재하는지 확인
+        // 토큰 주인(User) 존재 여부 확인
         User user = userRepository.findByEmail(storedToken.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 새로운 토큰 쌍(Access, Refresh)을 생성 (Refresh Token Rotation - RTR).
+        // 새로운 토큰 쌍(Access, Refresh) 생성 (Refresh Token Rotation - RTR)
         String newAccessToken = tokenProvider.createAccessToken(user.getEmail(), user.getRole().getKey());
         String newRefreshToken = tokenProvider.createRefreshToken(user.getEmail());
 
-        // Redis의 기존 토큰 정보를 새로운 토큰으로 업데이트
+        // Redis의 기존 토큰 정보 업데이트
         storedToken.updateToken(newRefreshToken);
         refreshTokenRepository.save(storedToken);
 
-        // 새로 발급된 토큰들을 클라이언트에 반환
+        // 새로 발급된 토큰 클라이언트 반환
         return TokenResponseDto.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
@@ -59,7 +59,7 @@ public class AuthService {
     }
 
     /**
-     * 사용자의 로그아웃 요청 시 Redis에서 리프레시 토큰을 삭제
+     * 로그아웃 시 Redis에서 리프레시 토큰 삭제
      */
     @Transactional
     public void logout(String email) {
@@ -67,7 +67,7 @@ public class AuthService {
     }
 
     /**
-     * 리프레시 토큰을 Redis에 저장하거나 기존 토큰을 갱신
+     * 리프레시 토큰 저장 또는 갱신
      */
     @Transactional
     public void saveRefreshToken(String email, String token) {

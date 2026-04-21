@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 
 /**
- * JWT 토큰의 생성, 파싱, 유효성 검증을 담당하는 컴포넌트입니다.
+ * JWT 토큰 생성, 파싱, 유효성 검증 담당 컴포넌트
  */
 @Slf4j
 @Component
@@ -37,7 +37,7 @@ public class JwtTokenProvider {
     private SecretKey key;
 
     /**
-     * 의존성 주입 완료 후 비밀키를 기반으로 서명에 사용할 Key 객체를 생성합니다.
+     * 의존성 주입 후 비밀키 기반 서명용 Key 객체 생성
      */
     @PostConstruct
     protected void init() {
@@ -45,27 +45,27 @@ public class JwtTokenProvider {
     }
 
     /**
-     * API 호출 시 인증에 사용하는 Access Token을 생성합니다.
+     * API 호출 인증용 Access Token 생성
      */
     public String createAccessToken(String email, String role) {
         return createToken(email, role, accessTokenExpiration);
     }
 
     /**
-     * Access Token 재발급을 위한 Refresh Token을 생성합니다. (권한 정보 미포함)
+     * Access Token 재발급용 Refresh Token 생성 (권한 정보 미포함)
      */
     public String createRefreshToken(String email) {
         return createToken(email, null, refreshTokenExpiration);
     }
 
     /**
-     * 실제 JWT 토큰을 빌드하는 공통 로직입니다.
+     * JWT 토큰 빌드 공통 로직
      */
     private String createToken(String email, String role, long expiration) {
         var claimsBuilder = Jwts.claims().subject(email);
         
         if (role != null) {
-            claimsBuilder.add("role", role); // Access Token에만 권한 정보를 담습니다.
+            claimsBuilder.add("role", role); // Access Token에만 권한 정보 포함
         }
         
         Claims claims = claimsBuilder.build();
@@ -80,7 +80,7 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰에서 사용자 정보를 추출하여 Spring Security 인증 객체(Authentication)를 생성합니다.
+     * 토큰 사용자 정보 추출 및 Spring Security 인증 객체(Authentication) 생성
      */
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
@@ -91,7 +91,7 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰의 유효성을 검사합니다. (서명 일치 여부, 만료 시간 확인 등)
+     * 토큰 유효성 검사 (서명 일치 여부, 만료 시간 확인 등)
      */
     public boolean validateToken(String token) {
         try {
@@ -104,7 +104,7 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰의 Payload(Claims)를 파싱합니다.
+     * 토큰 Payload(Claims) 파싱
      */
     private Claims getClaims(String token) {
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();

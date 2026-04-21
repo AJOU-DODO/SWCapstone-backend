@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 인증 및 토큰 관리 관련 API 요청을 처리하는 컨트롤러입니다.
+ * 인증 및 토큰 관리 API 요청 처리 컨트롤러
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -21,8 +21,8 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     * Access Token이 만료되었을 때, Refresh Token을 사용하여 새로운 토큰 쌍을 요청하는 엔드포인트
-     * 비로그인(인증 없이) 상태에서도 접근 가능하도록 SecurityConfig에 설정
+     * Access Token 만료 시 Refresh Token을 통한 새로운 토큰 쌍 요청 엔드포인트
+     * 비로그인 상태에서도 접근 가능하도록 SecurityConfig 설정
      */
     @PostMapping("/reissue")
     public ApiResponseDto<TokenResponseDto> reissue(@Valid @RequestBody TokenReissueRequestDto reissueRequestDto) {
@@ -30,12 +30,12 @@ public class AuthController {
     }
 
     /**
-     * 현재 로그인한 사용자의 세션을 만료(토큰 삭제)시키는 엔드포인트
-     * 인증 필터를 거친 후 SecurityContext에 담긴 Authentication 객체에서 이메일을 추출
+     * 현재 로그인 사용자의 세션 만료(토큰 삭제) 엔드포인트
+     * 인증 필터 통과 후 SecurityContext 내 Authentication 객체에서 이메일 추출
      */
     @PostMapping("/logout")
     public ApiResponseDto<String> logout(Authentication authentication) {
-        // JwtAuthenticationFilter에서 저장한 인증 정보 중 이메일을 가져옵니다.
+        // JwtAuthenticationFilter 저장 인증 정보 중 이메일 추출
         String email = authentication.getName();
         authService.logout(email);
         return ApiResponseDto.success("성공적으로 로그아웃되었습니다.");

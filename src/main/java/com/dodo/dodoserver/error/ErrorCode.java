@@ -21,6 +21,7 @@ public enum ErrorCode {
     // Auth (A)
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "A001", "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A002", "DB에 존재하지 않는 토큰입니다. 다시 로그인해주세요."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A003", "인증이 필요한 서비스입니다."),
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "사용자를 찾을 수 없습니다."),
@@ -31,7 +32,13 @@ public enum ErrorCode {
 
     // Category
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "카테고리를 찾을 수 없습니다."),
-    DUPLICATE_CATEGORY_NAME(HttpStatus.BAD_REQUEST, "CA002", "이미 존재하는 카테고리 이름입니다.");
+    DUPLICATE_CATEGORY_NAME(HttpStatus.BAD_REQUEST, "CA002", "이미 존재하는 카테고리 이름입니다."),
+
+    // Nest (N)
+    NEST_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "둥지를 찾을 수 없습니다."),
+    OUT_OF_UNLOCK_RADIUS(HttpStatus.BAD_REQUEST, "N002", "해당 위치에서 너무 멀어 해금할 수 없습니다."),
+    ALREADY_UNLOCKED(HttpStatus.BAD_REQUEST, "N003", "이미 해금된 둥지입니다."),
+    NOT_NEST_CREATOR(HttpStatus.FORBIDDEN, "N004", "둥지 작성자만 권한이 있습니다.");
 
 
 
