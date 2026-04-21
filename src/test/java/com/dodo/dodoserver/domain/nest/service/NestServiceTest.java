@@ -199,7 +199,7 @@ class NestServiceTest {
     }
 
     @Test
-    @DisplayName("둥지 상세 조회 - 미해금 시 내용 가림 처리")
+    @DisplayName("둥지 상세 조회 - 미해금 시 ")
     void getNestDetail_locked() {
         Long nestId = 1L;
         User creator = User.builder().id(2L).nickname("작성자").build();
