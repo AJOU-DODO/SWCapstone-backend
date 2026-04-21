@@ -15,7 +15,8 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
+        // setAllowedOrigins 대신 setAllowedOriginPatterns 사용 (와일드카드 패턴 지원)
+        configuration.setAllowedOriginPatterns(List.of(
             "http://localhost:3000",
             "https://sw-capstone-frontend-*-jeonguihoons-projects.vercel.app"
         ));
