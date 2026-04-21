@@ -19,6 +19,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -428,13 +429,43 @@ public class NestService {
 
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-        Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
+
+        Pageable nativePageable = translateToNativePageable(pageable);
+        Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, nativePageable);
         
         return nests.map(nest -> {
             boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest)
                     || nest.getCreator().equals(user);
             return NestSummaryResponseDto.from(nest, isUnlocked);
         });
+    }
+
+    /**
+     * Pageable의 Sort 속성을 DB 컬럼명으로 변환 (Native Query 대응)
+     */
+    private Pageable translateToNativePageable(Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            return pageable;
+        }
+
+        List<Sort.Order> orders = pageable.getSort().stream()
+                .map(order -> {
+                    String property = order.getProperty();
+                    String column = switch (property) {
+                        case "createdAt" -> "created_at";
+                        case "viewCount" -> "view_count";
+                        case "unlockRadius" -> "unlock_radius";
+                        default -> property;
+                    };
+                    return new Sort.Order(order.getDirection(), column);
+                })
+                .collect(Collectors.toList());
+
+        return org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(orders)
+        );
     }
 
     /**
