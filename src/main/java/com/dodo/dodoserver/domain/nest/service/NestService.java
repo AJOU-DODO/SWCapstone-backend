@@ -31,8 +31,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.dodo.dodoserver.global.common.constants.NotificationConstants.*;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -47,8 +45,7 @@ public class NestService {
     private final NestCommentRepository nestCommentRepository;
     private final UserProfileRepository userProfileRepository;
     private final CommentLikeRepository commentLikeRepository;
-    private final UserDeviceRepository userDeviceRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final NestNotificationService nestNotificationService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -218,49 +215,7 @@ public class NestService {
         NestComment savedComment = nestCommentRepository.save(comment);
         log.info("댓글 작성 완료: Nest={}, User={}", nestId, email);
 
-        publishCommentNotification(user, nest, parent, savedComment);
-    }
-
-    /**
-     * 댓글 및 대댓글 알림 발행
-     */
-    private void publishCommentNotification(User commenter, Nest nest, NestComment parent, NestComment savedComment) {
-        User targetUser;
-        String type;
-        String title;
-        String body;
-
-        if (parent == null) {
-            targetUser = nest.getCreator();
-            type = TYPE_COMMENT;
-            title = TITLE_NEW_COMMENT;
-            body = String.format(BODY_NEW_COMMENT, commenter.getNickname());
-        } else {
-            targetUser = parent.getUser();
-            type = TYPE_REPLY;
-            title = TITLE_NEW_REPLY;
-            body = String.format(BODY_NEW_REPLY, commenter.getNickname());
-        }
-        if (commenter.getId().equals(targetUser.getId())) {
-            return;
-        }
-
-        List<String> fcmTokens = userDeviceRepository.findByUserId(targetUser.getId()).stream()
-                .map(UserDevice::getFcmToken)
-                .filter(Objects::nonNull)
-                .toList();
-
-        if (fcmTokens.isEmpty()) {
-            return;
-        }
-
-        Map<String, String> data = new HashMap<>();
-        data.put(KEY_TYPE, type);
-        data.put(KEY_NEST_ID, nest.getId().toString());
-        data.put(KEY_COMMENT_ID, savedComment.getId().toString());
-
-        eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
-        log.info("댓글 알림 이벤트 발행 완료: TargetUser={}, Type={}", targetUser.getEmail(), type);
+        nestNotificationService.sendCommentNotification(user, nest, parent, savedComment);
     }
 
     /**
