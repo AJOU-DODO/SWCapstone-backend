@@ -21,6 +21,7 @@ public enum ErrorCode {
     // Auth (A)
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "A001", "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "A002", "DB에 존재하지 않는 토큰입니다. 다시 로그인해주세요."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "A003", "인증이 필요한 서비스입니다."),
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "사용자를 찾을 수 없습니다."),
