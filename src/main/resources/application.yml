@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: native
+
 spring:
   application:
     name: dodo-server
@@ -55,4 +58,4 @@ aws:
     secret-key: ${AWS_SECRET_KEY}
     region: ${AWS_REGION}
     bucket: ${AWS_S3_BUCKET}
-    cloudfront-domain: ${AWS_CLOUDFRONT_DOMAIN} # 예: https://d1234567.cloudfront.net
+    cloudfront-domain: ${AWS_CLOUDFRONT_DOMAIN}
