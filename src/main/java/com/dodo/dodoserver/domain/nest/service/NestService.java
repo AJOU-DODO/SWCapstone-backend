@@ -193,6 +193,12 @@ public class NestService {
         if (requestDto.getParentId() != null) {
             parent = nestCommentRepository.findById(requestDto.getParentId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
+            
+            // 부모 댓글이 현재 둥지에 속해 있는지 검증
+            if (!parent.getNest().getId().equals(nestId)) {
+                log.warn("댓글 트리 무결성 오류: 부모 댓글(ID={})이 요청된 둥지(ID={})에 속하지 않음", parent.getId(), nestId);
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
         }
 
         NestComment comment = NestComment.builder()
