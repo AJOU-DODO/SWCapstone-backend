@@ -9,13 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface NestCommentRepository extends JpaRepository<NestComment, Long> {
-    // 둥지 내 최상위 댓글(parent IS NULL) 조회 (User 정보 FETCH JOIN)
-    @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest = :nest AND nc.parent IS NULL ORDER BY nc.createdAt ASC")
-    List<NestComment> findAllByNestAndParentIsNullOrderByCreatedAtAsc(@Param("nest") Nest nest);
+    // 특정 둥지의 모든 댓글 조회 (User 정보 FETCH JOIN)
+    @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest = :nest")
+    List<NestComment> findAllByNestWithUser(@Param("nest") Nest nest);
 
-    @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest = :nest AND nc.parent IS NULL ORDER BY nc.createdAt DESC")
-    List<NestComment> findAllByNestAndParentIsNullOrderByCreatedAtDesc(@Param("nest") Nest nest);
 
-    @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest = :nest AND nc.parent IS NULL ORDER BY nc.likeCount DESC, nc.createdAt DESC")
-    List<NestComment> findAllByNestAndParentIsNullOrderByLikeCountDescCreatedAtDesc(@Param("nest") Nest nest);
 }

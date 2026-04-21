@@ -308,66 +308,76 @@ public class NestService {
     }
 
     /**
-     * 둥지 ID로 댓글 리스트 조회 (트리 구조, N+1 최적화)
+     * 둥지 ID로 댓글 리스트 조회 (트리 구조, N+1 문제 완벽 해결)
      */
     @Transactional(readOnly = true)
-    public List<CommentResponseDto> getCommentsByNestId(String email, Long nestId, String sortBy) {
-        User currentUser = email != null ? userRepository.findByEmail(email).orElse(null) : null;
+    public List<CommentResponseDto> getCommentsByNestId(String currentUserEmail, Long nestId, String sortBy) {
+        User currentUser = currentUserEmail != null ? userRepository.findByEmail(currentUserEmail).orElse(null) : null;
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 최상위 댓글 조회 (FETCH JOIN으로 User 정보 미리 로딩)
-        List<NestComment> topComments;
-        if ("LIKE".equalsIgnoreCase(sortBy)) {
-            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByLikeCountDescCreatedAtDesc(nest);
-        } else if ("LATEST".equalsIgnoreCase(sortBy)) {
-            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtDesc(nest);
-        } else {
-            topComments = nestCommentRepository.findAllByNestAndParentIsNullOrderByCreatedAtAsc(nest);
-        }
+        List<NestComment> allComments = nestCommentRepository.findAllByNestWithUser(nest);
 
-        // 전체 댓글 평탄화 (N+1 방지를 위한 유저/좋아요 일괄 조회 준비)
-        List<NestComment> allComments = new ArrayList<>();
-        flattenComments(topComments, allComments);
+        if (allComments.isEmpty()) return Collections.emptyList();
 
-        // 작성자 프로필 일괄 조회 및 Map 캐싱
         Set<User> authors = allComments.stream().map(NestComment::getUser).collect(Collectors.toSet());
-        Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream()
+        Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream() // (profile Id, image url)
                 .filter(p -> p.getUser() != null)
                 .collect(Collectors.toMap(p -> p.getUser().getId(), UserProfile::getProfileImageUrl, (oldV, newV) -> oldV));
 
-        // 로그인 유저의 좋아요 여부 일괄 조회 및 Set 캐싱
+        // 좋아요 여부 일괄 조회 및 캐싱
         Set<Long> likedCommentIds = new HashSet<>();
-        if (currentUser != null && !allComments.isEmpty()) {
+        if (currentUser != null) {
             likedCommentIds = commentLikeRepository.findAllByUserAndCommentIn(currentUser, allComments).stream()
                     .map(cl -> cl.getComment().getId())
                     .collect(Collectors.toSet());
         }
 
+        // 부모 ID를 기준으로 그룹화 (트리 구조 생성용)
+        Map<Long, List<NestComment>> childrenMap = allComments.stream()
+                .filter(c -> c.getParent() != null)
+                .collect(Collectors.groupingBy(c -> c.getParent().getId()));
+
+        // 최상위 댓글 추출 및 정렬
+        List<NestComment> topComments = allComments.stream()
+                .filter(c -> c.getParent() == null)
+                .collect(Collectors.toList());
+
+        sortComments(topComments, sortBy);
+
         Set<Long> finalLikedCommentIds = likedCommentIds;
         return topComments.stream()
-                .map(comment -> convertToCommentResponseDto(comment, profileImageMap, finalLikedCommentIds))
+                .map(c -> convertToCommentResponseDto(c, childrenMap, profileImageMap, finalLikedCommentIds))
                 .collect(Collectors.toList());
     }
 
     /**
-     * 댓글 트리를 평탄화하여 리스트로 수집 (재귀)
+     * 메모리 상에서 최상위 댓글 정렬
      */
-    private void flattenComments(List<NestComment> comments, List<NestComment> result) {
-        for (NestComment comment : comments) {
-            result.add(comment);
-            if (!comment.getChildren().isEmpty()) {
-                flattenComments(comment.getChildren(), result);
-            }
+    private void sortComments(List<NestComment> comments, String sortBy) {
+        if ("LIKE".equalsIgnoreCase(sortBy)) {
+            comments.sort(Comparator.comparing(NestComment::getLikeCount).reversed()
+                    .thenComparing(Comparator.comparing(NestComment::getCreatedAt).reversed()));
+        } else if ("LATEST".equalsIgnoreCase(sortBy)) {
+            comments.sort(Comparator.comparing(NestComment::getCreatedAt).reversed());
+        } else {
+            comments.sort(Comparator.comparing(NestComment::getCreatedAt));
         }
     }
 
     /**
-     * DTO 변환 (재귀, 메모리 맵 활용으로 쿼리 0개 수행)
+     * DTO 변환 (Map을 활용하여 LAZY 로딩 차단)
      */
     private CommentResponseDto convertToCommentResponseDto(
-            NestComment comment, Map<Long, String> profileImageMap, Set<Long> likedCommentIds) {
+            NestComment comment, 
+            Map<Long, List<NestComment>> childrenMap, 
+            Map<Long, String> profileImageMap, 
+            Set<Long> likedCommentIds) {
         
+        List<NestComment> children = childrenMap.getOrDefault(comment.getId(), Collections.emptyList());
+        // 대댓글은 생성순으로 정렬
+        children.sort(Comparator.comparing(NestComment::getCreatedAt));
+
         return CommentResponseDto.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
@@ -376,8 +386,8 @@ public class NestService {
                 .createdAt(comment.getCreatedAt())
                 .likeCount(comment.getLikeCount())
                 .isLiked(likedCommentIds.contains(comment.getId()))
-                .children(comment.getChildren().stream()
-                        .map(child -> convertToCommentResponseDto(child, profileImageMap, likedCommentIds))
+                .children(children.stream()
+                        .map(child -> convertToCommentResponseDto(child, childrenMap, profileImageMap, likedCommentIds))
                         .collect(Collectors.toList()))
                 .build();
     }
@@ -461,7 +471,7 @@ public class NestService {
                         case "createdAt" -> "created_at";
                         case "viewCount" -> "view_count";
                         case "unlockRadius" -> "unlock_radius";
-                        default -> property;
+                        default -> property; // id 등 컬럼명이 동일한 경우
                     };
                     return new Sort.Order(order.getDirection(), column);
                 })
