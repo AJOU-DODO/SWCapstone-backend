@@ -56,6 +56,8 @@ class NestServiceTest {
     private NestImageRepository nestImageRepository;
     @Mock
     private CommentLikeRepository commentLikeRepository;
+    @Mock
+    private NestNotificationService nestNotificationService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User user;
@@ -284,6 +286,7 @@ class NestServiceTest {
         nestService.createComment(email, nestId, requestDto);
 
         verify(nestCommentRepository).save(any(NestComment.class));
+            verify(nestNotificationService).sendCommentNotification(any(), any(), any(), any());
     }
 
     @Test

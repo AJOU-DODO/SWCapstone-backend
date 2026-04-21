@@ -5,18 +5,22 @@ import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
+import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.domain.user.entity.UserDevice;
 import com.dodo.dodoserver.domain.user.entity.UserProfile;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
+import com.dodo.dodoserver.infrastructure.fcm.NotificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -40,8 +44,8 @@ public class NestService {
     private final NestReactionRepository nestReactionRepository;
     private final NestCommentRepository nestCommentRepository;
     private final UserProfileRepository userProfileRepository;
-    private final NestImageRepository nestImageRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final NestNotificationService nestNotificationService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -208,8 +212,10 @@ public class NestService {
                 .content(requestDto.getContent())
                 .build();
 
-        nestCommentRepository.save(comment);
+        NestComment savedComment = nestCommentRepository.save(comment);
         log.info("댓글 작성 완료: Nest={}, User={}", nestId, email);
+
+        nestNotificationService.sendCommentNotification(user, nest, parent, savedComment);
     }
 
     /**
@@ -249,7 +255,7 @@ public class NestService {
     }
 
     /**
-     * ID 리스트 둥지 요약 정보 조회
+     * ID 리스트 둥지 요약 정보 조회 (N+1 최적화)
      */
     @Transactional(readOnly = true)
     public List<NestSummaryResponseDto> getNestsByIds(String email, List<Long> nestIds) {
@@ -450,15 +456,17 @@ public class NestService {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
 
+        // Native Query 정렬 불일치 해결: 엔티티 필드명을 DB 컬럼명으로 변환
         Pageable nativePageable = translateToNativePageable(pageable);
         Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, nativePageable);
-
+        
         if (nests.isEmpty()) return Page.empty(pageable);
 
+        // 현재 페이지의 해금 이력 일괄 조회 (N+1 방지)
         Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nests.getContent()).stream()
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
-        
+
         return nests.map(nest -> {
             boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
             return NestSummaryResponseDto.from(nest, isUnlocked);
