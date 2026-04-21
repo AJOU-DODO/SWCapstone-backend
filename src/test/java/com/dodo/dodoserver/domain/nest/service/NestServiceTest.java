@@ -395,6 +395,7 @@ class NestServiceTest {
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(nestRepository.findAllById(ids)).willReturn(List.of(n1, n2));
+        given(unlockHistoryRepository.findAllByUserAndNestIn(eq(user), any())).willReturn(new ArrayList<>());
 
         List<NestSummaryResponseDto> result = nestService.getNestsByIds(email, ids);
 
