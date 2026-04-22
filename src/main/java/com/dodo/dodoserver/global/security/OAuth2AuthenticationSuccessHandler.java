@@ -45,7 +45,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String accessToken = tokenProvider.createAccessToken(user.getId(), email, role);
         String refreshToken = tokenProvider.createRefreshToken(email);
-        authService.saveRefreshToken(email, refreshToken);
+        authService.saveRefreshToken(user.getId(), refreshToken);
 
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);

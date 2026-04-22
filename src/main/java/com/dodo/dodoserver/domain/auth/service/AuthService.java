@@ -38,7 +38,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         // 토큰 주인(User) 존재 여부 확인
-        User user = userRepository.findByEmail(storedToken.getEmail())
+        User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 새로운 토큰 쌍(Access, Refresh) 생성 (Refresh Token Rotation - RTR)
@@ -63,18 +63,16 @@ public class AuthService {
      */
     @Transactional
     public void logout(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        refreshTokenRepository.deleteByEmail(user.getEmail());
+        refreshTokenRepository.deleteById(userId);
     }
 
     /**
      * 리프레시 토큰 저장 또는 갱신
      */
     @Transactional
-    public void saveRefreshToken(String email, String token) {
+    public void saveRefreshToken(Long userId, String token) {
         refreshTokenRepository.save(RefreshToken.builder()
-                .email(email)
+                .userId(userId)
                 .token(token)
                 .build());
     }

@@ -54,15 +54,16 @@ class AuthServiceTest {
                 .isOnboarded(true)
                 .build();
         RefreshToken storedToken = RefreshToken.builder()
-                .email(email)
+                .userId(1L)
                 .token(oldRefreshToken)
                 .build();
-given(tokenProvider.validateToken(oldRefreshToken)).willReturn(true);
-given(refreshTokenRepository.findByToken(oldRefreshToken)).willReturn(Optional.of(storedToken));
-given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
-given(tokenProvider.createAccessToken(user.getId(), email, user.getRole().getKey())).willReturn(newAccessToken);
-given(tokenProvider.createRefreshToken(email)).willReturn(newRefreshToken);
-given(tokenProvider.getAccessTokenExpiration()).willReturn(3600L);
+
+        given(tokenProvider.validateToken(oldRefreshToken)).willReturn(true);
+        given(refreshTokenRepository.findByToken(oldRefreshToken)).willReturn(Optional.of(storedToken));
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(tokenProvider.createAccessToken(user.getId(), email, user.getRole().getKey())).willReturn(newAccessToken);
+        given(tokenProvider.createRefreshToken(email)).willReturn(newRefreshToken);
+        given(tokenProvider.getAccessTokenExpiration()).willReturn(3600L);
 
         // when
         TokenResponseDto response = authService.reissue(oldRefreshToken);
@@ -99,5 +100,18 @@ given(tokenProvider.getAccessTokenExpiration()).willReturn(3600L);
         assertThatThrownBy(() -> authService.reissue(refreshToken))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.REFRESH_TOKEN_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void logout_success() {
+        // given
+        Long userId = 1L;
+
+        // when
+        authService.logout(userId);
+
+        // then
+        verify(refreshTokenRepository, times(1)).deleteById(userId);
     }
 }

@@ -16,7 +16,7 @@ import org.springframework.data.redis.core.index.Indexed;
 public class RefreshToken {
 
     @Id
-    private String email; // 사용자 이메일을 Key로 사용합니다.
+    private Long userId; // 사용자 ID를 Key로 사용합니다.
 
     @Indexed
     private String token; // 토큰 값 자체로 검색하기 위해 @Indexed를 추가합니다.
