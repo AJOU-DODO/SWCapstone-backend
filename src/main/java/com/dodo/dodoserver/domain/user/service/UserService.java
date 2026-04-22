@@ -123,17 +123,9 @@ public class UserService {
      */
     @Transactional(readOnly = true)
     public UserProfileResponseDto getUserProfileById(Long userId) {
-
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        if (!user.isOnboarded()) {
-            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED);
-        }
-
-        UserProfile userProfile = userProfileRepository.findByUser(user).orElse(null);
-
-        return UserProfileResponseDto.from(user, userProfile);
+        return getUserProfileByUser(user);
     }
 
     /**
@@ -143,6 +135,16 @@ public class UserService {
     public UserProfileResponseDto getUserProfileByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        return getUserProfileById(user.getId());
+        return getUserProfileByUser(user);
+    }
+
+    private UserProfileResponseDto getUserProfileByUser(User user) {
+        if (!user.isOnboarded()) {
+            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED);
+        }
+
+        UserProfile userProfile = userProfileRepository.findByUser(user).orElse(null);
+
+        return UserProfileResponseDto.from(user, userProfile);
     }
 }
