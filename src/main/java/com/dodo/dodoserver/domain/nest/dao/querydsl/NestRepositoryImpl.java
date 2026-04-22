@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.domain.nest.dao;
+package com.dodo.dodoserver.domain.nest.dao.querydsl;
 
 import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
 import com.dodo.dodoserver.domain.nest.entity.*;
