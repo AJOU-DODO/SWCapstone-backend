@@ -40,10 +40,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         User user = saveOrUpdate(provider, providerId, email, nickname);
 
         // Spring Security에서 사용할 인증 객체를 생성하여 반환합니다.
-        return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority(user.getRole().getKey())),
-                oAuth2User.getAttributes(),
-                "sub" // PK로 사용할 속성명 지정
+        return UserPrincipal.create(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getKey(),
+                oAuth2User.getAttributes()
         );
     }
 

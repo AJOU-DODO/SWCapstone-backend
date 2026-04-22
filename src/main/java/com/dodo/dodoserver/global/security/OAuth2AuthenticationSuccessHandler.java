@@ -35,16 +35,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        String email = principal.getEmail();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
-        String role = authentication.getAuthorities().stream()
-                .findFirst()
-                .map(GrantedAuthority::getAuthority)
-                .orElse("ROLE_USER");
+        String role = principal.getRole();
 
         String accessToken = tokenProvider.createAccessToken(user.getId(), email, role);
         String refreshToken = tokenProvider.createRefreshToken(email);
