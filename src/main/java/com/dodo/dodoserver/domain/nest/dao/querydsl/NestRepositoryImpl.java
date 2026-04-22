@@ -73,7 +73,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
 
         List<Nest> content = query.fetch();
 
-        long total = queryFactory
+        Long totalCount = queryFactory
                 .select(nest.id.countDistinct())
                 .from(nest)
                 .join(nest.location, nestLocation)
@@ -84,6 +84,8 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                         nest.deletedAt.isNull()
                 )
                 .fetchOne();
+
+        long total = totalCount != null ? totalCount : 0L;
 
         return new PageImpl<>(content, pageable, total);
     }
