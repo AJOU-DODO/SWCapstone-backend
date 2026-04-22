@@ -5,16 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+
+import com.dodo.dodoserver.global.common.util.HashIdUtils;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Date;
 
 /**
@@ -22,7 +23,10 @@ import java.util.Date;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final HashIdUtils hashIdUtils;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -65,7 +69,8 @@ public class JwtTokenProvider {
         var claimsBuilder = Jwts.claims().subject(email);
         
         if (userId != null) {
-            claimsBuilder.add("userId", userId);
+            // ID 난독화 적용
+            claimsBuilder.add("uid", hashIdUtils.encode(userId));
         }
         
         if (role != null) {
@@ -89,8 +94,11 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
         String email = claims.getSubject();
-        Long userId = claims.get("userId", Long.class);
+        String encodedId = claims.get("uid", String.class);
         String role = claims.get("role", String.class);
+
+        // ID 복호화 적용
+        Long userId = hashIdUtils.decode(encodedId);
 
         UserPrincipal principal = UserPrincipal.create(userId, email, role);
 
