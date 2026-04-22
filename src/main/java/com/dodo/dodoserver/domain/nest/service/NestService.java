@@ -438,9 +438,7 @@ public class NestService {
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter) {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
-        return nestRepository.findNearbyPins(point, radius).stream()
-                .map(NestPinResponseDto::from)
-                .collect(Collectors.toList());
+        return nestRepository.findNearbyPins(point, radius);
     }
 
     /**
@@ -456,9 +454,7 @@ public class NestService {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
 
-        // Native Query 정렬 불일치 해결: 엔티티 필드명을 DB 컬럼명으로 변환
-        Pageable nativePageable = translateToNativePageable(pageable);
-        Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, nativePageable);
+        Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
         
         if (nests.isEmpty()) return Page.empty(pageable);
 
@@ -471,34 +467,6 @@ public class NestService {
             boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
             return NestSummaryResponseDto.from(nest, isUnlocked);
         });
-    }
-
-    /**
-     * Pageable의 Sort 속성을 DB 컬럼명으로 변환 (Native Query 대응)
-     */
-    private Pageable translateToNativePageable(Pageable pageable) {
-        if (pageable.getSort().isUnsorted()) {
-            return pageable;
-        }
-
-        List<Sort.Order> orders = pageable.getSort().stream()
-                .map(order -> {
-                    String property = order.getProperty();
-                    String column = switch (property) {
-                        case "createdAt" -> "created_at";
-                        case "viewCount" -> "view_count";
-                        case "unlockRadius" -> "unlock_radius";
-                        default -> property; // id 등 컬럼명이 동일한 경우
-                    };
-                    return new Sort.Order(order.getDirection(), column);
-                })
-                .collect(Collectors.toList());
-
-        return org.springframework.data.domain.PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                Sort.by(orders)
-        );
     }
 
     /**
