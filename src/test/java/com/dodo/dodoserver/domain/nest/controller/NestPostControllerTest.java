@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -75,7 +75,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("둥지 생성 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void createNest_success() throws Exception {
         NestCreateRequestDto requestDto = new NestCreateRequestDto("새둥지", "내용", 37.5, 127.0, 100, List.of(1L), List.of("url"), false);
         NestSummaryResponseDto responseDto = NestSummaryResponseDto.builder().id(1L).title("새둥지").build();
@@ -92,7 +92,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("둥지 상세 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getNestDetail_success() throws Exception {
         Long nestId = 1L;
         NestDetailResponseDto responseDto = NestDetailResponseDto.builder().id(nestId).title("상세조회").build();
@@ -106,7 +106,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("둥지 댓글 리스트 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getComments_success() throws Exception {
         Long nestId = 1L;
         CommentResponseDto comment = CommentResponseDto.builder().id(10L).content("댓글").build();
@@ -120,7 +120,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("댓글 좋아요 처리 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void handleCommentLike_success() throws Exception {
         Long commentId = 10L;
 
@@ -132,7 +132,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("둥지 수정 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void updateNest_success() throws Exception {
         Long nestId = 1L;
         NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
@@ -150,7 +150,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("둥지 삭제 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void deleteNest_success() throws Exception {
         Long nestId = 1L;
 
@@ -162,7 +162,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("댓글 작성 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void createComment_success() throws Exception {
         Long nestId = 1L;
         CommentCreateRequestDto requestDto = new CommentCreateRequestDto("댓글내용", null);
@@ -177,7 +177,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("댓글 수정 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void updateComment_success() throws Exception {
         Long commentId = 10L;
         CommentUpdateRequestDto requestDto = new CommentUpdateRequestDto("수정내용");
@@ -192,7 +192,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("댓글 삭제 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void deleteComment_success() throws Exception {
         Long commentId = 10L;
 
@@ -204,7 +204,7 @@ class NestPostControllerTest {
 
     @Test
     @DisplayName("리액션 처리 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void handleReaction_success() throws Exception {
         Long nestId = 1L;
 

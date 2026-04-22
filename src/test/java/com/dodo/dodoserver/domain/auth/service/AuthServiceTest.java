@@ -48,22 +48,21 @@ class AuthServiceTest {
         String email = "test@example.com";
 
         User user = User.builder()
+                .id(1L)
                 .email(email)
                 .role(Role.USER)
                 .isOnboarded(true)
                 .build();
-
         RefreshToken storedToken = RefreshToken.builder()
                 .email(email)
                 .token(oldRefreshToken)
                 .build();
-
-        given(tokenProvider.validateToken(oldRefreshToken)).willReturn(true);
-        given(refreshTokenRepository.findByToken(oldRefreshToken)).willReturn(Optional.of(storedToken));
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
-        given(tokenProvider.createAccessToken(email, user.getRole().getKey())).willReturn(newAccessToken);
-        given(tokenProvider.createRefreshToken(email)).willReturn(newRefreshToken);
-        given(tokenProvider.getAccessTokenExpiration()).willReturn(3600L);
+given(tokenProvider.validateToken(oldRefreshToken)).willReturn(true);
+given(refreshTokenRepository.findByToken(oldRefreshToken)).willReturn(Optional.of(storedToken));
+given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+given(tokenProvider.createAccessToken(user.getId(), email, user.getRole().getKey())).willReturn(newAccessToken);
+given(tokenProvider.createRefreshToken(email)).willReturn(newRefreshToken);
+given(tokenProvider.getAccessTokenExpiration()).willReturn(3600L);
 
         // when
         TokenResponseDto response = authService.reissue(oldRefreshToken);

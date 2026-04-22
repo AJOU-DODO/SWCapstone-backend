@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -72,7 +72,7 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("토큰 재발급 성공 - 온보딩 상태 포함 확인")
-    @WithMockUser
+    @WithMockUserPrincipal
     void reissue_success() throws Exception {
         // given
         TokenReissueRequestDto requestDto = new TokenReissueRequestDto("refresh-token");
@@ -98,7 +98,7 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("로그아웃 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(email = "test@example.com")
     void logout_success() throws Exception {
         // when & then
         mockMvc.perform(post("/api/v1/auth/logout")
