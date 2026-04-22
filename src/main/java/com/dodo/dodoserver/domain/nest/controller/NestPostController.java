@@ -2,7 +2,8 @@ package com.dodo.dodoserver.domain.nest.controller;
 
 import java.util.List;
 
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.dodo.dodoserver.global.security.UserPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,11 +40,10 @@ public class NestPostController {
 	 */
 	@PostMapping
 	public ApiResponseDto<NestSummaryResponseDto> createNest(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@RequestBody @Valid NestCreateRequestDto requestDto) {
 
-		String email = authentication.getName();
-		return ApiResponseDto.success(nestService.createNest(email, requestDto));
+		return ApiResponseDto.success(nestService.createNest(principal.getEmail(), requestDto));
 	}
 
 	/**
@@ -51,11 +51,10 @@ public class NestPostController {
 	 */
 	@GetMapping("/{id}")
 	public ApiResponseDto<NestDetailResponseDto> getNestDetail(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id) {
 
-		String email = authentication.getName();
-		return ApiResponseDto.success(nestService.getNestDetail(email, id));
+		return ApiResponseDto.success(nestService.getNestDetail(principal.getEmail(), id));
 	}
 
 	/**
@@ -63,12 +62,11 @@ public class NestPostController {
 	 */
 	@PatchMapping("/{id}")
 	public ApiResponseDto<NestSummaryResponseDto> updateNest(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id,
 		@RequestBody @Valid NestUpdateRequestDto requestDto) {
 
-		String email = authentication.getName();
-		return ApiResponseDto.success(nestService.updateNest(email, id, requestDto));
+		return ApiResponseDto.success(nestService.updateNest(principal.getEmail(), id, requestDto));
 	}
 
 	/**
@@ -76,11 +74,10 @@ public class NestPostController {
 	 */
 	@DeleteMapping("/{id}")
 	public ApiResponseDto<String> deleteNest(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id) {
 
-		String email = authentication.getName();
-		nestService.deleteNest(email, id);
+		nestService.deleteNest(principal.getEmail(), id);
 		return ApiResponseDto.success("둥지가 성공적으로 삭제되었습니다.");
 	}
 
@@ -89,12 +86,11 @@ public class NestPostController {
 	 */
 	@PostMapping("/{id}/comments")
 	public ApiResponseDto<String> createComment(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id,
 		@RequestBody @Valid CommentCreateRequestDto requestDto) {
 
-		String email = authentication.getName();
-		nestService.createComment(email, id, requestDto);
+		nestService.createComment(principal.getEmail(), id, requestDto);
 		return ApiResponseDto.success("댓글이 성공적으로 작성되었습니다.");
 	}
 
@@ -103,11 +99,11 @@ public class NestPostController {
 	 */
 	@GetMapping("/{id}/comments")
 	public ApiResponseDto<List<CommentResponseDto>> getComments(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id,
 		@RequestParam(required = false, defaultValue = "DEFAULT") String sortBy) {
 		
-		String email = (authentication != null) ? authentication.getName() : null;
+		String email = (principal != null) ? principal.getEmail() : null;
 		return ApiResponseDto.success(nestService.getCommentsByNestId(email, id, sortBy));
 	}
 
@@ -116,11 +112,10 @@ public class NestPostController {
 	 */
 	@PostMapping("/comments/{commentId}/like")
 	public ApiResponseDto<String> handleCommentLike(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long commentId) {
 
-		String email = authentication.getName();
-		nestService.handleCommentLike(email, commentId);
+		nestService.handleCommentLike(principal.getEmail(), commentId);
 		return ApiResponseDto.success("댓글 좋아요 처리가 완료되었습니다.");
 	}
 
@@ -129,12 +124,11 @@ public class NestPostController {
 	 */
 	@PatchMapping("/comments/{commentId}")
 	public ApiResponseDto<String> updateComment(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long commentId,
 		@RequestBody @Valid CommentUpdateRequestDto requestDto) {
 
-		String email = authentication.getName();
-		nestService.updateComment(email, commentId, requestDto);
+		nestService.updateComment(principal.getEmail(), commentId, requestDto);
 		return ApiResponseDto.success("댓글이 성공적으로 수정되었습니다.");
 	}
 
@@ -143,11 +137,10 @@ public class NestPostController {
 	 */
 	@DeleteMapping("/comments/{commentId}")
 	public ApiResponseDto<String> deleteComment(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long commentId) {
 
-		String email = authentication.getName();
-		nestService.deleteComment(email, commentId);
+		nestService.deleteComment(principal.getEmail(), commentId);
 		return ApiResponseDto.success("댓글이 성공적으로 삭제되었습니다.");
 	}
 
@@ -158,12 +151,11 @@ public class NestPostController {
 	 */
 	@PostMapping("/{id}/reaction")
 	public ApiResponseDto<String> handleReaction(
-		Authentication authentication,
+		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id,
 		@RequestParam ReactionType type) {
 
-		String email = authentication.getName();
-		nestService.handleReaction(email, id, type);
+		nestService.handleReaction(principal.getEmail(), id, type);
 		return ApiResponseDto.success("리액션이 성공적으로 처리되었습니다.");
 	}
 }

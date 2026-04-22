@@ -6,7 +6,8 @@ import com.dodo.dodoserver.domain.user.dto.OnboardRequestDto;
 import com.dodo.dodoserver.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import com.dodo.dodoserver.global.security.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,9 +29,8 @@ public class UserController {
      * 현재 로그인된 유저의 상세 정보를 조회
      */
     @GetMapping("/me")
-    public ApiResponseDto<UserProfileResponseDto> getMyProfile(Authentication authentication) {
-        String email = authentication.getName();
-        return ApiResponseDto.success(userService.getUserProfileByEmail(email));
+    public ApiResponseDto<UserProfileResponseDto> getMyProfile(@AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponseDto.success(userService.getUserProfileByEmail(principal.getEmail()));
     }
 
     /**
@@ -54,11 +54,10 @@ public class UserController {
      */
     @PatchMapping("/profile")
     public ApiResponseDto<String> updateProfile(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid ProfileUpdateRequestDto requestDto) {
 
-        String email = authentication.getName();
-        userService.updateProfile(email, requestDto);
+        userService.updateProfile(principal.getEmail(), requestDto);
 
         return ApiResponseDto.success("프로필 정보가 성공적으로 수정되었습니다.");
     }
@@ -68,11 +67,10 @@ public class UserController {
      */
     @PostMapping("/profile")
     public ApiResponseDto<String> postProfile(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid OnboardRequestDto requestDto) {
         
-        String email = authentication.getName();
-        userService.onboard(email, requestDto);
+        userService.onboard(principal.getEmail(), requestDto);
         
         return ApiResponseDto.success("온보딩이 완료되었습니다.");
     }

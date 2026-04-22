@@ -7,41 +7,40 @@ import com.dodo.dodoserver.global.common.ApiResponseDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import com.dodo.dodoserver.global.security.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * 유저의 관심사(카테고리 매핑) 정보를 관리하는 컨트롤러
+ * 유저의 관심 카테고리 설정 및 조회를 담당하는 컨트롤러
  */
 @RestController
-@RequestMapping("/api/v1/users/interests")
+@RequestMapping("/api/v1/user-interests")
 @RequiredArgsConstructor
 public class UserInterestController {
 
     private final UserInterestService userInterestService;
 
     /**
-     * 현재 로그인한 사용자가 선택한 관심 카테고리 목록을 조회
+     * 현재 로그인한 유저의 관심 카테고리 목록을 조회
      */
     @GetMapping
-    public ApiResponseDto<List<CategoryResponseDto>> getMyInterests(Authentication authentication) {
-        String email = authentication.getName();
-        return ApiResponseDto.success(userInterestService.getMyInterests(email));
+    public ApiResponseDto<List<CategoryResponseDto>> getMyInterests(@AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponseDto.success(userInterestService.getUserInterests(principal.getEmail()));
     }
 
     /**
-     * 현재 로그인한 사용자의 관심 카테고리 리스트를 일괄 업데이트
+     * 유저의 관심 카테고리를 설정 (기존 정보는 삭제 후 새로 등록)
      */
-    @PutMapping
+    @PostMapping
     public ApiResponseDto<String> updateInterests(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid UserInterestRequestDto requestDto) {
-        
-        String email = authentication.getName();
-        userInterestService.updateInterests(email, requestDto);
-        
+
+        userInterestService.updateUserInterests(principal.getEmail(), requestDto);
         return ApiResponseDto.success("관심 카테고리가 성공적으로 업데이트되었습니다.");
     }
+}
 }
