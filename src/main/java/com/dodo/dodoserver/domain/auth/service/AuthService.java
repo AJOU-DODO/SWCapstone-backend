@@ -42,7 +42,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 새로운 토큰 쌍(Access, Refresh) 생성 (Refresh Token Rotation - RTR)
-        String newAccessToken = tokenProvider.createAccessToken(user.getEmail(), user.getRole().getKey());
+        String newAccessToken = tokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().getKey());
         String newRefreshToken = tokenProvider.createRefreshToken(user.getEmail());
 
         // Redis의 기존 토큰 정보 업데이트

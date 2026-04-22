@@ -47,22 +47,26 @@ public class JwtTokenProvider {
     /**
      * API 호출 인증용 Access Token 생성
      */
-    public String createAccessToken(String email, String role) {
-        return createToken(email, role, accessTokenExpiration);
+    public String createAccessToken(Long userId, String email, String role) {
+        return createToken(userId, email, role, accessTokenExpiration);
     }
 
     /**
      * Access Token 재발급용 Refresh Token 생성 (권한 정보 미포함)
      */
     public String createRefreshToken(String email) {
-        return createToken(email, null, refreshTokenExpiration);
+        return createToken(null, email, null, refreshTokenExpiration);
     }
 
     /**
      * JWT 토큰 빌드 공통 로직
      */
-    private String createToken(String email, String role, long expiration) {
+    private String createToken(Long userId, String email, String role, long expiration) {
         var claimsBuilder = Jwts.claims().subject(email);
+        
+        if (userId != null) {
+            claimsBuilder.add("userId", userId);
+        }
         
         if (role != null) {
             claimsBuilder.add("role", role); // Access Token에만 권한 정보 포함
@@ -85,9 +89,12 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
         String email = claims.getSubject();
+        Long userId = claims.get("userId", Long.class);
         String role = claims.get("role", String.class);
-        return new UsernamePasswordAuthenticationToken(email, "", 
-                Collections.singleton(new SimpleGrantedAuthority(role)));
+
+        UserPrincipal principal = UserPrincipal.create(userId, email, role);
+
+        return new UsernamePasswordAuthenticationToken(principal, "", principal.getAuthorities());
     }
 
     /**

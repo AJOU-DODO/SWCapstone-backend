@@ -46,7 +46,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .map(GrantedAuthority::getAuthority)
                 .orElse("ROLE_USER");
 
-        String accessToken = tokenProvider.createAccessToken(email, role);
+        String accessToken = tokenProvider.createAccessToken(user.getId(), email, role);
         String refreshToken = tokenProvider.createRefreshToken(email);
         authService.saveRefreshToken(email, refreshToken);
 
