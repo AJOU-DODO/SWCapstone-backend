@@ -30,8 +30,7 @@ public class DeviceController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid DeviceRequestDto requestDto) {
 
-        userDeviceService.registerDevice(principal.getEmail(), requestDto);
+        userDeviceService.registerOrUpdateDevice(principal.getEmail(), requestDto);
         return ApiResponseDto.success("기기가 성공적으로 등록되었습니다.");
     }
-}
 }
