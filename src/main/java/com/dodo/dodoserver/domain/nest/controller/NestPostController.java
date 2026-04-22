@@ -43,7 +43,7 @@ public class NestPostController {
 		@AuthenticationPrincipal UserPrincipal principal,
 		@RequestBody @Valid NestCreateRequestDto requestDto) {
 
-		return ApiResponseDto.success(nestService.createNest(principal.getEmail(), requestDto));
+		return ApiResponseDto.success(nestService.createNest(principal.getId(), requestDto));
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class NestPostController {
 		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id) {
 
-		return ApiResponseDto.success(nestService.getNestDetail(principal.getEmail(), id));
+		return ApiResponseDto.success(nestService.getNestDetail(principal.getId(), id));
 	}
 
 	/**
@@ -66,7 +66,7 @@ public class NestPostController {
 		@PathVariable Long id,
 		@RequestBody @Valid NestUpdateRequestDto requestDto) {
 
-		return ApiResponseDto.success(nestService.updateNest(principal.getEmail(), id, requestDto));
+		return ApiResponseDto.success(nestService.updateNest(principal.getId(), id, requestDto));
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class NestPostController {
 		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id) {
 
-		nestService.deleteNest(principal.getEmail(), id);
+		nestService.deleteNest(principal.getId(), id);
 		return ApiResponseDto.success("둥지가 성공적으로 삭제되었습니다.");
 	}
 
@@ -90,7 +90,7 @@ public class NestPostController {
 		@PathVariable Long id,
 		@RequestBody @Valid CommentCreateRequestDto requestDto) {
 
-		nestService.createComment(principal.getEmail(), id, requestDto);
+		nestService.createComment(principal.getId(), id, requestDto);
 		return ApiResponseDto.success("댓글이 성공적으로 작성되었습니다.");
 	}
 
@@ -103,8 +103,8 @@ public class NestPostController {
 		@PathVariable Long id,
 		@RequestParam(required = false, defaultValue = "DEFAULT") String sortBy) {
 		
-		String email = (principal != null) ? principal.getEmail() : null;
-		return ApiResponseDto.success(nestService.getCommentsByNestId(email, id, sortBy));
+		Long userId = (principal != null) ? principal.getId() : null;
+		return ApiResponseDto.success(nestService.getCommentsByNestId(userId, id, sortBy));
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class NestPostController {
 		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long commentId) {
 
-		nestService.handleCommentLike(principal.getEmail(), commentId);
+		nestService.handleCommentLike(principal.getId(), commentId);
 		return ApiResponseDto.success("댓글 좋아요 처리가 완료되었습니다.");
 	}
 
@@ -128,7 +128,7 @@ public class NestPostController {
 		@PathVariable Long commentId,
 		@RequestBody @Valid CommentUpdateRequestDto requestDto) {
 
-		nestService.updateComment(principal.getEmail(), commentId, requestDto);
+		nestService.updateComment(principal.getId(), commentId, requestDto);
 		return ApiResponseDto.success("댓글이 성공적으로 수정되었습니다.");
 	}
 
@@ -140,7 +140,7 @@ public class NestPostController {
 		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long commentId) {
 
-		nestService.deleteComment(principal.getEmail(), commentId);
+		nestService.deleteComment(principal.getId(), commentId);
 		return ApiResponseDto.success("댓글이 성공적으로 삭제되었습니다.");
 	}
 
@@ -155,7 +155,7 @@ public class NestPostController {
 		@PathVariable Long id,
 		@RequestParam ReactionType type) {
 
-		nestService.handleReaction(principal.getEmail(), id, type);
+		nestService.handleReaction(principal.getId(), id, type);
 		return ApiResponseDto.success("리액션이 성공적으로 처리되었습니다.");
 	}
 }

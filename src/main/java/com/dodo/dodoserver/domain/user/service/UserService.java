@@ -41,8 +41,8 @@ public class UserService {
      * 사용자의 프로필 정보를 업데이트
      */
     @Transactional
-    public void updateProfile(String email, ProfileUpdateRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void updateProfile(Long userId, ProfileUpdateRequestDto requestDto) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         UserProfile userProfile = userProfileRepository.findByUser(user)
@@ -66,18 +66,18 @@ public class UserService {
             userProfile.setBio(requestDto.getBio());
         }
 
-        log.info("프로필 수정 완료: {}", email);
+        log.info("프로필 수정 완료: {}", userId);
     }
 
     /**
      * 구글 로그인 후 상세 정보(프로필, 기기 등)를 등록하고 가입
-     * @param email 사용자 이메일
+     * @param userId 사용자 ID
      * @param requestDto 온보딩 정보 (닉네임, 이미지, 소개, FCM 토큰, 관심 카테고리)
      */
     @Transactional
-    public void onboard(String email, OnboardRequestDto requestDto) {
+    public void onboard(Long userId, OnboardRequestDto requestDto) {
         // 유저 조회 및 상태 확인
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (user.isOnboarded()) {
@@ -103,28 +103,28 @@ public class UserService {
             requestDto.getFcmToken(),
             requestDto.getDeviceType()
         );
-        userDeviceService.registerOrUpdateDevice(email, deviceRequest);
+        userDeviceService.registerOrUpdateDevice(userId, deviceRequest);
 
         // 관심 카테고리 등록 (선택한 게 있을 경우)
         if (requestDto.getCategoryIds() != null && !requestDto.getCategoryIds().isEmpty()) {
             UserInterestRequestDto interestRequest = new UserInterestRequestDto(requestDto.getCategoryIds());
-            userInterestService.updateInterests(email, interestRequest);
+            userInterestService.updateInterests(userId, interestRequest);
         }
 
         // 온보딩 상태 완료 처리
         user.setOnboarded(true);
         user.setNickname(requestDto.getNickname());
 
-        log.info("온보딩 성공: {}", email);
+        log.info("온보딩 성공: {}", userId);
     }
 
     /**
-     * 사용자 상세 프로필 정보 조회
+     * 사용자 상세 프로필 정보 조회 (ID 기반)
      */
     @Transactional(readOnly = true)
-    public UserProfileResponseDto getUserProfileByEmail(String email) {
+    public UserProfileResponseDto getUserProfileById(Long userId) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (!user.isOnboarded()) {
@@ -134,5 +134,15 @@ public class UserService {
         UserProfile userProfile = userProfileRepository.findByUser(user).orElse(null);
 
         return UserProfileResponseDto.from(user, userProfile);
+    }
+
+    /**
+     * 사용자 상세 프로필 정보 조회 (이메일 기반)
+     */
+    @Transactional(readOnly = true)
+    public UserProfileResponseDto getUserProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        return getUserProfileById(user.getId());
     }
 }

@@ -36,7 +36,7 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ApiResponseDto<String> logout(@AuthenticationPrincipal UserPrincipal principal) {
-        authService.logout(principal.getEmail());
+        authService.logout(principal.getId());
         return ApiResponseDto.success("성공적으로 로그아웃되었습니다.");
     }
 }

@@ -74,14 +74,14 @@ class UserControllerTest {
 
     @Test
     @DisplayName("내 프로필 조회 성공")
-    @WithMockUserPrincipal(email = "test@example.com")
+    @WithMockUserPrincipal(id = 1L, email = "test@example.com")
     void getMyProfile_success() throws Exception {
         // given
         UserProfileResponseDto responseDto = UserProfileResponseDto.builder()
                 .email("test@example.com")
                 .nickname("테스터")
                 .build();
-        given(userService.getUserProfileByEmail("test@example.com")).willReturn(responseDto);
+        given(userService.getUserProfileById(1L)).willReturn(responseDto);
 
         // when & then
         mockMvc.perform(get("/api/v1/users/me"))

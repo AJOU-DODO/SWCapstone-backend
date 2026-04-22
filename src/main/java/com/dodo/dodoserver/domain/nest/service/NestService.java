@@ -53,8 +53,8 @@ public class NestService {
      * 새로운 둥지(Nest) 생성
      */
     @Transactional
-    public NestSummaryResponseDto createNest(String email, NestCreateRequestDto requestDto) {
-        User creator = userRepository.findByEmail(email)
+    public NestSummaryResponseDto createNest(Long userId, NestCreateRequestDto requestDto) {
+        User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Nest nest = Nest.builder()
@@ -107,8 +107,8 @@ public class NestService {
      * 둥지 정보 수정
      */
     @Transactional
-    public NestSummaryResponseDto updateNest(String email, Long nestId, NestUpdateRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public NestSummaryResponseDto updateNest(Long userId, Long nestId, NestUpdateRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Nest nest = nestRepository.findById(nestId)
@@ -163,8 +163,8 @@ public class NestService {
      * 둥지 삭제 (Soft Delete)
      */
     @Transactional
-    public void deleteNest(String email, Long nestId) {
-        User user = userRepository.findByEmail(email)
+    public void deleteNest(Long userId, Long nestId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Nest nest = nestRepository.findById(nestId)
@@ -182,8 +182,8 @@ public class NestService {
      * 둥지 댓글 작성
      */
     @Transactional
-    public void createComment(String email, Long nestId, CommentCreateRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void createComment(Long userId, Long nestId, CommentCreateRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Nest nest = nestRepository.findById(nestId)
@@ -213,7 +213,7 @@ public class NestService {
                 .build();
 
         NestComment savedComment = nestCommentRepository.save(comment);
-        log.info("댓글 작성 완료: Nest={}, User={}", nestId, email);
+        log.info("댓글 작성 완료: Nest={}, User={}", nestId, userId);
 
         nestNotificationService.sendCommentNotification(user, nest, parent, savedComment);
     }
@@ -222,8 +222,8 @@ public class NestService {
      * 댓글 수정
      */
     @Transactional
-    public void updateComment(String email, Long commentId, CommentUpdateRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void updateComment(Long userId, Long commentId, CommentUpdateRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         NestComment comment = nestCommentRepository.findById(commentId)
@@ -240,8 +240,8 @@ public class NestService {
      * 댓글 삭제 (Soft Delete)
      */
     @Transactional
-    public void deleteComment(String email, Long commentId) {
-        User user = userRepository.findByEmail(email)
+    public void deleteComment(Long userId, Long commentId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         NestComment comment = nestCommentRepository.findById(commentId)
@@ -258,8 +258,8 @@ public class NestService {
      * ID 리스트 둥지 요약 정보 조회 (N+1 최적화)
      */
     @Transactional(readOnly = true)
-    public List<NestSummaryResponseDto> getNestsByIds(String email, List<Long> nestIds) {
-        User user = userRepository.findByEmail(email)
+    public List<NestSummaryResponseDto> getNestsByIds(Long userId, List<Long> nestIds) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         List<Nest> nests = nestRepository.findAllById(nestIds);
@@ -280,8 +280,8 @@ public class NestService {
      * 둥지 상세 정보 조회
      */
     @Transactional
-    public NestDetailResponseDto getNestDetail(String email, Long nestId) {
-        User user = userRepository.findByEmail(email)
+    public NestDetailResponseDto getNestDetail(Long userId, Long nestId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Nest nest = nestRepository.findById(nestId)
@@ -322,8 +322,8 @@ public class NestService {
      * 둥지 ID로 댓글 리스트 조회 (트리 구조, N+1 문제 완벽 해결)
      */
     @Transactional(readOnly = true)
-    public List<CommentResponseDto> getCommentsByNestId(String currentUserEmail, Long nestId, String sortBy) {
-        User currentUser = currentUserEmail != null ? userRepository.findByEmail(currentUserEmail).orElse(null) : null;
+    public List<CommentResponseDto> getCommentsByNestId(Long currentUserId, Long nestId, String sortBy) {
+        User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -406,8 +406,8 @@ public class NestService {
      * 댓글 좋아요 처리 (Toggle 방식)
      */
     @Transactional
-    public void handleCommentLike(String email, Long commentId) {
-        User user = userRepository.findByEmail(email)
+    public void handleCommentLike(Long userId, Long commentId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         NestComment comment = nestCommentRepository.findById(commentId)
@@ -418,7 +418,7 @@ public class NestService {
         if (existingLike.isPresent()) {
             commentLikeRepository.delete(existingLike.get());
             comment.decreaseLikeCount();
-            log.info("댓글 좋아요 취소: User={}, Comment={}", email, commentId);
+            log.info("댓글 좋아요 취소: User={}, Comment={}", userId, commentId);
         } else {
             CommentLike like = CommentLike.builder()
                     .user(user)
@@ -426,7 +426,7 @@ public class NestService {
                     .build();
             commentLikeRepository.save(like);
             comment.increaseLikeCount();
-            log.info("댓글 좋아요 등록: User={}, Comment={}", email, commentId);
+            log.info("댓글 좋아요 등록: User={}, Comment={}", userId, commentId);
         }
     }
 
@@ -448,9 +448,9 @@ public class NestService {
      */
     @Transactional(readOnly = true)
     public Page<NestSummaryResponseDto> getNearNestsByCategory(
-            String email, Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
+            Long userId, Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
         
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
@@ -505,8 +505,8 @@ public class NestService {
      * 사용자 현재 위치 검증을 통한 둥지 해금
      */
     @Transactional
-    public void unlockNest(String email, Long nestId, NestUnlockRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void unlockNest(Long userId, Long nestId, NestUnlockRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
         Nest nest = nestRepository.findById(nestId)
@@ -531,15 +531,15 @@ public class NestService {
                 .build();
         
         unlockHistoryRepository.save(history);
-        log.info("둥지 해금 성공: User={}, Nest={}", email, nestId);
+        log.info("둥지 해금 성공: User={}, Nest={}", userId, nestId);
     }
 
     /**
      * 둥지에 대한 리액션(좋아요/싫어요) 등록, 수정 또는 취소
      */
     @Transactional
-    public void handleReaction(String email, Long nestId, ReactionType type) {
-        User user = userRepository.findByEmail(email)
+    public void handleReaction(Long userId, Long nestId, ReactionType type) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         Nest nest = nestRepository.findById(nestId)
@@ -556,11 +556,11 @@ public class NestService {
             if (reaction.getReactionType() == type) {
                 // 동일한 타입이면 취소(삭제)
                 nestReactionRepository.delete(reaction);
-                log.info("리액션 취소 완료: User={}, Nest={}, Type={}", email, nestId, type);
+                log.info("리액션 취소 완료: User={}, Nest={}, Type={}", userId, nestId, type);
             } else {
                 // 다른 타입이면 수정
                 reaction.setReactionType(type);
-                log.info("리액션 수정 완료: User={}, Nest={}, Type={}", email, nestId, type);
+                log.info("리액션 수정 완료: User={}, Nest={}, Type={}", userId, nestId, type);
             }
         } else {
             // 없으면 신규 등록
@@ -570,7 +570,7 @@ public class NestService {
                     .reactionType(type)
                     .build();
             nestReactionRepository.save(reaction);
-            log.info("리액션 등록 완료: User={}, Nest={}, Type={}", email, nestId, type);
+            log.info("리액션 등록 완료: User={}, Nest={}, Type={}", userId, nestId, type);
         }
     }
 }

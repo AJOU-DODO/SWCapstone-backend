@@ -35,8 +35,8 @@ public class UserInterestService {
      * 현재 유저가 선택한 관심 카테고리 목록을 조회
      */
     @Transactional(readOnly = true)
-    public List<CategoryResponseDto> getMyInterests(String email) {
-        User user = userRepository.findByEmail(email)
+    public List<CategoryResponseDto> getMyInterests(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         return userInterestRepository.findByUserId(user.getId()).stream()
@@ -48,8 +48,8 @@ public class UserInterestService {
      * 유저의 모든 관심사를 삭제한 뒤 요청한 리스트로 다시 일괄 저장
      */
     @Transactional
-    public void updateInterests(String email, UserInterestRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void updateInterests(Long userId, UserInterestRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 
@@ -69,6 +69,6 @@ public class UserInterestService {
                 .collect(Collectors.toList());
 
         userInterestRepository.saveAll(newInterests);
-        log.info("유저 관심사 일괄 업데이트 완료: {}, 개수: {}", email, newInterests.size());
+        log.info("유저 관심사 일괄 업데이트 완료: {}, 개수: {}", userId, newInterests.size());
     }
 }

@@ -78,7 +78,7 @@ class UserInterestControllerTest {
     void getMyInterests_success() throws Exception {
         // given
         List<CategoryResponseDto> responseDtos = List.of(new CategoryResponseDto(1L, "카페", null));
-        given(userInterestService.getMyInterests("test@example.com")).willReturn(responseDtos);
+        given(userInterestService.getMyInterests(1L)).willReturn(responseDtos);
 
         // when & then
         mockMvc.perform(get("/api/v1/user-interests"))

@@ -62,8 +62,10 @@ public class AuthService {
      * 로그아웃 시 Redis에서 리프레시 토큰 삭제
      */
     @Transactional
-    public void logout(String email) {
-        refreshTokenRepository.deleteByEmail(email);
+    public void logout(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        refreshTokenRepository.deleteByEmail(user.getEmail());
     }
 
     /**

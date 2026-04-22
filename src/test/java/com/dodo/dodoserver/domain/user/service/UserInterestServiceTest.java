@@ -45,16 +45,16 @@ class UserInterestServiceTest {
     @DisplayName("내 관심사 조회 성공")
     void getMyInterests_success() {
         // given
-        String email = "test@example.com";
-        User user = User.builder().id(1L).email(email).build();
+        Long userId = 1L;
+        User user = User.builder().id(userId).email("test@example.com").build();
         Category category = Category.builder().id(1L).name("카페").build();
         UserInterest userInterest = UserInterest.builder().user(user).category(category).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(userInterestRepository.findByUserId(user.getId())).willReturn(List.of(userInterest));
 
         // when
-        List<CategoryResponseDto> result = userInterestService.getMyInterests(email);
+        List<CategoryResponseDto> result = userInterestService.getMyInterests(userId);
 
         // then
         assertThat(result).hasSize(1);
@@ -65,18 +65,18 @@ class UserInterestServiceTest {
     @DisplayName("관심사 업데이트 성공")
     void updateInterests_success() {
         // given
-        String email = "test@example.com";
-        User user = User.builder().id(1L).email(email).build();
+        Long userId = 1L;
+        User user = User.builder().id(userId).email("test@example.com").build();
         UserInterestRequestDto requestDto = new UserInterestRequestDto(List.of(1L, 2L));
         Category category1 = Category.builder().id(1L).name("카페").build();
         Category category2 = Category.builder().id(2L).name("맛집").build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(categoryRepository.findById(1L)).willReturn(Optional.of(category1));
         given(categoryRepository.findById(2L)).willReturn(Optional.of(category2));
 
         // when
-        userInterestService.updateInterests(email, requestDto);
+        userInterestService.updateInterests(userId, requestDto);
 
         // then
         verify(userInterestRepository, times(1)).deleteByUserId(user.getId());
@@ -87,15 +87,15 @@ class UserInterestServiceTest {
     @DisplayName("관심사 업데이트 실패 - 카테고리 없음")
     void updateInterests_fail_categoryNotFound() {
         // given
-        String email = "test@example.com";
-        User user = User.builder().id(1L).email(email).build();
+        Long userId = 1L;
+        User user = User.builder().id(userId).email("test@example.com").build();
         UserInterestRequestDto requestDto = new UserInterestRequestDto(List.of(99L));
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(categoryRepository.findById(99L)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userInterestService.updateInterests(email, requestDto))
+        assertThatThrownBy(() -> userInterestService.updateInterests(userId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.CATEGORY_NOT_FOUND.getMessage());
     }

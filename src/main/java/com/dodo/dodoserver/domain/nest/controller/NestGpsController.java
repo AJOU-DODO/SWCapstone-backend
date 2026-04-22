@@ -33,7 +33,7 @@ public class NestGpsController {
             @PathVariable Long id,
             @RequestBody @Valid NestUnlockRequestDto requestDto) {
         
-        nestService.unlockNest(principal.getEmail(), id, requestDto);
+        nestService.unlockNest(principal.getId(), id, requestDto);
         return ApiResponseDto.success("둥지가 성공적으로 해금되었습니다.");
     }
 
@@ -47,7 +47,7 @@ public class NestGpsController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam List<Long> ids) {
 
-        return ApiResponseDto.success(nestService.getNestsByIds(principal.getEmail(), ids));
+        return ApiResponseDto.success(nestService.getNestsByIds(principal.getId(), ids));
     }
 
     /**
@@ -63,7 +63,7 @@ public class NestGpsController {
             @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        return ApiResponseDto.success(nestService.getNearNestsByCategory(principal.getEmail(), latitude, longitude, radiusMeter, categoryId, pageable));
+        return ApiResponseDto.success(nestService.getNearNestsByCategory(principal.getId(), latitude, longitude, radiusMeter, categoryId, pageable));
     }
 
     /**

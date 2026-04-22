@@ -28,7 +28,7 @@ public class UserInterestController {
      */
     @GetMapping
     public ApiResponseDto<List<CategoryResponseDto>> getMyInterests(@AuthenticationPrincipal UserPrincipal principal) {
-        return ApiResponseDto.success(userInterestService.getMyInterests(principal.getEmail()));
+        return ApiResponseDto.success(userInterestService.getMyInterests(principal.getId()));
     }
 
     /**
@@ -39,7 +39,7 @@ public class UserInterestController {
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid UserInterestRequestDto requestDto) {
 
-        userInterestService.updateInterests(principal.getEmail(), requestDto);
+        userInterestService.updateInterests(principal.getId(), requestDto);
         return ApiResponseDto.success("관심 카테고리가 성공적으로 업데이트되었습니다.");
     }
 }

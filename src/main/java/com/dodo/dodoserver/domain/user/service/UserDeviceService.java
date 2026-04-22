@@ -28,12 +28,12 @@ public class UserDeviceService {
 
     /**
      * 유저의 기기를 등록하거나 기존 기기의 토큰 정보를 갱신
-     * @param email 유저 이메일 (AccessToken에서 추출)
+     * @param userId 유저 ID (AccessToken에서 추출)
      * @param requestDto 등록할 기기 정보
      */
     @Transactional
-    public void registerOrUpdateDevice(String email, DeviceRequestDto requestDto) {
-        User user = userRepository.findByEmail(email)
+    public void registerOrUpdateDevice(Long userId, DeviceRequestDto requestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 이미 존재하는 토큰인지 확인
@@ -43,7 +43,7 @@ public class UserDeviceService {
                             device.setUser(user); // 주인이 바뀌었을 수도 있음
                             device.setDeviceType(requestDto.getDeviceType());
                             device.setLastActiveAt(LocalDateTime.now());
-                            log.info("기존 기기 토큰 정보 갱신: {}", user.getEmail());
+                            log.info("기존 기기 토큰 정보 갱신: {}", user.getId());
                         },
                         () -> {
                             UserDevice newDevice = UserDevice.builder()
@@ -52,7 +52,7 @@ public class UserDeviceService {
                                     .deviceType(requestDto.getDeviceType())
                                     .build();
                             userDeviceRepository.save(newDevice);
-                            log.info("신규 기기 토큰 등록: {}", user.getEmail());
+                            log.info("신규 기기 토큰 등록: {}", user.getId());
                         }
                 );
     }
