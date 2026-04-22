@@ -39,15 +39,15 @@ class UserDeviceServiceTest {
     @DisplayName("기기 등록 성공 - 신규")
     void registerOrUpdateDevice_new() {
         // given
-        String email = "test@example.com";
+        Long userId = 1L;
         DeviceRequestDto requestDto = new DeviceRequestDto("fcm-token", DeviceType.ANDROID);
-        User user = User.builder().email(email).build();
+        User user = User.builder().id(userId).email("test@example.com").build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(userDeviceRepository.findByFcmToken("fcm-token")).willReturn(Optional.empty());
 
         // when
-        userDeviceService.registerOrUpdateDevice(email, requestDto);
+        userDeviceService.registerOrUpdateDevice(userId, requestDto);
 
         // then
         verify(userDeviceRepository, times(1)).save(any(UserDevice.class));
@@ -57,19 +57,19 @@ class UserDeviceServiceTest {
     @DisplayName("기기 등록 성공 - 기존 갱신")
     void registerOrUpdateDevice_update() {
         // given
-        String email = "test@example.com";
+        Long userId = 1L;
         DeviceRequestDto requestDto = new DeviceRequestDto("existing-token", DeviceType.IOS);
-        User user = User.builder().email(email).build();
+        User user = User.builder().id(userId).email("test@example.com").build();
         UserDevice existingDevice = UserDevice.builder()
                 .fcmToken("existing-token")
                 .deviceType(DeviceType.ANDROID)
                 .build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(userDeviceRepository.findByFcmToken("existing-token")).willReturn(Optional.of(existingDevice));
 
         // when
-        userDeviceService.registerOrUpdateDevice(email, requestDto);
+        userDeviceService.registerOrUpdateDevice(userId, requestDto);
 
         // then
         assertThat(existingDevice.getDeviceType()).isEqualTo(DeviceType.IOS);
@@ -81,12 +81,12 @@ class UserDeviceServiceTest {
     @DisplayName("기기 등록 실패 - 유저 없음")
     void registerOrUpdateDevice_fail_userNotFound() {
         // given
-        String email = "none@example.com";
+        Long userId = 999L;
         DeviceRequestDto requestDto = new DeviceRequestDto("fcm", DeviceType.ANDROID);
-        given(userRepository.findByEmail(email)).willReturn(Optional.empty());
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> userDeviceService.registerOrUpdateDevice(email, requestDto))
+        assertThatThrownBy(() -> userDeviceService.registerOrUpdateDevice(userId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.USER_NOT_FOUND.getMessage());
     }

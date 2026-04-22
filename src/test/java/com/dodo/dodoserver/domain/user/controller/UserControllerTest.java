@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -74,14 +74,14 @@ class UserControllerTest {
 
     @Test
     @DisplayName("내 프로필 조회 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(id = 1L, email = "test@example.com")
     void getMyProfile_success() throws Exception {
         // given
         UserProfileResponseDto responseDto = UserProfileResponseDto.builder()
                 .email("test@example.com")
                 .nickname("테스터")
                 .build();
-        given(userService.getUserProfileByEmail("test@example.com")).willReturn(responseDto);
+        given(userService.getUserProfileById(1L)).willReturn(responseDto);
 
         // when & then
         mockMvc.perform(get("/api/v1/users/me"))
@@ -92,7 +92,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("닉네임 중복 체크 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void checkNickname_success() throws Exception {
         // given
         given(userService.existsByNickname("이미있는닉네임")).willReturn(true);
@@ -106,7 +106,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("프로필 수정 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(email = "test@example.com")
     void updateProfile_success() throws Exception {
         // given
         ProfileUpdateRequestDto requestDto = new ProfileUpdateRequestDto("새닉네임", null, "새소개");
@@ -122,7 +122,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("온보딩 성공")
-    @WithMockUser(username = "new@example.com")
+    @WithMockUserPrincipal(email = "new@example.com")
     void postProfile_success() throws Exception {
         // given
         OnboardRequestDto requestDto = new OnboardRequestDto(
@@ -140,7 +140,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("온보딩 실패 - 입력값 검증 오류 (닉네임 누락)")
-    @WithMockUser(username = "new@example.com")
+    @WithMockUserPrincipal(email = "new@example.com")
     void postProfile_fail_invalidInput() throws Exception {
         // given
         OnboardRequestDto requestDto = new OnboardRequestDto(
@@ -159,7 +159,7 @@ class UserControllerTest {
 
     @Test
     @DisplayName("특정 유저 상세 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getUserProfile_success() throws Exception {
         // given
         String email = "other@example.com";

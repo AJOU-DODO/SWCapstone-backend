@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -76,7 +76,7 @@ class NestGpsControllerTest {
 
     @Test
     @DisplayName("둥지 해금 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void unlockNest_success() throws Exception {
         Long nestId = 1L;
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
@@ -91,7 +91,7 @@ class NestGpsControllerTest {
 
     @Test
     @DisplayName("둥지 요약 정보 리스트 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getNestsByIds_success() throws Exception {
         List<Long> ids = List.of(1L, 2L);
         NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).title("테스트").build();
@@ -105,7 +105,7 @@ class NestGpsControllerTest {
 
     @Test
     @DisplayName("반경 내 둥지 목록 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getNearbyNests_success() throws Exception {
         NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).title("테스트").build();
         Page<NestSummaryResponseDto> page = new PageImpl<>(List.of(summary));
@@ -121,7 +121,7 @@ class NestGpsControllerTest {
 
     @Test
     @DisplayName("주변 핀 조회 성공")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getNearbyPins_success() throws Exception {
         NestPinResponseDto pin = new NestPinResponseDto(1L, 37.5, 127.0);
         given(nestService.getNearbyPins(any(), any(), any())).willReturn(List.of(pin));

@@ -16,7 +16,7 @@ import com.dodo.dodoserver.global.config.SecurityConfig;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -85,7 +85,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 생성 성공 - ADMIN 권한 필요")
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void createCategory_success() throws Exception {
         // given
         CategoryRequestDto requestDto = new CategoryRequestDto("운동");
@@ -106,7 +106,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 생성 실패 - 권한 없음(USER)")
-    @WithMockUser(roles = "USER")
+    @WithMockUserPrincipal(role = "ROLE_USER")
     void createCategory_fail_forbidden() throws Exception {
         // given
         CategoryRequestDto requestDto = new CategoryRequestDto("운동");
@@ -121,7 +121,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("전체 카테고리 조회 성공 - 인증된 사용자")
-    @WithMockUser
+    @WithMockUserPrincipal
     void getAllCategories_success() throws Exception {
         // given
         CategoryResponseDto res1 = new CategoryResponseDto(1L, "운동", LocalDateTime.now());
@@ -139,7 +139,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 수정 성공 - ADMIN 권한")
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void updateCategory_success() throws Exception {
         // given
         Long categoryId = 1L;
@@ -159,7 +159,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 삭제 성공 - ADMIN 권한")
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void deleteCategory_success() throws Exception {
         // given
         Long categoryId = 1L;
@@ -173,7 +173,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 생성 실패 - 유효성 검증 오류 (이름 누락)")
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void createCategory_fail_invalidInput() throws Exception {
         // given
         CategoryRequestDto requestDto = new CategoryRequestDto("");
@@ -189,7 +189,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 수정 실패 - 권한 없음(USER)")
-    @WithMockUser(roles = "USER")
+    @WithMockUserPrincipal(role = "ROLE_USER")
     void updateCategory_fail_forbidden() throws Exception {
         // given
         Long categoryId = 1L;
@@ -205,7 +205,7 @@ class CategoryControllerTest {
 
     @Test
     @DisplayName("카테고리 삭제 실패 - 권한 없음(USER)")
-    @WithMockUser(roles = "USER")
+    @WithMockUserPrincipal(role = "ROLE_USER")
     void deleteCategory_fail_forbidden() throws Exception {
         // given
         Long categoryId = 1L;

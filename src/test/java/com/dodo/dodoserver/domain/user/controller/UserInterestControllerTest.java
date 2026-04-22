@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -74,11 +74,11 @@ class UserInterestControllerTest {
 
     @Test
     @DisplayName("내 관심사 조회 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(email = "test@example.com")
     void getMyInterests_success() throws Exception {
         // given
         List<CategoryResponseDto> responseDtos = List.of(new CategoryResponseDto(1L, "카페", null));
-        given(userInterestService.getMyInterests("test@example.com")).willReturn(responseDtos);
+        given(userInterestService.getMyInterests(1L)).willReturn(responseDtos);
 
         // when & then
         mockMvc.perform(get("/api/v1/users/interests"))
@@ -89,7 +89,7 @@ class UserInterestControllerTest {
 
     @Test
     @DisplayName("관심사 업데이트 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(email = "test@example.com")
     void updateInterests_success() throws Exception {
         // given
         UserInterestRequestDto requestDto = new UserInterestRequestDto(List.of(1L, 2L));

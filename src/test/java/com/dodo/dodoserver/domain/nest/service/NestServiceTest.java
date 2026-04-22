@@ -78,10 +78,10 @@ class NestServiceTest {
     @DisplayName("둥지 생성 성공")
     void createNest_success() {
         NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, null, null, false);
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.save(any(Nest.class))).willAnswer(inv -> (Nest) inv.getArgument(0));
 
-        NestSummaryResponseDto response = nestService.createNest(email, requestDto);
+        NestSummaryResponseDto response = nestService.createNest(user.getId(), requestDto);
 
         assertThat(response.getTitle()).isEqualTo("제목");
         verify(nestRepository).save(any(Nest.class));
@@ -94,10 +94,10 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(user).title("기존제목").images(new ArrayList<>()).build();
         NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", "수정내용", 200, null, null);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        NestSummaryResponseDto response = nestService.updateNest(email, nestId, requestDto);
+        NestSummaryResponseDto response = nestService.updateNest(user.getId(), nestId, requestDto);
 
         assertThat(response.getTitle()).isEqualTo("수정제목");
         assertThat(nest.getContent()).isEqualTo("수정내용");
@@ -111,10 +111,10 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(other).build();
         NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        assertThatThrownBy(() -> nestService.updateNest(email, nestId, requestDto))
+        assertThatThrownBy(() -> nestService.updateNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.NOT_NEST_CREATOR.getMessage());
     }
@@ -125,10 +125,10 @@ class NestServiceTest {
         Long nestId = 1L;
         Nest nest = Nest.builder().id(nestId).creator(user).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        nestService.deleteNest(email, nestId);
+        nestService.deleteNest(user.getId(), nestId);
 
         verify(nestRepository).delete(nest);
     }
@@ -140,10 +140,10 @@ class NestServiceTest {
         User other = User.builder().id(2L).build();
         Nest nest = Nest.builder().id(nestId).creator(other).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        assertThatThrownBy(() -> nestService.deleteNest(email, nestId))
+        assertThatThrownBy(() -> nestService.deleteNest(user.getId(), nestId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.NOT_NEST_CREATOR.getMessage());
     }
@@ -158,12 +158,12 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(creator).unlockRadius(100).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(nestRepository.calculateDistance(eq(nestId), any(Point.class))).willReturn(50.0);
 
-        nestService.unlockNest(email, nestId, requestDto);
+        nestService.unlockNest(user.getId(), nestId, requestDto);
 
         verify(unlockHistoryRepository).save(any(UnlockHistory.class));
     }
@@ -176,11 +176,11 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(creator).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
 
-        assertThatThrownBy(() -> nestService.unlockNest(email, nestId, requestDto))
+        assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
     }
@@ -192,10 +192,10 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        assertThatThrownBy(() -> nestService.unlockNest(email, nestId, requestDto))
+        assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
     }
@@ -207,13 +207,13 @@ class NestServiceTest {
         User creator = User.builder().id(2L).nickname("작성자").build();
         Nest nest = Nest.builder().id(nestId).title("비밀").content("내용").creator(creator).images(new ArrayList<>()).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
 
-        NestDetailResponseDto response = nestService.getNestDetail(email, nestId);
+        NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
 
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
@@ -226,13 +226,13 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).build();
         NestComment comment = NestComment.builder().id(10L).user(user).content("댓글").children(new ArrayList<>()).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestCommentRepository.findAllByNestWithUser(nest)).willReturn(List.of(comment));
         given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
         given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
 
-        List<CommentResponseDto> result = nestService.getCommentsByNestId(email, nestId, "DEFAULT");
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(user.getId(), nestId, "DEFAULT");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getContent()).isEqualTo("댓글");
@@ -244,11 +244,11 @@ class NestServiceTest {
         Long commentId = 10L;
         NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(0L).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
 
-        nestService.handleCommentLike(email, commentId);
+        nestService.handleCommentLike(user.getId(), commentId);
 
         assertThat(comment.getLikeCount()).isEqualTo(1L);
         verify(commentLikeRepository).save(any(CommentLike.class));
@@ -261,11 +261,11 @@ class NestServiceTest {
         NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(1L).build();
         CommentLike like = CommentLike.builder().user(user).comment(comment).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.of(like));
 
-        nestService.handleCommentLike(email, commentId);
+        nestService.handleCommentLike(user.getId(), commentId);
 
         assertThat(comment.getLikeCount()).isEqualTo(0L);
         verify(commentLikeRepository).delete(like);
@@ -280,10 +280,10 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(user).build();
         CommentCreateRequestDto requestDto = new CommentCreateRequestDto("댓글내용", null);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        nestService.createComment(email, nestId, requestDto);
+        nestService.createComment(user.getId(), nestId, requestDto);
 
         verify(nestCommentRepository).save(any(NestComment.class));
             verify(nestNotificationService).sendCommentNotification(any(), any(), any(), any());
@@ -300,11 +300,11 @@ class NestServiceTest {
         NestComment parentComment = NestComment.builder().id(10L).nest(otherNest).build();
         CommentCreateRequestDto requestDto = new CommentCreateRequestDto("내용", 10L);
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestCommentRepository.findById(10L)).willReturn(Optional.of(parentComment));
 
-        assertThatThrownBy(() -> nestService.createComment(email, nestId, requestDto))
+        assertThatThrownBy(() -> nestService.createComment(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
     }
@@ -316,10 +316,10 @@ class NestServiceTest {
         NestComment comment = NestComment.builder().id(commentId).user(user).content("기존내용").build();
         CommentUpdateRequestDto requestDto = new CommentUpdateRequestDto("수정내용");
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        nestService.updateComment(email, commentId, requestDto);
+        nestService.updateComment(user.getId(), commentId, requestDto);
 
         assertThat(comment.getContent()).isEqualTo("수정내용");
     }
@@ -332,10 +332,10 @@ class NestServiceTest {
         NestComment comment = NestComment.builder().id(commentId).user(other).build();
         CommentUpdateRequestDto requestDto = new CommentUpdateRequestDto("수정내용");
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        assertThatThrownBy(() -> nestService.updateComment(email, commentId, requestDto))
+        assertThatThrownBy(() -> nestService.updateComment(user.getId(), commentId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.HANDLE_ACCESS_DENIED.getMessage());
     }
@@ -346,10 +346,10 @@ class NestServiceTest {
         Long commentId = 10L;
         NestComment comment = NestComment.builder().id(commentId).user(user).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
 
-        nestService.deleteComment(email, commentId);
+        nestService.deleteComment(user.getId(), commentId);
 
         verify(nestCommentRepository).delete(comment);
     }
@@ -362,11 +362,11 @@ class NestServiceTest {
         Long nestId = 1L;
         Nest nest = Nest.builder().id(nestId).creator(user).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
 
-        nestService.handleReaction(email, nestId, ReactionType.LIKE);
+        nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
 
         verify(nestReactionRepository).save(any(NestReaction.class));
     }
@@ -378,11 +378,11 @@ class NestServiceTest {
         Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestReaction reaction = NestReaction.builder().user(user).nest(nest).reactionType(ReactionType.LIKE).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.of(reaction));
 
-        nestService.handleReaction(email, nestId, ReactionType.LIKE);
+        nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
 
         verify(nestReactionRepository).delete(reaction);
     }
@@ -396,11 +396,11 @@ class NestServiceTest {
         Nest n1 = Nest.builder().id(1L).creator(user).images(new ArrayList<>()).build();
         Nest n2 = Nest.builder().id(2L).creator(user).images(new ArrayList<>()).build();
 
-        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findAllById(ids)).willReturn(List.of(n1, n2));
         given(unlockHistoryRepository.findAllByUserAndNestIn(eq(user), any())).willReturn(new ArrayList<>());
 
-        List<NestSummaryResponseDto> result = nestService.getNestsByIds(email, ids);
+        List<NestSummaryResponseDto> result = nestService.getNestsByIds(user.getId(), ids);
 
         assertThat(result).hasSize(2);
     }

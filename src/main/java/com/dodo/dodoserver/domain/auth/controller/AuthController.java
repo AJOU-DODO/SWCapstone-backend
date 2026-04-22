@@ -7,7 +7,8 @@ import com.dodo.dodoserver.domain.auth.service.AuthService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import com.dodo.dodoserver.global.security.UserPrincipal;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -31,13 +32,11 @@ public class AuthController {
 
     /**
      * 현재 로그인 사용자의 세션 만료(토큰 삭제) 엔드포인트
-     * 인증 필터 통과 후 SecurityContext 내 Authentication 객체에서 이메일 추출
+     * 인증 필터 통과 후 SecurityContext 내 UserPrincipal 객체에서 이메일 추출
      */
     @PostMapping("/logout")
-    public ApiResponseDto<String> logout(Authentication authentication) {
-        // JwtAuthenticationFilter 저장 인증 정보 중 이메일 추출
-        String email = authentication.getName();
-        authService.logout(email);
+    public ApiResponseDto<String> logout(@AuthenticationPrincipal UserPrincipal principal) {
+        authService.logout(principal.getId());
         return ApiResponseDto.success("성공적으로 로그아웃되었습니다.");
     }
 }

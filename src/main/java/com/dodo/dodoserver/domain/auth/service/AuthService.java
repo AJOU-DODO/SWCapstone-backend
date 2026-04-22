@@ -38,11 +38,11 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         // 토큰 주인(User) 존재 여부 확인
-        User user = userRepository.findByEmail(storedToken.getEmail())
+        User user = userRepository.findById(storedToken.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 새로운 토큰 쌍(Access, Refresh) 생성 (Refresh Token Rotation - RTR)
-        String newAccessToken = tokenProvider.createAccessToken(user.getEmail(), user.getRole().getKey());
+        String newAccessToken = tokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().getKey());
         String newRefreshToken = tokenProvider.createRefreshToken(user.getEmail());
 
         // Redis의 기존 토큰 정보 업데이트
@@ -62,17 +62,17 @@ public class AuthService {
      * 로그아웃 시 Redis에서 리프레시 토큰 삭제
      */
     @Transactional
-    public void logout(String email) {
-        refreshTokenRepository.deleteByEmail(email);
+    public void logout(Long userId) {
+        refreshTokenRepository.deleteById(userId);
     }
 
     /**
      * 리프레시 토큰 저장 또는 갱신
      */
     @Transactional
-    public void saveRefreshToken(String email, String token) {
+    public void saveRefreshToken(Long userId, String token) {
         refreshTokenRepository.save(RefreshToken.builder()
-                .email(email)
+                .userId(userId)
                 .token(token)
                 .build());
     }

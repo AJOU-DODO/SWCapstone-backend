@@ -9,7 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.dodo.dodoserver.global.security.UserPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,12 +29,11 @@ public class NestGpsController {
      */
     @PostMapping("/{id}/unlock")
     public ApiResponseDto<String> unlockNest(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @RequestBody @Valid NestUnlockRequestDto requestDto) {
         
-        String email = authentication.getName();
-        nestService.unlockNest(email, id, requestDto);
+        nestService.unlockNest(principal.getId(), id, requestDto);
         return ApiResponseDto.success("둥지가 성공적으로 해금되었습니다.");
     }
 
@@ -44,11 +44,10 @@ public class NestGpsController {
      */
     @GetMapping("/summaries")
     public ApiResponseDto<List<NestSummaryResponseDto>> getNestsByIds(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam List<Long> ids) {
 
-        String email = authentication.getName();
-        return ApiResponseDto.success(nestService.getNestsByIds(email, ids));
+        return ApiResponseDto.success(nestService.getNestsByIds(principal.getId(), ids));
     }
 
     /**
@@ -57,15 +56,14 @@ public class NestGpsController {
      */
     @GetMapping
     public ApiResponseDto<Page<NestSummaryResponseDto>> getNearbyNests(
-            Authentication authentication,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam Double latitude,
             @RequestParam Double longitude,
             @RequestParam(required = false) Double radiusMeter,
             @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        String email = authentication.getName();
-        return ApiResponseDto.success(nestService.getNearNestsByCategory(email, latitude, longitude, radiusMeter, categoryId, pageable));
+        return ApiResponseDto.success(nestService.getNearNestsByCategory(principal.getId(), latitude, longitude, radiusMeter, categoryId, pageable));
     }
 
     /**

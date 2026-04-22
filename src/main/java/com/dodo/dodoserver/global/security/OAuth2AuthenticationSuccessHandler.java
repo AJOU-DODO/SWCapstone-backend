@@ -11,8 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -35,20 +33,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String email = oAuth2User.getAttribute("email");
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(principal.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
-        String role = authentication.getAuthorities().stream()
-                .findFirst()
-                .map(GrantedAuthority::getAuthority)
-                .orElse("ROLE_USER");
+        String role = principal.getRole();
 
-        String accessToken = tokenProvider.createAccessToken(email, role);
-        String refreshToken = tokenProvider.createRefreshToken(email);
-        authService.saveRefreshToken(email, refreshToken);
+        String accessToken = tokenProvider.createAccessToken(user.getId(), user.getEmail(), role);
+        String refreshToken = tokenProvider.createRefreshToken(user.getEmail());
+        authService.saveRefreshToken(user.getId(), refreshToken);
 
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);

@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
@@ -71,7 +71,7 @@ class DeviceControllerTest {
 
     @Test
     @DisplayName("기기 등록 성공")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUserPrincipal(email = "test@example.com")
     void registerDevice_success() throws Exception {
         // given
         DeviceRequestDto requestDto = new DeviceRequestDto("fcm-token", DeviceType.ANDROID);

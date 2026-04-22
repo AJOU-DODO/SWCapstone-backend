@@ -5,16 +5,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
+
+import com.dodo.dodoserver.global.common.util.HashIdUtils;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Date;
 
 /**
@@ -22,7 +23,10 @@ import java.util.Date;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    private final HashIdUtils hashIdUtils;
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -47,22 +51,27 @@ public class JwtTokenProvider {
     /**
      * API 호출 인증용 Access Token 생성
      */
-    public String createAccessToken(String email, String role) {
-        return createToken(email, role, accessTokenExpiration);
+    public String createAccessToken(Long userId, String email, String role) {
+        return createToken(userId, email, role, accessTokenExpiration);
     }
 
     /**
      * Access Token 재발급용 Refresh Token 생성 (권한 정보 미포함)
      */
     public String createRefreshToken(String email) {
-        return createToken(email, null, refreshTokenExpiration);
+        return createToken(null, email, null, refreshTokenExpiration);
     }
 
     /**
      * JWT 토큰 빌드 공통 로직
      */
-    private String createToken(String email, String role, long expiration) {
+    private String createToken(Long userId, String email, String role, long expiration) {
         var claimsBuilder = Jwts.claims().subject(email);
+        
+        if (userId != null) {
+            // ID 난독화 적용
+            claimsBuilder.add("uid", hashIdUtils.encode(userId));
+        }
         
         if (role != null) {
             claimsBuilder.add("role", role); // Access Token에만 권한 정보 포함
@@ -85,9 +94,15 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = getClaims(token);
         String email = claims.getSubject();
+        String encodedId = claims.get("uid", String.class);
         String role = claims.get("role", String.class);
-        return new UsernamePasswordAuthenticationToken(email, "", 
-                Collections.singleton(new SimpleGrantedAuthority(role)));
+
+        // ID 복호화 적용
+        Long userId = hashIdUtils.decode(encodedId);
+
+        UserPrincipal principal = UserPrincipal.create(userId, email, role);
+
+        return new UsernamePasswordAuthenticationToken(principal, "", principal.getAuthorities());
     }
 
     /**
