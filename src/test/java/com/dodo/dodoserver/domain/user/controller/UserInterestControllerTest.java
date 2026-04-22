@@ -32,7 +32,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -81,7 +81,7 @@ class UserInterestControllerTest {
         given(userInterestService.getMyInterests(1L)).willReturn(responseDtos);
 
         // when & then
-        mockMvc.perform(get("/api/v1/user-interests"))
+        mockMvc.perform(get("/api/v1/users/interests"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data[0].name").value("카페"));
@@ -95,7 +95,7 @@ class UserInterestControllerTest {
         UserInterestRequestDto requestDto = new UserInterestRequestDto(List.of(1L, 2L));
 
         // when & then
-        mockMvc.perform(post("/api/v1/user-interests")
+        mockMvc.perform(put("/api/v1/users/interests")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))

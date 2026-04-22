@@ -17,7 +17,7 @@ import java.util.List;
  * 유저의 관심 카테고리 설정 및 조회를 담당하는 컨트롤러
  */
 @RestController
-@RequestMapping("/api/v1/user-interests")
+@RequestMapping("/api/v1/users/interests")
 @RequiredArgsConstructor
 public class UserInterestController {
 
@@ -34,7 +34,7 @@ public class UserInterestController {
     /**
      * 유저의 관심 카테고리를 설정 (기존 정보는 삭제 후 새로 등록)
      */
-    @PostMapping
+    @PutMapping
     public ApiResponseDto<String> updateInterests(
             @AuthenticationPrincipal UserPrincipal principal,
             @RequestBody @Valid UserInterestRequestDto requestDto) {
