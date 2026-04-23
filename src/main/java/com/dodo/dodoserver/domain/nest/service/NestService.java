@@ -449,18 +449,23 @@ public class NestService {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
 
-        Page<Nest> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
+        Page<NestQueryDto> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
         
         if (nests.isEmpty()) return Page.empty(pageable);
 
+        List<Nest> nestEntities = nests.getContent().stream()
+                .map(NestQueryDto::getNest)
+                .collect(Collectors.toList());
+
         // 현재 페이지의 해금 이력 일괄 조회 (N+1 방지)
-        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nests.getContent()).stream()
+        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nestEntities).stream()
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
-        return nests.map(nest -> {
-            boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
-            return NestSummaryResponseDto.from(nest, isUnlocked);
+        return nests.map(dto -> {
+            Nest nestEntity = dto.getNest();
+            boolean isUnlocked = nestEntity.getCreator().equals(user) || unlockedNestIds.contains(nestEntity.getId());
+            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance());
         });
     }
 

@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.nest.dao.querydsl;
 
 import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
+import com.dodo.dodoserver.domain.nest.dto.NestQueryDto;
 import com.dodo.dodoserver.domain.nest.entity.*;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
@@ -49,12 +50,21 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
     }
 
     @Override
-    public Page<Nest> findNearbyNests(Point point, Double radiusMeter, Long categoryId, Pageable pageable) {
+    public Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, Long categoryId, Pageable pageable) {
         NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
                 "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
 
-        JPAQuery<Nest> query = queryFactory
-                .selectFrom(nest)
+        NumberExpression<Long> likeCount = nestReaction.reactionType
+                .when(ReactionType.LIKE).then(1L)
+                .otherwise(0L).sum().coalesce(0L);
+
+        JPAQuery<NestQueryDto> query = queryFactory
+                .select(Projections.constructor(NestQueryDto.class,
+                        nest,
+                        likeCount,
+                        distance
+                ))
+                .from(nest)
                 .join(nest.location, nestLocation)
                 .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
@@ -71,7 +81,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
             query.orderBy(specifier);
         }
 
-        List<Nest> content = query.fetch();
+        List<NestQueryDto> content = query.fetch();
 
         Long totalCount = queryFactory
                 .select(nest.id.countDistinct())
