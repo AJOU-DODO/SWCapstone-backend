@@ -38,7 +38,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<NestPinResponseDto> findNearbyPins(Point point, Double radiusMeter) {
+    public List<NestPinResponseDto> findNearbyPins(Point point, Double radiusMeter, List<Long> categoryIds) {
         NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
                 "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
 
@@ -50,8 +50,59 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 ))
                 .from(nest)
                 .join(nest.location, nestLocation)
-                .where(distance.loe(radiusMeter), nest.deletedAt.isNull())
+                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
+                .where(
+                        distance.loe(radiusMeter),
+                        categoryIn(categoryIds),
+                        nest.deletedAt.isNull()
+                )
+                .groupBy(nest.id)
                 .fetch();
+    }
+
+    @Override
+    public List<NestQueryDto> findNestsByIdsCustom(List<Long> nestIds, Sort sort) {
+        NumberExpression<Long> likeCount = Expressions.asNumber(
+                JPAExpressions.select(nestReaction.count())
+                        .from(nestReaction)
+                        .where(nestReaction.nest.id.eq(nest.id)
+                                .and(nestReaction.reactionType.eq(ReactionType.LIKE)))
+        ).coalesce(0L);
+
+        JPAQuery<NestQueryDto> query = queryFactory
+                .select(Projections.constructor(NestQueryDto.class,
+                        nest,
+                        likeCount,
+                        Expressions.numberTemplate(Double.class, "null")
+                ))
+                .from(nest)
+                .where(nest.id.in(nestIds), nest.deletedAt.isNull());
+
+        for (OrderSpecifier<?> specifier : getOrderSpecifiers(sort, null)) {
+            query.orderBy(specifier);
+        }
+
+        List<NestQueryDto> content = query.fetch();
+
+        if (!content.isEmpty()) {
+            Map<Long, List<String>> categoryMap = queryFactory
+                    .select(nestCategory.nest.id, category.name)
+                    .from(nestCategory)
+                    .join(nestCategory.category, category)
+                    .where(nestCategory.nest.id.in(nestIds))
+                    .fetch()
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            t -> t.get(nestCategory.nest.id),
+                            Collectors.mapping(t -> t.get(category.name), Collectors.toList())
+                    ));
+
+            content.forEach(dto -> dto.setCategoryNames(
+                    categoryMap.getOrDefault(dto.getNest().getId(), Collections.emptyList())
+            ));
+        }
+
+        return content;
     }
 
     @Override
