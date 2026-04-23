@@ -95,7 +95,7 @@ class NestGpsControllerTest {
     void getNestsByIds_success() throws Exception {
         List<Long> ids = List.of(1L, 2L);
         NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).content("테스트").build();
-        given(nestService.getNestsByIds(any(), eq(ids))).willReturn(List.of(summary));
+        given(nestService.getNestsByIds(any(), eq(ids), any())).willReturn(List.of(summary));
 
         mockMvc.perform(get("/api/v1/nests/summaries")
                         .param("ids", "1,2"))
@@ -124,7 +124,7 @@ class NestGpsControllerTest {
     @WithMockUserPrincipal
     void getNearbyPins_success() throws Exception {
         NestPinResponseDto pin = new NestPinResponseDto(1L, 37.5, 127.0);
-        given(nestService.getNearbyPins(any(), any(), any())).willReturn(List.of(pin));
+        given(nestService.getNearbyPins(any(), any(), any(), any())).willReturn(List.of(pin));
 
         mockMvc.perform(get("/api/v1/nests/pins")
                         .param("latitude", "37.5")
