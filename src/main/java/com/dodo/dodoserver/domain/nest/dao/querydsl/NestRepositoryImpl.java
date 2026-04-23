@@ -50,7 +50,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
     }
 
     @Override
-    public Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, Long categoryId, Pageable pageable) {
+    public Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, List<Long> categoryIds, Pageable pageable) {
         NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
                 "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
 
@@ -70,7 +70,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
-                        categoryEq(categoryId),
+                        categoryIn(categoryIds),
                         nest.deletedAt.isNull()
                 )
                 .groupBy(nest.id)
@@ -90,7 +90,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
-                        categoryEq(categoryId),
+                        categoryIn(categoryIds),
                         nest.deletedAt.isNull()
                 )
                 .fetchOne();
@@ -110,8 +110,8 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .fetchOne();
     }
 
-    private BooleanExpression categoryEq(Long categoryId) {
-        return categoryId != null ? nestCategory.category.id.eq(categoryId) : null;
+    private BooleanExpression categoryIn(List<Long> categoryIds) {
+        return categoryIds != null && !categoryIds.isEmpty() ? nestCategory.category.id.in(categoryIds) : null;
     }
 
     private List<OrderSpecifier<?>> getOrderSpecifiers(Sort sort, Point point) {

@@ -441,7 +441,7 @@ public class NestService {
      */
     @Transactional(readOnly = true)
     public Page<NestSummaryResponseDto> getNearNestsByCategory(
-            Long userId, Double latitude, Double longitude, Double radiusMeter, Long categoryId, Pageable pageable) {
+            Long userId, Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds, Pageable pageable) {
         
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -449,7 +449,7 @@ public class NestService {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
 
-        Page<NestQueryDto> nests = nestRepository.findNearbyNests(point, radius, categoryId, pageable);
+        Page<NestQueryDto> nests = nestRepository.findNearbyNests(point, radius, categoryIds, pageable);
         
         if (nests.isEmpty()) return Page.empty(pageable);
 

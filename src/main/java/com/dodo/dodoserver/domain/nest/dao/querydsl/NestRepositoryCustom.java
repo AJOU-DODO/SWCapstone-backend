@@ -10,6 +10,6 @@ import java.util.List;
 
 public interface NestRepositoryCustom {
     List<NestPinResponseDto> findNearbyPins(Point point, Double radiusMeter);
-    Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, Long categoryId, Pageable pageable);
+    Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, List<Long> categoryIds, Pageable pageable);
     Double calculateDistance(Long nestId, Point point);
 }
