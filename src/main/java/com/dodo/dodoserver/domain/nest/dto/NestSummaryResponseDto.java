@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class NestSummaryResponseDto {
     private Long id;
-    private String title;
+    private String content;
     private String thumbnailUrl;
     private Long likeCount;
     private Double distance;
@@ -18,9 +18,18 @@ public class NestSummaryResponseDto {
 
     public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked, Long likeCount, Double distance) {
         String thumbnail = nest.getImages().isEmpty() ? null : nest.getImages().get(0).getImageUrl();
+
+        String displayContent = nest.getContent();
+        if (displayContent != null) {
+            int newlineIndex = displayContent.indexOf('\n');
+            if (newlineIndex != -1) {
+                displayContent = displayContent.substring(0, newlineIndex);
+            }
+        }
+
         return NestSummaryResponseDto.builder()
                 .id(nest.getId())
-                .title(nest.getTitle())
+                .content(displayContent)
                 .thumbnailUrl(thumbnail)
                 .likeCount(likeCount != null ? likeCount : 0L)
                 .distance(distance)
