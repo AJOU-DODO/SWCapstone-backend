@@ -40,12 +40,17 @@ public class UserDeviceService {
         userDeviceRepository.findByFcmToken(requestDto.getFcmToken())
                 .ifPresentOrElse(
                         device -> {
-                            device.setUser(user); // 주인이 바뀌었을 수도 있음
-                            device.setDeviceType(requestDto.getDeviceType());
-                            device.setLastActiveAt(LocalDateTime.now());
-                            log.info("기존 기기 토큰 정보 갱신: {}", user.getId());
+                            if (!device.getUser().equals(user) ||
+                                    device.getDeviceType() != requestDto.getDeviceType()) {
+
+                                device.setUser(user);
+                                device.setDeviceType(requestDto.getDeviceType());
+                                device.setLastActiveAt(LocalDateTime.now());
+                                log.info("기기 정보 업데이트 수행: {}", user.getId());
+                            }
                         },
                         () -> {
+
                             UserDevice newDevice = UserDevice.builder()
                                     .user(user)
                                     .fcmToken(requestDto.getFcmToken())
