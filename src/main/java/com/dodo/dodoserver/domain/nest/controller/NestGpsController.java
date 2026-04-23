@@ -60,10 +60,10 @@ public class NestGpsController {
             @RequestParam Double latitude,
             @RequestParam Double longitude,
             @RequestParam(required = false) Double radiusMeter,
-            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) List<Long> categoryIds,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        return ApiResponseDto.success(nestService.getNearNestsByCategory(principal.getId(), latitude, longitude, radiusMeter, categoryId, pageable));
+        return ApiResponseDto.success(nestService.getNearNestsByCategory(principal.getId(), latitude, longitude, radiusMeter, categoryIds, pageable));
     }
 
     /**

@@ -61,6 +61,7 @@ class UserDeviceServiceTest {
         DeviceRequestDto requestDto = new DeviceRequestDto("existing-token", DeviceType.IOS);
         User user = User.builder().id(userId).email("test@example.com").build();
         UserDevice existingDevice = UserDevice.builder()
+                .user(user)
                 .fcmToken("existing-token")
                 .deviceType(DeviceType.ANDROID)
                 .build();
@@ -74,6 +75,34 @@ class UserDeviceServiceTest {
         // then
         assertThat(existingDevice.getDeviceType()).isEqualTo(DeviceType.IOS);
         assertThat(existingDevice.getUser()).isEqualTo(user);
+        verify(userDeviceRepository, never()).save(any(UserDevice.class));
+    }
+
+    @Test
+    @DisplayName("기기 등록 성공 - 다른 유저의 토큰인 경우 소유권 이전")
+    void registerOrUpdateDevice_reassign() {
+        // given
+        Long newUserId = 1L;
+        Long oldUserId = 2L;
+        DeviceRequestDto requestDto = new DeviceRequestDto("existing-token", DeviceType.ANDROID);
+        
+        User newUser = User.builder().id(newUserId).email("new@example.com").build();
+        User oldUser = User.builder().id(oldUserId).email("old@example.com").build();
+        
+        UserDevice existingDevice = UserDevice.builder()
+                .user(oldUser)
+                .fcmToken("existing-token")
+                .deviceType(DeviceType.ANDROID)
+                .build();
+
+        given(userRepository.findById(newUserId)).willReturn(Optional.of(newUser));
+        given(userDeviceRepository.findByFcmToken("existing-token")).willReturn(Optional.of(existingDevice));
+
+        // when
+        userDeviceService.registerOrUpdateDevice(newUserId, requestDto);
+
+        // then
+        assertThat(existingDevice.getUser()).isEqualTo(newUser);
         verify(userDeviceRepository, never()).save(any(UserDevice.class));
     }
 

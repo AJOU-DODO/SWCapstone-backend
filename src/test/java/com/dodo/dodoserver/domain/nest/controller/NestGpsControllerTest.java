@@ -94,7 +94,7 @@ class NestGpsControllerTest {
     @WithMockUserPrincipal
     void getNestsByIds_success() throws Exception {
         List<Long> ids = List.of(1L, 2L);
-        NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).title("테스트").build();
+        NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).content("테스트").build();
         given(nestService.getNestsByIds(any(), eq(ids))).willReturn(List.of(summary));
 
         mockMvc.perform(get("/api/v1/nests/summaries")
@@ -107,7 +107,7 @@ class NestGpsControllerTest {
     @DisplayName("반경 내 둥지 목록 조회 성공")
     @WithMockUserPrincipal
     void getNearbyNests_success() throws Exception {
-        NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).title("테스트").build();
+        NestSummaryResponseDto summary = NestSummaryResponseDto.builder().id(1L).content("테스트").build();
         Page<NestSummaryResponseDto> page = new PageImpl<>(List.of(summary));
         
         given(nestService.getNearNestsByCategory(any(), any(), any(), any(), any(), any())).willReturn(page);

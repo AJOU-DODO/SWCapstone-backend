@@ -1,8 +1,10 @@
 package com.dodo.dodoserver.domain.nest.dto;
 
 import com.dodo.dodoserver.domain.nest.entity.Nest;
-import com.dodo.dodoserver.domain.nest.entity.NestImage;
 import lombok.*;
+
+import java.util.Collections;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -10,19 +12,39 @@ import lombok.*;
 @Builder
 public class NestSummaryResponseDto {
     private Long id;
-    private String title;
+    private String content;
     private String thumbnailUrl;
+    private Long likeCount;
+    private Double distance;
+    private List<String> categoryNames;
     private boolean isAd;
     private boolean isUnlocked;
 
-    public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked) {
+    public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked, Long likeCount, Double distance, List<String> categoryNames) {
         String thumbnail = nest.getImages().isEmpty() ? null : nest.getImages().get(0).getImageUrl();
+
+        String displayContent = nest.getContent();
+        if (displayContent != null) {
+            int newlineIndex = displayContent.indexOf('\n');
+            if (newlineIndex != -1) {
+                displayContent = displayContent.substring(0, newlineIndex);
+            }
+        }
+
         return NestSummaryResponseDto.builder()
                 .id(nest.getId())
-                .title(nest.getTitle())
+                .content(displayContent)
                 .thumbnailUrl(thumbnail)
+                .likeCount(likeCount != null ? likeCount : 0L)
+                .distance(distance)
+                .categoryNames(categoryNames)
                 .isAd(nest.isAd())
                 .isUnlocked(isUnlocked)
                 .build();
     }
+
+    public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked) {
+        return from(nest, isUnlocked, 0L, null, Collections.emptyList());
+    }
 }
+

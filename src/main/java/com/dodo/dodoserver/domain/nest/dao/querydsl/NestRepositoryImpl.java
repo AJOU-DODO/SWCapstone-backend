@@ -1,0 +1,181 @@
+package com.dodo.dodoserver.domain.nest.dao.querydsl;
+
+import com.dodo.dodoserver.domain.nest.dto.NestPinResponseDto;
+import com.dodo.dodoserver.domain.nest.dto.NestQueryDto;
+import com.dodo.dodoserver.domain.nest.entity.*;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.core.types.dsl.NumberTemplate;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Point;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.dodo.dodoserver.domain.nest.entity.QNest.nest;
+import static com.dodo.dodoserver.domain.nest.entity.QNestLocation.nestLocation;
+import static com.dodo.dodoserver.domain.nest.entity.QNestCategory.nestCategory;
+import static com.dodo.dodoserver.domain.nest.entity.QNestReaction.nestReaction;
+import static com.dodo.dodoserver.domain.category.entity.QCategory.category;
+
+@RequiredArgsConstructor
+public class NestRepositoryImpl implements NestRepositoryCustom {
+
+    private final JPAQueryFactory queryFactory;
+
+    @Override
+    public List<NestPinResponseDto> findNearbyPins(Point point, Double radiusMeter) {
+        NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
+                "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
+
+        return queryFactory
+                .select(Projections.constructor(NestPinResponseDto.class,
+                        nest.id,
+                        Expressions.numberTemplate(Double.class, "ST_Latitude({0})", nestLocation.point),
+                        Expressions.numberTemplate(Double.class, "ST_Longitude({0})", nestLocation.point)
+                ))
+                .from(nest)
+                .join(nest.location, nestLocation)
+                .where(distance.loe(radiusMeter), nest.deletedAt.isNull())
+                .fetch();
+    }
+
+    @Override
+    public Page<NestQueryDto> findNearbyNests(Point point, Double radiusMeter, List<Long> categoryIds, Pageable pageable) {
+        NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
+                "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
+
+        NumberExpression<Long> likeCount = Expressions.asNumber(
+                JPAExpressions.select(nestReaction.count())
+                        .from(nestReaction)
+                        .where(nestReaction.nest.id.eq(nest.id)
+                                .and(nestReaction.reactionType.eq(ReactionType.LIKE)))
+        ).coalesce(0L);
+
+        JPAQuery<NestQueryDto> query = queryFactory
+                .select(Projections.constructor(NestQueryDto.class,
+                        nest,
+                        likeCount,
+                        distance
+                ))
+                .from(nest)
+                .join(nest.location, nestLocation)
+                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
+                .where(
+                        distance.loe(radiusMeter),
+                        categoryIn(categoryIds),
+                        nest.deletedAt.isNull()
+                )
+                .groupBy(nest.id)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize());
+
+        for (OrderSpecifier<?> specifier : getOrderSpecifiers(pageable.getSort(), point)) {
+            query.orderBy(specifier);
+        }
+
+        List<NestQueryDto> content = query.fetch();
+
+        if (!content.isEmpty()) {
+            List<Long> nestIds = content.stream()
+                    .map(dto -> dto.getNest().getId())
+                    .collect(Collectors.toList());
+
+            Map<Long, List<String>> categoryMap = queryFactory
+                    .select(nestCategory.nest.id, category.name)
+                    .from(nestCategory)
+                    .join(nestCategory.category, category)
+                    .where(nestCategory.nest.id.in(nestIds))
+                    .fetch()
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            t -> t.get(nestCategory.nest.id),
+                            Collectors.mapping(t -> t.get(category.name), Collectors.toList())
+                    ));
+
+            content.forEach(dto -> dto.setCategoryNames(
+                    categoryMap.getOrDefault(dto.getNest().getId(), Collections.emptyList())
+            ));
+        }
+
+        Long totalCount = queryFactory
+                .select(nest.id.countDistinct())
+                .from(nest)
+                .join(nest.location, nestLocation)
+                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
+                .where(
+                        distance.loe(radiusMeter),
+                        categoryIn(categoryIds),
+                        nest.deletedAt.isNull()
+                )
+                .fetchOne();
+
+        long total = totalCount != null ? totalCount : 0L;
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public Double calculateDistance(Long nestId, Point point) {
+        return queryFactory
+                .select(Expressions.numberTemplate(Double.class,
+                        "ST_Distance_Sphere({0}, {1})", nestLocation.point, point))
+                .from(nestLocation)
+                .where(nestLocation.nest.id.eq(nestId))
+                .fetchOne();
+    }
+
+    private BooleanExpression categoryIn(List<Long> categoryIds) {
+        return categoryIds != null && !categoryIds.isEmpty() ? nestCategory.category.id.in(categoryIds) : null;
+    }
+
+    private List<OrderSpecifier<?>> getOrderSpecifiers(Sort sort, Point point) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+
+        if (sort.isUnsorted()) {
+            specifiers.add(new OrderSpecifier<>(Order.DESC, nest.createdAt));
+            return specifiers;
+        }
+
+        for (Sort.Order order : sort) {
+            Order direction = order.getDirection().isAscending() ? Order.ASC : Order.DESC;
+            String property = order.getProperty();
+
+            switch (property) {
+                case "createdAt", "created_at" -> specifiers.add(new OrderSpecifier<>(direction, nest.createdAt));
+                case "viewCount", "view_count" -> specifiers.add(new OrderSpecifier<>(direction, nest.viewCount));
+                case "distance" -> {
+                    NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
+                            "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
+                    specifiers.add(new OrderSpecifier<>(direction, distance));
+                }
+                case "like", "likeCount" -> {
+                    NumberExpression<Long> likeCount = Expressions.asNumber(
+                            JPAExpressions.select(nestReaction.count())
+                                    .from(nestReaction)
+                                    .where(nestReaction.nest.id.eq(nest.id)
+                                            .and(nestReaction.reactionType.eq(ReactionType.LIKE)))
+                    ).coalesce(0L);
+                    specifiers.add(new OrderSpecifier<>(direction, likeCount));
+                }
+                default -> specifiers.add(new OrderSpecifier<>(direction, Expressions.stringPath(nest, property)));
+            }
+        }
+
+        return specifiers;
+    }
+}
