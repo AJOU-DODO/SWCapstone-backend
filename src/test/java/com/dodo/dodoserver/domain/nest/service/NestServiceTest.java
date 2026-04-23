@@ -83,7 +83,7 @@ class NestServiceTest {
 
         NestSummaryResponseDto response = nestService.createNest(user.getId(), requestDto);
 
-        assertThat(response.getTitle()).isEqualTo("제목");
+        assertThat(response.getContent()).isEqualTo("내용");
         verify(nestRepository).save(any(Nest.class));
     }
 
@@ -99,7 +99,7 @@ class NestServiceTest {
 
         NestSummaryResponseDto response = nestService.updateNest(user.getId(), nestId, requestDto);
 
-        assertThat(response.getTitle()).isEqualTo("수정제목");
+        assertThat(response.getContent()).isEqualTo("수정내용");
         assertThat(nest.getContent()).isEqualTo("수정내용");
     }
 
