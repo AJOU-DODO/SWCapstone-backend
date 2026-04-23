@@ -163,7 +163,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 case "like", "likeCount" -> {
                     NumberExpression<Long> likeCount = nestReaction.reactionType
                             .when(ReactionType.LIKE).then(1L)
-                            .otherwise(0L).sum();
+                            .otherwise(0L).sum().coalesce(0L);
                     specifiers.add(new OrderSpecifier<>(direction, likeCount));
                 }
                 default -> specifiers.add(new OrderSpecifier<>(direction, Expressions.stringPath(nest, property)));
