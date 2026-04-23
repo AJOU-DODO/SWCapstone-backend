@@ -10,6 +10,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberTemplate;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -58,9 +59,12 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
         NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
                 "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
 
-        NumberExpression<Long> likeCount = nestReaction.reactionType
-                .when(ReactionType.LIKE).then(1L)
-                .otherwise(0L).sum().coalesce(0L);
+        NumberExpression<Long> likeCount = Expressions.asNumber(
+                JPAExpressions.select(nestReaction.count())
+                        .from(nestReaction)
+                        .where(nestReaction.nest.id.eq(nest.id)
+                                .and(nestReaction.reactionType.eq(ReactionType.LIKE)))
+        ).coalesce(0L);
 
         JPAQuery<NestQueryDto> query = queryFactory
                 .select(Projections.constructor(NestQueryDto.class,
@@ -71,7 +75,6 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .from(nest)
                 .join(nest.location, nestLocation)
                 .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
-                .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
@@ -161,9 +164,12 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                     specifiers.add(new OrderSpecifier<>(direction, distance));
                 }
                 case "like", "likeCount" -> {
-                    NumberExpression<Long> likeCount = nestReaction.reactionType
-                            .when(ReactionType.LIKE).then(1L)
-                            .otherwise(0L).sum().coalesce(0L);
+                    NumberExpression<Long> likeCount = Expressions.asNumber(
+                            JPAExpressions.select(nestReaction.count())
+                                    .from(nestReaction)
+                                    .where(nestReaction.nest.id.eq(nest.id)
+                                            .and(nestReaction.reactionType.eq(ReactionType.LIKE)))
+                    ).coalesce(0L);
                     specifiers.add(new OrderSpecifier<>(direction, likeCount));
                 }
                 default -> specifiers.add(new OrderSpecifier<>(direction, Expressions.stringPath(nest, property)));
