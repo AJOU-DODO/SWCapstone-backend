@@ -465,7 +465,7 @@ public class NestService {
         return nests.map(dto -> {
             Nest nestEntity = dto.getNest();
             boolean isUnlocked = nestEntity.getCreator().equals(user) || unlockedNestIds.contains(nestEntity.getId());
-            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance());
+            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
         });
     }
 

@@ -20,12 +20,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dodo.dodoserver.domain.nest.entity.QNest.nest;
 import static com.dodo.dodoserver.domain.nest.entity.QNestLocation.nestLocation;
 import static com.dodo.dodoserver.domain.nest.entity.QNestCategory.nestCategory;
 import static com.dodo.dodoserver.domain.nest.entity.QNestReaction.nestReaction;
+import static com.dodo.dodoserver.domain.category.entity.QCategory.category;
 
 @RequiredArgsConstructor
 public class NestRepositoryImpl implements NestRepositoryCustom {
@@ -82,6 +86,28 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
         }
 
         List<NestQueryDto> content = query.fetch();
+
+        if (!content.isEmpty()) {
+            List<Long> nestIds = content.stream()
+                    .map(dto -> dto.getNest().getId())
+                    .collect(Collectors.toList());
+
+            Map<Long, List<String>> categoryMap = queryFactory
+                    .select(nestCategory.nest.id, category.name)
+                    .from(nestCategory)
+                    .join(nestCategory.category, category)
+                    .where(nestCategory.nest.id.in(nestIds))
+                    .fetch()
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            t -> t.get(nestCategory.nest.id),
+                            Collectors.mapping(t -> t.get(category.name), Collectors.toList())
+                    ));
+
+            content.forEach(dto -> dto.setCategoryNames(
+                    categoryMap.getOrDefault(dto.getNest().getId(), Collections.emptyList())
+            ));
+        }
 
         Long totalCount = queryFactory
                 .select(nest.id.countDistinct())
