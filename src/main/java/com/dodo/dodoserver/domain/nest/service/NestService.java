@@ -19,6 +19,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -250,24 +251,29 @@ public class NestService {
     }
 
     /**
-     * ID 리스트 둥지 요약 정보 조회 (N+1 최적화)
+     * ID 리스트 둥지 요약 정보 조회 (정렬 추가)
      */
     @Transactional(readOnly = true)
-    public List<NestSummaryResponseDto> getNestsByIds(Long userId, List<Long> nestIds) {
+    public List<NestSummaryResponseDto> getNestsByIds(Long userId, List<Long> nestIds, Sort sort) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        List<Nest> nests = nestRepository.findAllById(nestIds);
-        if (nests.isEmpty()) return Collections.emptyList();
+        if (nestIds == null || nestIds.isEmpty()) return Collections.emptyList();
+
+        List<NestQueryDto> nestDtos = nestRepository.findNestsByIdsCustom(nestIds, sort);
+        if (nestDtos.isEmpty()) return Collections.emptyList();
+
+        List<Nest> nestEntities = nestDtos.stream().map(NestQueryDto::getNest).collect(Collectors.toList());
 
         // 해금 이력 일괄 조회
-        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nests).stream()
+        Set<Long> unlockedNestIds = unlockHistoryRepository.findAllByUserAndNestIn(user, nestEntities).stream()
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
-        return nests.stream().map(nest -> {
+        return nestDtos.stream().map(dto -> {
+            Nest nest = dto.getNest();
             boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
-            return NestSummaryResponseDto.from(nest, isUnlocked);
+            return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
         }).collect(Collectors.toList());
     }
 
@@ -430,10 +436,10 @@ public class NestService {
      * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
      */
     @Transactional(readOnly = true)
-    public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter) {
+    public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
         double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
-        return nestRepository.findNearbyPins(point, radius);
+        return nestRepository.findNearbyPins(point, radius, categoryIds);
     }
 
     /**
