@@ -40,7 +40,7 @@ public class UserDeviceService {
         userDeviceRepository.findByFcmToken(requestDto.getFcmToken())
                 .ifPresentOrElse(
                         device -> {
-                            if (!device.getUser().equals(user) ||
+                            if (!device.getUser().getId().equals(user.getId()) ||
                                     device.getDeviceType() != requestDto.getDeviceType()) {
 
                                 device.setUser(user);
