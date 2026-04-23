@@ -255,10 +255,10 @@ public class NestService {
      */
     @Transactional(readOnly = true)
     public List<NestSummaryResponseDto> getNestsByIds(Long userId, List<Long> nestIds, Sort sort) {
+        if (nestIds == null || nestIds.isEmpty()) return Collections.emptyList();
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-        if (nestIds == null || nestIds.isEmpty()) return Collections.emptyList();
 
         List<NestQueryDto> nestDtos = nestRepository.findNestsByIdsCustom(nestIds, sort);
         if (nestDtos.isEmpty()) return Collections.emptyList();
