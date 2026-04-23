@@ -73,7 +73,7 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .select(Projections.constructor(NestQueryDto.class,
                         nest,
                         likeCount,
-                        Expressions.numberTemplate(Double.class, "null")
+                        Expressions.numberTemplate(Double.class, "NULL")
                 ))
                 .from(nest)
                 .where(nest.id.in(nestIds), nest.deletedAt.isNull());
