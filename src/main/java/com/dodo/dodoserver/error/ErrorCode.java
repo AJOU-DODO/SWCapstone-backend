@@ -38,7 +38,8 @@ public enum ErrorCode {
     NEST_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "둥지를 찾을 수 없습니다."),
     OUT_OF_UNLOCK_RADIUS(HttpStatus.BAD_REQUEST, "N002", "해당 위치에서 너무 멀어 해금할 수 없습니다."),
     ALREADY_UNLOCKED(HttpStatus.BAD_REQUEST, "N003", "이미 해금된 둥지입니다."),
-    NOT_NEST_CREATOR(HttpStatus.FORBIDDEN, "N004", "둥지 작성자만 권한이 있습니다.");
+    NOT_NEST_CREATOR(HttpStatus.FORBIDDEN, "N004", "둥지 작성자만 권한이 있습니다."),
+    DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "N005", "임시 저장된 둥지를 찾을 수 없습니다.");
 
 
 

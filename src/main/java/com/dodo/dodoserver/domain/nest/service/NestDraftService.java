@@ -139,7 +139,7 @@ public class NestDraftService {
 
     private NestDraft getDraftIfOwner(Long userId, Long draftId) {
         NestDraft draft = nestDraftRepository.findById(draftId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DRAFT_NOT_FOUND));
 
         if (!draft.getCreator().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
