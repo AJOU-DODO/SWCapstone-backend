@@ -50,13 +50,11 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 ))
                 .from(nest)
                 .join(nest.location, nestLocation)
-                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
                         nest.deletedAt.isNull()
                 )
-                .groupBy(nest.id)
                 .fetch();
     }
 
@@ -125,13 +123,11 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 ))
                 .from(nest)
                 .join(nest.location, nestLocation)
-                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
                         nest.deletedAt.isNull()
                 )
-                .groupBy(nest.id)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize());
 
@@ -167,7 +163,6 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .select(nest.id.countDistinct())
                 .from(nest)
                 .join(nest.location, nestLocation)
-                .leftJoin(nestCategory).on(nestCategory.nest.eq(nest))
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
@@ -191,7 +186,12 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
     }
 
     private BooleanExpression categoryIn(List<Long> categoryIds) {
-        return categoryIds != null && !categoryIds.isEmpty() ? nestCategory.category.id.in(categoryIds) : null;
+        return categoryIds != null && !categoryIds.isEmpty() ?
+                JPAExpressions.selectOne()
+                        .from(nestCategory)
+                        .where(nestCategory.nest.eq(nest)
+                                .and(nestCategory.category.id.in(categoryIds)))
+                        .exists() : null;
     }
 
     private List<OrderSpecifier<?>> getOrderSpecifiers(Sort sort, Point point) {
