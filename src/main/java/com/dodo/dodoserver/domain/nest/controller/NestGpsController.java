@@ -45,9 +45,10 @@ public class NestGpsController {
     @GetMapping("/summaries")
     public ApiResponseDto<List<NestSummaryResponseDto>> getNestsByIds(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam List<Long> ids) {
+            @RequestParam List<Long> ids,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        return ApiResponseDto.success(nestService.getNestsByIds(principal.getId(), ids));
+        return ApiResponseDto.success(nestService.getNestsByIds(principal.getId(), ids, pageable.getSort()));
     }
 
     /**
@@ -73,8 +74,9 @@ public class NestGpsController {
     public ApiResponseDto<List<NestPinResponseDto>> getNearbyPins(
             @RequestParam Double latitude,
             @RequestParam Double longitude,
-            @RequestParam(required = false) Double radiusMeter) {
+            @RequestParam(required = false) Double radiusMeter,
+            @RequestParam(required = false) List<Long> categoryIds) {
 
-        return ApiResponseDto.success(nestService.getNearbyPins(latitude, longitude, radiusMeter));
+        return ApiResponseDto.success(nestService.getNearbyPins(latitude, longitude, radiusMeter, categoryIds));
     }
 }

@@ -395,12 +395,14 @@ class NestServiceTest {
         List<Long> ids = List.of(1L, 2L);
         Nest n1 = Nest.builder().id(1L).creator(user).images(new ArrayList<>()).build();
         Nest n2 = Nest.builder().id(2L).creator(user).images(new ArrayList<>()).build();
+        NestQueryDto dto1 = new NestQueryDto(n1, 0L, null);
+        NestQueryDto dto2 = new NestQueryDto(n2, 0L, null);
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-        given(nestRepository.findAllById(ids)).willReturn(List.of(n1, n2));
+        given(nestRepository.findNestsByIdsCustom(eq(ids), any())).willReturn(List.of(dto1, dto2));
         given(unlockHistoryRepository.findAllByUserAndNestIn(eq(user), any())).willReturn(new ArrayList<>());
 
-        List<NestSummaryResponseDto> result = nestService.getNestsByIds(user.getId(), ids);
+        List<NestSummaryResponseDto> result = nestService.getNestsByIds(user.getId(), ids, org.springframework.data.domain.Sort.unsorted());
 
         assertThat(result).hasSize(2);
     }

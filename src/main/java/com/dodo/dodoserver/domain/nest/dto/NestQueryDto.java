@@ -23,4 +23,11 @@ public class NestQueryDto {
         this.likeCount = likeCount;
         this.distance = distance;
     }
+
+    public NestQueryDto(Nest nest, Object likeCount, Double distance) {
+        this.nest = nest;
+        this.likeCount = (likeCount instanceof Long) ? (Long) likeCount : 
+                         (likeCount instanceof Number) ? ((Number) likeCount).longValue() : 0L;
+        this.distance = distance;
+    }
 }
