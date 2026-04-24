@@ -79,11 +79,15 @@ class NestServiceTest {
     void createNest_success() {
         NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, null, null, false);
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-        given(nestRepository.save(any(Nest.class))).willAnswer(inv -> (Nest) inv.getArgument(0));
+        given(nestRepository.save(any(Nest.class))).willAnswer(inv -> {
+            Nest nest = inv.getArgument(0);
+            nest.setId(100L);
+            return nest;
+        });
 
-        NestSummaryResponseDto response = nestService.createNest(user.getId(), requestDto);
+        NestSimpleResponseDto response = nestService.createNest(user.getId(), requestDto);
 
-        assertThat(response.getContent()).isEqualTo("내용");
+        assertThat(response.getId()).isEqualTo(100L);
         verify(nestRepository).save(any(Nest.class));
     }
 
@@ -97,9 +101,9 @@ class NestServiceTest {
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
-        NestSummaryResponseDto response = nestService.updateNest(user.getId(), nestId, requestDto);
+        NestSimpleResponseDto response = nestService.updateNest(user.getId(), nestId, requestDto);
 
-        assertThat(response.getContent()).isEqualTo("수정내용");
+        assertThat(response.getId()).isEqualTo(nestId);
         assertThat(nest.getContent()).isEqualTo("수정내용");
     }
 

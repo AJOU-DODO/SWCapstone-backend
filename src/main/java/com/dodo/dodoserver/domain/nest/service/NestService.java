@@ -52,7 +52,7 @@ public class NestService {
      * 새로운 둥지(Nest) 생성
      */
     @Transactional
-    public NestSummaryResponseDto createNest(Long userId, NestCreateRequestDto requestDto) {
+    public NestSimpleResponseDto createNest(Long userId, NestCreateRequestDto requestDto) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -99,14 +99,14 @@ public class NestService {
         }
 
         log.info("새로운 둥지 생성 완료: ID={}, Title={}", savedNest.getId(), savedNest.getTitle());
-        return NestSummaryResponseDto.from(savedNest, true);
+        return NestSimpleResponseDto.from(savedNest);
     }
 
     /**
      * 둥지 정보 수정
      */
     @Transactional
-    public NestSummaryResponseDto updateNest(Long userId, Long nestId, NestUpdateRequestDto requestDto) {
+    public NestSimpleResponseDto updateNest(Long userId, Long nestId, NestUpdateRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
@@ -155,7 +155,7 @@ public class NestService {
         }
 
         log.info("둥지 수정 완료: ID={}", nestId);
-        return NestSummaryResponseDto.from(nest, true);
+        return NestSimpleResponseDto.from(nest);
     }
 
     /**

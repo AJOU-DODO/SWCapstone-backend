@@ -19,6 +19,7 @@ import com.dodo.dodoserver.domain.nest.dto.CommentResponseDto;
 import com.dodo.dodoserver.domain.nest.dto.CommentUpdateRequestDto;
 import com.dodo.dodoserver.domain.nest.dto.NestCreateRequestDto;
 import com.dodo.dodoserver.domain.nest.dto.NestDetailResponseDto;
+import com.dodo.dodoserver.domain.nest.dto.NestSimpleResponseDto;
 import com.dodo.dodoserver.domain.nest.dto.NestSummaryResponseDto;
 import com.dodo.dodoserver.domain.nest.dto.NestUpdateRequestDto;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
@@ -39,7 +40,7 @@ public class NestPostController {
 	 * 새로운 둥지(Nest) 생성
 	 */
 	@PostMapping
-	public ApiResponseDto<NestSummaryResponseDto> createNest(
+	public ApiResponseDto<NestSimpleResponseDto> createNest(
 		@AuthenticationPrincipal UserPrincipal principal,
 		@RequestBody @Valid NestCreateRequestDto requestDto) {
 
@@ -61,7 +62,7 @@ public class NestPostController {
 	 * 둥지 정보 수정 (작성자 전용)
 	 */
 	@PatchMapping("/{id}")
-	public ApiResponseDto<NestSummaryResponseDto> updateNest(
+	public ApiResponseDto<NestSimpleResponseDto> updateNest(
 		@AuthenticationPrincipal UserPrincipal principal,
 		@PathVariable Long id,
 		@RequestBody @Valid NestUpdateRequestDto requestDto) {

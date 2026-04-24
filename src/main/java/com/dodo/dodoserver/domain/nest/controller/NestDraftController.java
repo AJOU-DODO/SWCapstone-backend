@@ -73,7 +73,7 @@ public class NestDraftController {
      * 임시 저장 발행
      */
     @PostMapping("/{id}/publish")
-    public ApiResponseDto<NestSummaryResponseDto> publishDraft(
+    public ApiResponseDto<NestSimpleResponseDto> publishDraft(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id) {
         return ApiResponseDto.success(nestDraftService.publishDraft(userPrincipal.getId(), id));

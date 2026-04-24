@@ -149,13 +149,13 @@ class NestDraftControllerTest {
     @WithMockUserPrincipal
     void publishDraft_success() throws Exception {
         Long draftId = 1L;
-        NestSummaryResponseDto responseDto = NestSummaryResponseDto.builder().id(100L).content("발행완료").build();
+        NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(100L).build();
 
         given(nestDraftService.publishDraft(any(), eq(draftId))).willReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/nests/drafts/{id}/publish", draftId)
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("발행완료"));
+                .andExpect(jsonPath("$.data.id").value(100L));
     }
 }

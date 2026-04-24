@@ -108,7 +108,7 @@ public class NestDraftService {
      * 임시 저장 데이터를 둥지로 정식 발행
      */
     @Transactional
-    public NestSummaryResponseDto publishDraft(Long userId, Long draftId) {
+    public NestSimpleResponseDto publishDraft(Long userId, Long draftId) {
         NestDraft draft = getDraftIfOwner(userId, draftId);
 
         // 발행 시 필수 값 검증
@@ -126,7 +126,7 @@ public class NestDraftService {
                 false // isAd 기본값
         );
 
-        NestSummaryResponseDto response = nestService.createNest(userId, nestCreateRequestDto);
+        NestSimpleResponseDto response = nestService.createNest(userId, nestCreateRequestDto);
 
         // 발행 성공 시 임시 저장 데이터 삭제
         nestDraftRepository.delete(draft);

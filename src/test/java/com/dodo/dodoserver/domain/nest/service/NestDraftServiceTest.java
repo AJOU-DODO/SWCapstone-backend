@@ -148,10 +148,10 @@ class NestDraftServiceTest {
                 .build();
 
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
-        given(nestService.createNest(eq(userId), any())).willReturn(NestSummaryResponseDto.builder().id(100L).build());
+        given(nestService.createNest(eq(userId), any())).willReturn(NestSimpleResponseDto.builder().id(100L).build());
 
         // when
-        NestSummaryResponseDto response = nestDraftService.publishDraft(userId, draftId);
+        NestSimpleResponseDto response = nestDraftService.publishDraft(userId, draftId);
 
         // then
         assertThat(response.getId()).isEqualTo(100L);

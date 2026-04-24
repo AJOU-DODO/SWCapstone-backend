@@ -78,7 +78,7 @@ class NestPostControllerTest {
     @WithMockUserPrincipal
     void createNest_success() throws Exception {
         NestCreateRequestDto requestDto = new NestCreateRequestDto("새둥지", "내용", 37.5, 127.0, 100, List.of(1L), List.of("url"), false);
-        NestSummaryResponseDto responseDto = NestSummaryResponseDto.builder().id(1L).content("새둥지").build();
+        NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(1L).build();
 
         given(nestService.createNest(any(), any())).willReturn(responseDto);
 
@@ -87,7 +87,7 @@ class NestPostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("새둥지"));
+                .andExpect(jsonPath("$.data.id").value(1L));
     }
 
     @Test
@@ -136,7 +136,7 @@ class NestPostControllerTest {
     void updateNest_success() throws Exception {
         Long nestId = 1L;
         NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
-        NestSummaryResponseDto responseDto = NestSummaryResponseDto.builder().id(nestId).content("수정제목").build();
+        NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(nestId).build();
 
         given(nestService.updateNest(any(), eq(nestId), any())).willReturn(responseDto);
 
@@ -145,7 +145,7 @@ class NestPostControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content").value("수정제목"));
+                .andExpect(jsonPath("$.data.id").value(nestId));
     }
 
     @Test
