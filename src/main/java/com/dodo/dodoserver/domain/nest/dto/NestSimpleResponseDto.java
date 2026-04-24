@@ -11,11 +11,13 @@ import java.time.LocalDateTime;
 public class NestSimpleResponseDto {
     private Long id;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static NestSimpleResponseDto from(Nest nest) {
         return NestSimpleResponseDto.builder()
                 .id(nest.getId())
                 .createdAt(nest.getCreatedAt())
+                .updatedAt(nest.getUpdatedAt())
                 .build();
     }
 }
