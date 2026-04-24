@@ -142,7 +142,9 @@ class NestDraftServiceTest {
                 .creator(user)
                 .point(point)
                 .title("발행제목")
+                .content("발행내용")
                 .unlockRadius(100)
+                .categoryIds(List.of(1L))
                 .build();
 
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
@@ -158,7 +160,7 @@ class NestDraftServiceTest {
     }
 
     @Test
-    @DisplayName("임시 저장 발행 실패 - 제목 없음")
+    @DisplayName("임시 저장 발행 실패 - 필수값(제목) 없음")
     void publishDraft_fail_noTitle() {
         // given
         Long userId = 1L;
@@ -168,6 +170,9 @@ class NestDraftServiceTest {
                 .id(draftId)
                 .creator(user)
                 .title(null)
+                .content("내용")
+                .unlockRadius(100)
+                .categoryIds(List.of(1L))
                 .build();
 
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
@@ -176,5 +181,51 @@ class NestDraftServiceTest {
         assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
+    }
+
+    @Test
+    @DisplayName("임시 저장 발행 실패 - 필수값(내용) 없음")
+    void publishDraft_fail_noContent() {
+        // given
+        Long userId = 1L;
+        Long draftId = 10L;
+        User user = User.builder().id(userId).build();
+        NestDraft draft = NestDraft.builder()
+                .id(draftId)
+                .creator(user)
+                .title("제목")
+                .content(null)
+                .unlockRadius(100)
+                .categoryIds(List.of(1L))
+                .build();
+
+        given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
+
+        // when & then
+        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("임시 저장 발행 실패 - 필수값(카테고리) 없음")
+    void publishDraft_fail_noCategories() {
+        // given
+        Long userId = 1L;
+        Long draftId = 10L;
+        User user = User.builder().id(userId).build();
+        NestDraft draft = NestDraft.builder()
+                .id(draftId)
+                .creator(user)
+                .title("제목")
+                .content("내용")
+                .unlockRadius(100)
+                .categoryIds(null)
+                .build();
+
+        given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
+
+        // when & then
+        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
+                .isInstanceOf(BusinessException.class);
     }
 }

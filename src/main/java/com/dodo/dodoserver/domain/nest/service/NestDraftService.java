@@ -111,10 +111,8 @@ public class NestDraftService {
     public NestSummaryResponseDto publishDraft(Long userId, Long draftId) {
         NestDraft draft = getDraftIfOwner(userId, draftId);
 
-        // 발행 시 필수 값 검증 (예: 제목)
-        if (draft.getTitle() == null || draft.getTitle().isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE); // 혹은 적절한 에러 코드
-        }
+        // 발행 시 필수 값 검증
+        validatePublishable(draft);
 
         // NestService의 createNest를 활용하기 위해 DTO 변환
         NestCreateRequestDto nestCreateRequestDto = new NestCreateRequestDto(
@@ -135,6 +133,24 @@ public class NestDraftService {
         log.info("임시 저장 발행 완료: DraftID={}, NestID={}", draftId, response.getId());
 
         return response;
+    }
+
+    /**
+     * 발행 가능 여부 검증 (필수값 체크)
+     */
+    private void validatePublishable(NestDraft draft) {
+        if (draft.getTitle() == null || draft.getTitle().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (draft.getContent() == null || draft.getContent().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (draft.getUnlockRadius() == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (draft.getCategoryIds() == null || draft.getCategoryIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     private NestDraft getDraftIfOwner(Long userId, Long draftId) {
