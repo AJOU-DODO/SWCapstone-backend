@@ -1,5 +1,7 @@
 package com.dodo.dodoserver.domain.nest.service;
 
+import static com.dodo.dodoserver.global.common.constants.NestConstants.*;
+
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
@@ -32,6 +34,7 @@ import java.util.stream.IntStream;
 @Slf4j
 public class NestService {
 
+
     private final NestRepository nestRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -49,7 +52,7 @@ public class NestService {
      * 새로운 둥지(Nest) 생성
      */
     @Transactional
-    public NestSummaryResponseDto createNest(Long userId, NestCreateRequestDto requestDto) {
+    public NestSimpleResponseDto createNest(Long userId, NestCreateRequestDto requestDto) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -96,14 +99,14 @@ public class NestService {
         }
 
         log.info("새로운 둥지 생성 완료: ID={}, Title={}", savedNest.getId(), savedNest.getTitle());
-        return NestSummaryResponseDto.from(savedNest, true);
+        return NestSimpleResponseDto.from(savedNest);
     }
 
     /**
      * 둥지 정보 수정
      */
     @Transactional
-    public NestSummaryResponseDto updateNest(Long userId, Long nestId, NestUpdateRequestDto requestDto) {
+    public NestSimpleResponseDto updateNest(Long userId, Long nestId, NestUpdateRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
@@ -152,7 +155,7 @@ public class NestService {
         }
 
         log.info("둥지 수정 완료: ID={}", nestId);
-        return NestSummaryResponseDto.from(nest, true);
+        return NestSimpleResponseDto.from(nest);
     }
 
     /**
@@ -437,7 +440,7 @@ public class NestService {
      */
     @Transactional(readOnly = true)
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
-        double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
+        double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
         return nestRepository.findNearbyPins(point, radius, categoryIds);
     }
@@ -452,7 +455,7 @@ public class NestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        double radius = (radiusMeter != null) ? radiusMeter : 5000.0;
+        double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
 
         Page<NestQueryDto> nests = nestRepository.findNearbyNests(point, radius, categoryIds, pageable);
