@@ -140,16 +140,16 @@ public class NestDraftService {
      */
     private void validatePublishable(NestDraft draft) {
         if (draft.getTitle() == null || draft.getTitle().isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(ErrorCode.DRAFT_NOT_PUBLISHABLE);
         }
         if (draft.getContent() == null || draft.getContent().isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(ErrorCode.DRAFT_NOT_PUBLISHABLE);
         }
         if (draft.getUnlockRadius() == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(ErrorCode.DRAFT_NOT_PUBLISHABLE);
         }
         if (draft.getCategoryIds() == null || draft.getCategoryIds().isEmpty()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            throw new BusinessException(ErrorCode.DRAFT_NOT_PUBLISHABLE);
         }
     }
 

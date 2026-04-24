@@ -180,7 +180,7 @@ class NestDraftServiceTest {
         // when & then
         assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
+                .hasMessageContaining(ErrorCode.DRAFT_NOT_PUBLISHABLE.getMessage());
     }
 
     @Test

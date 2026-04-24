@@ -39,7 +39,8 @@ public enum ErrorCode {
     OUT_OF_UNLOCK_RADIUS(HttpStatus.BAD_REQUEST, "N002", "해당 위치에서 너무 멀어 해금할 수 없습니다."),
     ALREADY_UNLOCKED(HttpStatus.BAD_REQUEST, "N003", "이미 해금된 둥지입니다."),
     NOT_NEST_CREATOR(HttpStatus.FORBIDDEN, "N004", "둥지 작성자만 권한이 있습니다."),
-    DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "N005", "임시 저장된 둥지를 찾을 수 없습니다.");
+    DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "N005", "임시 저장된 둥지를 찾을 수 없습니다."),
+    DRAFT_NOT_PUBLISHABLE(HttpStatus.BAD_REQUEST, "N006", "필수 정보(제목, 내용, 반경, 카테고리)가 누락되어 발행할 수 없습니다.");
 
 
 
