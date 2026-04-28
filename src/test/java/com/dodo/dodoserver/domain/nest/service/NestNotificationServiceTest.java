@@ -119,4 +119,61 @@ class NestNotificationServiceTest {
         // then
         verify(eventPublisher, never()).publishEvent(any());
     }
+
+    @Test
+    @DisplayName("둥지 좋아요 시 둥지 제작자에게 알림 발행")
+    void sendNestLikeNotification_success() {
+        // given
+        User reactor = User.builder().id(1L).nickname("좋아요누른사람").build();
+        UserDevice device = UserDevice.builder().fcmToken("token-like").build();
+        given(userDeviceRepository.findByUserId(nest.getCreator().getId())).willReturn(List.of(device));
+
+        // when
+        nestNotificationService.sendNestLikeNotification(reactor, nest);
+
+        // then
+        ArgumentCaptor<NotificationEvent> captor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+
+        NotificationEvent event = captor.getValue();
+        assertThat(event.title()).isEqualTo(NotificationConstants.TITLE_NEST_LIKE);
+        assertThat(event.data().get(NotificationConstants.KEY_TYPE)).isEqualTo(NotificationConstants.TYPE_NEST_LIKE);
+        assertThat(event.data().get(NotificationConstants.KEY_NEST_ID)).isEqualTo(nest.getId().toString());
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 시 댓글 작성자에게 알림 발행")
+    void sendCommentLikeNotification_success() {
+        // given
+        User reactor = User.builder().id(1L).nickname("좋아요누른사람").build();
+        User commentAuthor = User.builder().id(3L).nickname("댓글작성자").build();
+        NestComment comment = NestComment.builder().id(50L).user(commentAuthor).nest(nest).build();
+        UserDevice device = UserDevice.builder().fcmToken("token-comment-like").build();
+        given(userDeviceRepository.findByUserId(commentAuthor.getId())).willReturn(List.of(device));
+
+        // when
+        nestNotificationService.sendCommentLikeNotification(reactor, comment);
+
+        // then
+        ArgumentCaptor<NotificationEvent> captor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+
+        NotificationEvent event = captor.getValue();
+        assertThat(event.title()).isEqualTo(NotificationConstants.TITLE_COMMENT_LIKE);
+        assertThat(event.data().get(NotificationConstants.KEY_TYPE)).isEqualTo(NotificationConstants.TYPE_COMMENT_LIKE);
+        assertThat(event.data().get(NotificationConstants.KEY_COMMENT_ID)).isEqualTo(comment.getId().toString());
+    }
+
+    @Test
+    @DisplayName("본인 글에 본인이 좋아요를 누르면 알림이 발행되지 않음")
+    void sendNestLikeNotification_SelfAction() {
+        // given
+        User nestCreator = nest.getCreator();
+
+        // when
+        nestNotificationService.sendNestLikeNotification(nestCreator, nest);
+
+        // then
+        verify(eventPublisher, never()).publishEvent(any());
+    }
 }
