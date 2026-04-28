@@ -33,10 +33,8 @@ public class RedisViewCountService {
         Boolean isFirstView = redisTemplate.opsForValue().setIfAbsent(userKey, "v", Duration.ofDays(1));
 
         if (Boolean.TRUE.equals(isFirstView)) {
-            // 중복이 아닐 경우 조회수 카운터 증가
             String countKey = String.format(VIEW_COUNT_KEY, nestId);
             redisTemplate.opsForValue().increment(countKey);
-            // 업데이트 대상 둥지 목록(Set)에 추가
             redisTemplate.opsForSet().add(UPDATED_NESTS_KEY, String.valueOf(nestId));
         }
     }
@@ -67,7 +65,6 @@ public class RedisViewCountService {
             Long nestId = Long.parseLong(nestIdStr);
             String countKey = String.format(VIEW_COUNT_KEY, nestId);
             
-            // 값을 가져오는 동시에 삭제하여 원자성 확보 시도 (getAndDelete는 Spring Data Redis 2.6+ 지원)
             String countStr = redisTemplate.opsForValue().getAndDelete(countKey);
             
             if (countStr != null) {
@@ -75,7 +72,6 @@ public class RedisViewCountService {
                 nestRepository.incrementViewCount(nestId, increment);
             }
             
-            // 동기화 완료된 nestId를 Set에서 제거
             redisTemplate.opsForSet().remove(UPDATED_NESTS_KEY, nestIdStr);
         }
         
