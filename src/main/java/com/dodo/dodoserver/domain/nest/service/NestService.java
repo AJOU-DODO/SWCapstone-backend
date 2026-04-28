@@ -45,6 +45,7 @@ public class NestService {
     private final UserProfileRepository userProfileRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final NestNotificationService nestNotificationService;
+    private final RedisViewCountService redisViewCountService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -291,7 +292,8 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        nest.setViewCount(nest.getViewCount() + 1);
+        // Redis 기반 조회수 증가 (중복 방지 포함)
+        redisViewCountService.incrementViewCount(nestId, userId);
 
         boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user); // 자기 자신일 경우 해금
@@ -309,7 +311,7 @@ public class NestService {
                 .title(nest.getTitle())
                 .content(nest.getContent())
                 .unlockRadius(nest.getUnlockRadius())
-                .viewCount(nest.getViewCount())
+                .viewCount(nest.getViewCount() + redisViewCountService.getCachedViewCount(nestId))
                 .isAd(nest.isAd())
                 .createdAt(nest.getCreatedAt())
                 .creatorNickname(nest.getCreator().getNickname())
