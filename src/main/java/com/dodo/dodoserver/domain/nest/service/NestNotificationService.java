@@ -56,10 +56,7 @@ public class NestNotificationService {
         }
 
         // 수신자의 FCM 토큰 목록 조회
-        List<String> fcmTokens = userDeviceRepository.findByUserId(targetUser.getId()).stream()
-                .map(UserDevice::getFcmToken)
-                .filter(Objects::nonNull)
-                .toList();
+        List<String> fcmTokens = getFcmTokens(targetUser);
 
         if (fcmTokens.isEmpty()) {
             return;
@@ -74,5 +71,62 @@ public class NestNotificationService {
         // 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
         log.info("댓글 알림 이벤트 발행 완료: TargetUser={}, Type={}", targetUser.getEmail(), type);
+    }
+
+    /**
+     * 둥지 좋아요 알림 발행
+     */
+    public void sendNestLikeNotification(User reactor, Nest nest) {
+        User targetUser = nest.getCreator();
+
+        if (reactor.getId().equals(targetUser.getId())) {
+            return;
+        }
+
+        List<String> fcmTokens = getFcmTokens(targetUser);
+        if (fcmTokens.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put(KEY_TYPE, TYPE_NEST_LIKE);
+        data.put(KEY_NEST_ID, nest.getId().toString());
+
+        eventPublisher.publishEvent(new NotificationEvent(fcmTokens, TITLE_NEST_LIKE,
+                String.format(BODY_NEST_LIKE, reactor.getNickname()), data));
+        log.info("둥지 좋아요 알림 이벤트 발행 완료: TargetUser={}, Reactor={}", targetUser.getEmail(), reactor.getNickname());
+    }
+
+    /**
+     * 댓글 좋아요 알림 발행
+     */
+    public void sendCommentLikeNotification(User reactor, NestComment comment) {
+        User targetUser = comment.getUser();
+        Nest nest = comment.getNest();
+
+        if (reactor.getId().equals(targetUser.getId())) {
+            return;
+        }
+
+        List<String> fcmTokens = getFcmTokens(targetUser);
+        if (fcmTokens.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put(KEY_TYPE, TYPE_COMMENT_LIKE);
+        data.put(KEY_NEST_ID, nest.getId().toString());
+        data.put(KEY_COMMENT_ID, comment.getId().toString());
+
+        eventPublisher.publishEvent(new NotificationEvent(fcmTokens, TITLE_COMMENT_LIKE,
+                String.format(BODY_COMMENT_LIKE, reactor.getNickname()), data));
+        log.info("댓글 좋아요 알림 이벤트 발행 완료: TargetUser={}, Reactor={}", targetUser.getEmail(), reactor.getNickname());
+    }
+
+    private List<String> getFcmTokens(User targetUser) {
+        return userDeviceRepository.findByUserId(targetUser.getId()).stream()
+                .map(UserDevice::getFcmToken)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

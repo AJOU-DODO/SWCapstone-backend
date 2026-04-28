@@ -256,6 +256,7 @@ class NestServiceTest {
 
         assertThat(comment.getLikeCount()).isEqualTo(1L);
         verify(commentLikeRepository).save(any(CommentLike.class));
+        verify(nestNotificationService).sendCommentLikeNotification(eq(user), eq(comment));
     }
 
     @Test
@@ -373,6 +374,7 @@ class NestServiceTest {
         nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
 
         verify(nestReactionRepository).save(any(NestReaction.class));
+        verify(nestNotificationService).sendNestLikeNotification(eq(user), eq(nest));
     }
 
     @Test
@@ -389,6 +391,23 @@ class NestServiceTest {
         nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
 
         verify(nestReactionRepository).delete(reaction);
+    }
+
+    @Test
+    @DisplayName("리액션 수정(DISLIKE -> LIKE) 시 알림 발송 성공")
+    void handleReaction_update_to_like() {
+        Long nestId = 1L;
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
+        NestReaction existingReaction = NestReaction.builder().user(user).nest(nest).reactionType(ReactionType.DISLIKE).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.of(existingReaction));
+
+        nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
+
+        assertThat(existingReaction.getReactionType()).isEqualTo(ReactionType.LIKE);
+        verify(nestNotificationService).sendNestLikeNotification(eq(user), eq(nest));
     }
 
     // --- 조회 (Search) 테스트 ---
