@@ -431,6 +431,7 @@ public class NestService {
             commentLikeRepository.save(like);
             comment.increaseLikeCount();
             log.info("댓글 좋아요 등록: User={}, Comment={}", userId, commentId);
+            nestNotificationService.sendCommentLikeNotification(user, comment);
         }
     }
 
@@ -538,6 +539,9 @@ public class NestService {
                 // 다른 타입이면 수정
                 reaction.setReactionType(type);
                 log.info("리액션 수정 완료: User={}, Nest={}, Type={}", userId, nestId, type);
+                if (type == ReactionType.LIKE) {
+                    nestNotificationService.sendNestLikeNotification(user, nest);
+                }
             }
         } else {
             // 없으면 신규 등록
@@ -548,6 +552,9 @@ public class NestService {
                     .build();
             nestReactionRepository.save(reaction);
             log.info("리액션 등록 완료: User={}, Nest={}, Type={}", userId, nestId, type);
+            if (type == ReactionType.LIKE) {
+                nestNotificationService.sendNestLikeNotification(user, nest);
+            }
         }
     }
 }
