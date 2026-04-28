@@ -189,7 +189,7 @@ public class NestService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
         if (!nest.getCreator().equals(user) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
-            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); 
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
         NestComment parent = null;
@@ -523,7 +523,7 @@ public class NestService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
         if (!unlockHistoryRepository.existsByUserAndNest(user, nest) && !nest.getCreator().equals(user)) {
-            throw new BusinessException(ErrorCode.ONBOARDING_REQUIRED); 
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
         Optional<NestReaction> existingReaction = nestReactionRepository.findByUserAndNest(user, nest);

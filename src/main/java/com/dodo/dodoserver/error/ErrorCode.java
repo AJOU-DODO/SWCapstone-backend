@@ -40,7 +40,8 @@ public enum ErrorCode {
     ALREADY_UNLOCKED(HttpStatus.BAD_REQUEST, "N003", "이미 해금된 둥지입니다."),
     NOT_NEST_CREATOR(HttpStatus.FORBIDDEN, "N004", "둥지 작성자만 권한이 있습니다."),
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "N005", "임시 저장된 둥지를 찾을 수 없습니다."),
-    DRAFT_NOT_PUBLISHABLE(HttpStatus.BAD_REQUEST, "N006", "필수 정보(제목, 내용, 반경, 카테고리)가 누락되어 발행할 수 없습니다.");
+    DRAFT_NOT_PUBLISHABLE(HttpStatus.BAD_REQUEST, "N006", "필수 정보(제목, 내용, 반경, 카테고리)가 누락되어 발행할 수 없습니다."),
+    NEST_NOT_UNLOCKED(HttpStatus.FORBIDDEN, "N007", "해당 둥지의 상세 내용을 보려면 해금이 필요합니다.");
 
 
 
