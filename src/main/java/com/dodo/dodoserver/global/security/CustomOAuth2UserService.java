@@ -54,7 +54,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private User saveOrUpdate(String provider, String providerId, String email, String nickname) {
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
                 .map(entity -> {
-                    entity.setNickname(nickname); // 이름이 변경되었을 수 있으므로 업데이트
+                    if (!entity.isOnboarded()) {
+                        entity.setNickname(nickname);
+                    }
                     return entity;
                 })
                 .orElse(User.builder()
