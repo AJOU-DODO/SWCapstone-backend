@@ -58,6 +58,8 @@ class NestServiceTest {
     private CommentLikeRepository commentLikeRepository;
     @Mock
     private NestNotificationService nestNotificationService;
+    @Mock
+    private RedisViewCountService redisViewCountService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User user;
@@ -216,11 +218,13 @@ class NestServiceTest {
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
+        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(5L);
 
         NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
 
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
+        verify(redisViewCountService).incrementViewCount(nestId, user.getId());
     }
 
     @Test
