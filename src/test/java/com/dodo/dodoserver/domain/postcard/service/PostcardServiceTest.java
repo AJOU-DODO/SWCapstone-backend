@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.PostcardExchangeRequestDto;
 import com.dodo.dodoserver.domain.postcard.dto.PostcardResponseDto;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -42,6 +43,8 @@ class PostcardServiceTest {
     private UnlockHistoryRepository unlockHistoryRepository;
     @Mock
     private PostcardNotificationService postcardNotificationService;
+    @Mock
+    private UserRepository userRepository;
 
     private User user;
     private Nest nest;
@@ -76,13 +79,14 @@ class PostcardServiceTest {
         // given
         PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
 
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
         // when
-        PostcardResponseDto response = postcardService.exchangePostcard(user, nest.getId(), requestDto);
+        PostcardResponseDto response = postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto);
 
         // then
         assertThat(response.getId()).isEqualTo(targetPostcard.getId());
@@ -102,13 +106,14 @@ class PostcardServiceTest {
         targetPostcard.setOriginalAuthor(user); // 둥지에 있는 엽서가 내가 쓴 것
         PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
 
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
         // when & then
-        assertThatThrownBy(() -> postcardService.exchangePostcard(user, nest.getId(), requestDto))
+        assertThatThrownBy(() -> postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.CANNOT_EXCHANGE_OWN_POSTCARD.getMessage());
     }
@@ -120,12 +125,13 @@ class PostcardServiceTest {
         myPostcard.setShared(true);
         PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
 
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
 
         // when & then
-        assertThatThrownBy(() -> postcardService.exchangePostcard(user, nest.getId(), requestDto))
+        assertThatThrownBy(() -> postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_SHARED.getMessage());
     }

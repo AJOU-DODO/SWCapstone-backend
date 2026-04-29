@@ -8,6 +8,7 @@ import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.*;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.postcard.entity.PostcardReaction;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -25,9 +26,11 @@ public class PostcardService {
     private final UnlockHistoryRepository unlockHistoryRepository;
     private final PostcardNotificationService postcardNotificationService;
     private final PostcardReactionRepository postcardReactionRepository;
+    private final UserRepository userRepository;
 
     @Transactional
-    public PostcardResponseDto createPostcard(User user, PostcardCreateRequestDto requestDto) {
+    public PostcardResponseDto createPostcard(Long userId, PostcardCreateRequestDto requestDto) {
+        User user = getUser(userId);
         Postcard postcard = Postcard.builder()
                 .originalAuthor(user)
                 .currentOwner(user)
@@ -41,8 +44,8 @@ public class PostcardService {
     }
 
     @Transactional(readOnly = true)
-    public PostcardExchangeCheckResponseDto checkExchangeAvailability(User user) {
-        int remainingCount = postcardRedisService.getRemainingExchangeCount(user.getId());
+    public PostcardExchangeCheckResponseDto checkExchangeAvailability(Long userId) {
+        int remainingCount = postcardRedisService.getRemainingExchangeCount(userId);
         
         if (remainingCount <= 0) {
             return PostcardExchangeCheckResponseDto.builder()
@@ -59,7 +62,8 @@ public class PostcardService {
     }
 
     @Transactional
-    public PostcardResponseDto exchangePostcard(User user, Long nestId, PostcardExchangeRequestDto requestDto) {
+    public PostcardResponseDto exchangePostcard(Long userId, Long nestId, PostcardExchangeRequestDto requestDto) {
+        User user = getUser(userId);
         // 1. 둥지 및 해금 여부 확인
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
@@ -69,7 +73,7 @@ public class PostcardService {
         }
 
         // 2. 일일 교환 횟수 제한 확인 및 증가 (Atomic INCR)
-        postcardRedisService.checkAndIncrementExchangeCount(user.getId());
+        postcardRedisService.checkAndIncrementExchangeCount(userId);
 
         // 3. 내 엽서 락 획득 및 검증
         Postcard myPostcard = postcardRepository.findByIdForUpdate(requestDto.getMyPostcardId())
@@ -82,7 +86,7 @@ public class PostcardService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_AVAILABLE_POSTCARD_IN_NEST));
 
         // 5. 본인 엽서 교환 차단
-        if (targetPostcard.getOriginalAuthor().getId().equals(user.getId())) {
+        if (targetPostcard.getOriginalAuthor().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.CANNOT_EXCHANGE_OWN_POSTCARD);
         }
 
@@ -97,18 +101,18 @@ public class PostcardService {
     }
 
     @Transactional(readOnly = true)
-    public PostcardResponseDto getPostcardDetail(User user, Long postcardId) {
+    public PostcardResponseDto getPostcardDetail(Long userId, Long postcardId) {
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
         return PostcardResponseDto.from(postcard);
     }
 
     @Transactional
-    public PostcardResponseDto updatePostcard(User user, Long postcardId, PostcardCreateRequestDto requestDto) {
+    public PostcardResponseDto updatePostcard(Long userId, Long postcardId, PostcardCreateRequestDto requestDto) {
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
-        if (!postcard.getCurrentOwner().getId().equals(user.getId())) {
+        if (!postcard.getCurrentOwner().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
         }
 
@@ -123,11 +127,11 @@ public class PostcardService {
     }
 
     @Transactional
-    public void deletePostcard(User user, Long postcardId) {
+    public void deletePostcard(Long userId, Long postcardId) {
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
-        if (!postcard.getCurrentOwner().getId().equals(user.getId())) {
+        if (!postcard.getCurrentOwner().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
         }
 
@@ -139,7 +143,8 @@ public class PostcardService {
     }
 
     @Transactional
-    public void addReaction(User user, Long postcardId, com.dodo.dodoserver.domain.nest.entity.ReactionType reactionType) {
+    public void addReaction(Long userId, Long postcardId, com.dodo.dodoserver.domain.nest.entity.ReactionType reactionType) {
+        User user = getUser(userId);
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
@@ -161,6 +166,11 @@ public class PostcardService {
                             postcardReactionRepository.save(reaction);
                         }
                 );
+    }
+
+    private User getUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 
     private void validateMyPostcard(User user, Postcard myPostcard) {
