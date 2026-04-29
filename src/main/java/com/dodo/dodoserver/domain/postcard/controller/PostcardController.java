@@ -3,7 +3,10 @@ package com.dodo.dodoserver.domain.postcard.controller;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.postcard.dto.*;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class PostcardController {
 
     private final PostcardService postcardService;
+    private final UserRepository userRepository;
 
     /**
      * 엽서 등록 (생성)
@@ -24,7 +28,7 @@ public class PostcardController {
     public ApiResponseDto<PostcardResponseDto> createPostcard(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestBody PostcardCreateRequestDto requestDto) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         return ApiResponseDto.success(postcardService.createPostcard(user, requestDto));
     }
 
@@ -35,7 +39,7 @@ public class PostcardController {
     public ApiResponseDto<PostcardResponseDto> getPostcardDetail(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         return ApiResponseDto.success(postcardService.getPostcardDetail(user, id));
     }
 
@@ -47,7 +51,7 @@ public class PostcardController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id,
             @RequestBody PostcardCreateRequestDto requestDto) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         return ApiResponseDto.success(postcardService.updatePostcard(user, id, requestDto));
     }
 
@@ -58,7 +62,7 @@ public class PostcardController {
     public ApiResponseDto<Void> deletePostcard(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         postcardService.deletePostcard(user, id);
         return ApiResponseDto.success(null);
     }
@@ -69,7 +73,7 @@ public class PostcardController {
     @GetMapping("/postcards/exchange-check")
     public ApiResponseDto<PostcardExchangeCheckResponseDto> checkExchangeAvailability(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         return ApiResponseDto.success(postcardService.checkExchangeAvailability(user));
     }
 
@@ -81,7 +85,7 @@ public class PostcardController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable(name = "id") Long nestId,
             @RequestBody PostcardExchangeRequestDto requestDto) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         return ApiResponseDto.success(postcardService.exchangePostcard(user, nestId, requestDto));
     }
 
@@ -93,8 +97,13 @@ public class PostcardController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id,
             @RequestParam ReactionType type) {
-        User user = userPrincipal.getUser();
+        User user = getUser(userPrincipal);
         postcardService.addReaction(user, id, type);
         return ApiResponseDto.success(null);
+    }
+
+    private User getUser(UserPrincipal userPrincipal) {
+        return userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }
