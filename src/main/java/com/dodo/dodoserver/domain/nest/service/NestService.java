@@ -7,6 +7,8 @@ import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
+import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -46,6 +48,7 @@ public class NestService {
     private final CommentLikeRepository commentLikeRepository;
     private final NestNotificationService nestNotificationService;
     private final RedisViewCountService redisViewCountService;
+    private final PostcardRepository postcardRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -85,6 +88,24 @@ public class NestService {
         }
 
         Nest savedNest = nestRepository.save(nest);
+
+        // 초기 엽서 등록 처리
+        if (requestDto.getPostcardId() != null) {
+            Postcard postcard = postcardRepository.findById(requestDto.getPostcardId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
+
+            if (!postcard.getCurrentOwner().getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
+            }
+            if (postcard.isShared()) {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED);
+            }
+            if (postcard.isExchanged()) {
+                throw new BusinessException(ErrorCode.ALREADY_EXCHANGED);
+            }
+
+            postcard.shareToNest(savedNest);
+        }
 
         if (requestDto.getCategoryIds() != null) {
             requestDto.getCategoryIds().forEach(categoryId -> {

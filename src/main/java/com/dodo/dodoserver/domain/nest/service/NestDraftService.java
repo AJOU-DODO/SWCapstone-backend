@@ -121,6 +121,7 @@ public class NestDraftService {
                 draft.getLatitude(),
                 draft.getLongitude(),
                 draft.getUnlockRadius(),
+                null, // postcardId
                 draft.getCategoryIds(),
                 draft.getImageUrls(),
                 false // isAd 기본값
