@@ -49,6 +49,33 @@ public class PostcardNotificationService {
         log.info("엽서 교환 알림 이벤트 발행 완료: TargetUser={}, Nest={}", targetUser.getEmail(), nest.getTitle());
     }
 
+    /**
+     * 엽서 좋아요 알림 발행
+     */
+    public void sendPostcardLikeNotification(User reactor, Postcard postcard) {
+        User targetUser = postcard.getOriginalAuthor();
+
+        // 본인 엽서에 본인이 반응을 한 경우 알림 미발행
+        if (reactor.getId().equals(targetUser.getId())) {
+            return;
+        }
+
+        List<String> fcmTokens = getFcmTokens(targetUser);
+        if (fcmTokens.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put(KEY_TYPE, TYPE_POSTCARD_LIKE);
+        data.put(KEY_POSTCARD_ID, postcard.getId().toString());
+
+        String title = TITLE_POSTCARD_LIKE;
+        String body = String.format(BODY_POSTCARD_LIKE, reactor.getNickname());
+
+        eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
+        log.info("엽서 좋아요 알림 이벤트 발행 완료: TargetUser={}, Reactor={}", targetUser.getEmail(), reactor.getNickname());
+    }
+
     private List<String> getFcmTokens(User targetUser) {
         return userDeviceRepository.findByUserId(targetUser.getId()).stream()
                 .map(UserDevice::getFcmToken)

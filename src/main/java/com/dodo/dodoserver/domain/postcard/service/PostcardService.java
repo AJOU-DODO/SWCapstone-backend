@@ -164,6 +164,11 @@ public class PostcardService {
                                     .reactionType(reactionType)
                                     .build();
                             postcardReactionRepository.save(reaction);
+                            
+                            // 좋아요 반응인 경우 알림 발송
+                            if (reactionType == com.dodo.dodoserver.domain.nest.entity.ReactionType.LIKE) {
+                                postcardNotificationService.sendPostcardLikeNotification(user, postcard);
+                            }
                         }
                 );
     }
