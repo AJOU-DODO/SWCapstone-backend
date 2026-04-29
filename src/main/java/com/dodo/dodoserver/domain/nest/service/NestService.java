@@ -295,10 +295,14 @@ public class NestService {
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
+        // 엽서 정보 일괄 조회
+        Map<Long, Long> nestPostcardMap = postcardRepository.findAllByNestInAndIsSharedTrue(nestEntities).stream()
+                .collect(Collectors.toMap(p -> p.getNest().getId(), Postcard::getId));
+
         return nestDtos.stream().map(dto -> {
             Nest nest = dto.getNest();
             boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
-            return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
+            return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nest.getId()));
         }).collect(Collectors.toList());
     }
 
@@ -495,10 +499,14 @@ public class NestService {
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
+        // 현재 페이지의 엽서 정보 일괄 조회
+        Map<Long, Long> nestPostcardMap = postcardRepository.findAllByNestInAndIsSharedTrue(nestEntities).stream()
+                .collect(Collectors.toMap(p -> p.getNest().getId(), Postcard::getId));
+
         return nests.map(dto -> {
             Nest nestEntity = dto.getNest();
             boolean isUnlocked = nestEntity.getCreator().equals(user) || unlockedNestIds.contains(nestEntity.getId());
-            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
+            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nestEntity.getId()));
         });
     }
 

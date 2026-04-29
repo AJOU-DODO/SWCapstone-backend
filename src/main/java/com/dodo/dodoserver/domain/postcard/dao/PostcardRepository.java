@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PostcardRepository extends JpaRepository<Postcard, Long> {
@@ -22,4 +23,7 @@ public interface PostcardRepository extends JpaRepository<Postcard, Long> {
 
     @Query("SELECT p FROM Postcard p WHERE p.nest = :nest AND p.isShared = true")
     Optional<Postcard> findSharedPostcardByNest(@Param("nest") Nest nest);
+
+    @Query("SELECT p FROM Postcard p WHERE p.nest IN :nests AND p.isShared = true")
+    List<Postcard> findAllByNestInAndIsSharedTrue(@Param("nests") java.util.Collection<Nest> nests);
 }

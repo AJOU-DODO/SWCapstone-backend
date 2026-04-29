@@ -19,11 +19,13 @@ public class NestSummaryResponseDto {
     private List<String> categoryNames;
     private boolean isAd;
     private boolean isUnlocked;
+    private boolean hasPostcard;
+    private Long postcardId;
 
-    public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked, Long likeCount, Double distance, List<String> categoryNames) {
+    public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked, Long likeCount, Double distance, List<String> categoryNames, Long postcardId) {
         String thumbnail = nest.getImages().isEmpty() ? null : nest.getImages().get(0).getImageUrl();
 
-        String displayContent = nest.getContent();
+        String displayContent = nest.getContent(); // 해금 전 콘텐츠 필터링
         if (displayContent != null) {
             int newlineIndex = displayContent.indexOf('\n');
             if (newlineIndex != -1) {
@@ -40,11 +42,13 @@ public class NestSummaryResponseDto {
                 .categoryNames(categoryNames)
                 .isAd(nest.isAd())
                 .isUnlocked(isUnlocked)
+                .hasPostcard(postcardId != null)
+                .postcardId(postcardId)
                 .build();
     }
 
     public static NestSummaryResponseDto from(Nest nest, boolean isUnlocked) {
-        return from(nest, isUnlocked, 0L, null, Collections.emptyList());
+        return from(nest, isUnlocked, 0L, null, Collections.emptyList(), null);
     }
 }
 
