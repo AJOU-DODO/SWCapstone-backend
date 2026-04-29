@@ -1,6 +1,5 @@
 package com.dodo.dodoserver.domain.postcard.entity;
 
-import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,7 +35,7 @@ public class PostcardReaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReactionType reactionType;
+    private PostcardReactionType reactionType;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

@@ -1,12 +1,8 @@
 package com.dodo.dodoserver.domain.postcard.controller;
 
-import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.postcard.dto.*;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
-import com.dodo.dodoserver.domain.user.dao.UserRepository;
-import com.dodo.dodoserver.domain.user.entity.User;
-import com.dodo.dodoserver.error.ErrorCode;
-import com.dodo.dodoserver.error.exception.BusinessException;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -83,13 +79,13 @@ public class PostcardController {
     }
 
     /**
-     * 엽서 이모지 반응
+     * 엽서 리액션 반응
      */
     @PostMapping("/postcards/{id}/reactions")
     public ApiResponseDto<Void> addReaction(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id,
-            @RequestParam ReactionType type) {
+            @RequestParam PostcardReactionType type) {
         postcardService.addReaction(userPrincipal.getId(), id, type);
         return ApiResponseDto.success(null);
     }

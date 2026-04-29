@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.postcard.service;
 
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
@@ -50,9 +51,9 @@ public class PostcardNotificationService {
     }
 
     /**
-     * 엽서 좋아요 알림 발행
+     * 엽서 리액션 알림 발행
      */
-    public void sendPostcardLikeNotification(User reactor, Postcard postcard) {
+    public void sendPostcardReactionNotification(User reactor, Postcard postcard, PostcardReactionType reactionType) {
         User targetUser = postcard.getOriginalAuthor();
 
         // 본인 엽서에 본인이 반응을 한 경우 알림 미발행
@@ -70,10 +71,11 @@ public class PostcardNotificationService {
         data.put(KEY_POSTCARD_ID, postcard.getId().toString());
 
         String title = TITLE_POSTCARD_LIKE;
-        String body = String.format(BODY_POSTCARD_LIKE, reactor.getNickname());
+        String body = String.format(BODY_POSTCARD_LIKE, reactor.getNickname(), reactionType.getValue());
 
         eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
-        log.info("엽서 좋아요 알림 이벤트 발행 완료: TargetUser={}, Reactor={}", targetUser.getEmail(), reactor.getNickname());
+        log.info("엽서 리액션 알림 이벤트 발행 완료: TargetUser={}, Reactor={}, Type={}", 
+                targetUser.getEmail(), reactor.getNickname(), reactionType.name());
     }
 
     private List<String> getFcmTokens(User targetUser) {

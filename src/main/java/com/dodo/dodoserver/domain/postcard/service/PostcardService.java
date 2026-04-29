@@ -8,6 +8,7 @@ import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.*;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.postcard.entity.PostcardReaction;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -94,7 +95,7 @@ public class PostcardService {
         targetPostcard.exchangeToUser(user);
         myPostcard.shareToNest(nest);
 
-        // 7. 알림 발행 (FCM 토큰 조회 등이 포함되므로 커밋 후 비동기 처리가 권장되나, 현재는 서비스 내에서 호출)
+        // 7. 알림 발행
         postcardNotificationService.sendPostcardExchangedNotification(targetPostcard, nest);
 
         return PostcardResponseDto.from(targetPostcard);
@@ -143,7 +144,7 @@ public class PostcardService {
     }
 
     @Transactional
-    public void addReaction(Long userId, Long postcardId, com.dodo.dodoserver.domain.nest.entity.ReactionType reactionType) {
+    public void addReaction(Long userId, Long postcardId, PostcardReactionType reactionType) {
         User user = getUser(userId);
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
@@ -155,6 +156,7 @@ public class PostcardService {
                                 postcardReactionRepository.delete(reaction);
                             } else {
                                 reaction.setReactionType(reactionType);
+                                postcardNotificationService.sendPostcardReactionNotification(user, postcard, reactionType);
                             }
                         },
                         () -> {
@@ -164,11 +166,7 @@ public class PostcardService {
                                     .reactionType(reactionType)
                                     .build();
                             postcardReactionRepository.save(reaction);
-                            
-                            // 좋아요 반응인 경우 알림 발송
-                            if (reactionType == com.dodo.dodoserver.domain.nest.entity.ReactionType.LIKE) {
-                                postcardNotificationService.sendPostcardLikeNotification(user, postcard);
-                            }
+                            postcardNotificationService.sendPostcardReactionNotification(user, postcard, reactionType);
                         }
                 );
     }
