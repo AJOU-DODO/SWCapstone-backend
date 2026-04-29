@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
+import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -101,7 +102,7 @@ class NestServiceTest {
     void createNest_withPostcard_success() {
         Long postcardId = 10L;
         NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, postcardId, null, null, false);
-        com.dodo.dodoserver.domain.postcard.entity.Postcard postcard = com.dodo.dodoserver.domain.postcard.entity.Postcard.builder()
+        Postcard postcard = Postcard.builder()
                 .id(postcardId)
                 .currentOwner(user)
                 .build();
