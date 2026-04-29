@@ -4,6 +4,7 @@ import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -60,6 +61,8 @@ class NestServiceTest {
     private NestNotificationService nestNotificationService;
     @Mock
     private RedisViewCountService redisViewCountService;
+    @Mock
+    private PostcardRepository postcardRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     private User user;
@@ -79,7 +82,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 생성 성공")
     void createNest_success() {
-        NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, null, null, false);
+        NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, null, null, null, false);
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.save(any(Nest.class))).willAnswer(inv -> {
             Nest nest = inv.getArgument(0);
@@ -91,6 +94,31 @@ class NestServiceTest {
 
         assertThat(response.getId()).isEqualTo(100L);
         verify(nestRepository).save(any(Nest.class));
+    }
+
+    @Test
+    @DisplayName("둥지 생성 성공 - 초기 엽서 포함")
+    void createNest_withPostcard_success() {
+        Long postcardId = 10L;
+        NestCreateRequestDto requestDto = new NestCreateRequestDto("제목", "내용", 37.5, 127.0, 100, postcardId, null, null, false);
+        com.dodo.dodoserver.domain.postcard.entity.Postcard postcard = com.dodo.dodoserver.domain.postcard.entity.Postcard.builder()
+                .id(postcardId)
+                .currentOwner(user)
+                .build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(postcardRepository.findById(postcardId)).willReturn(Optional.of(postcard));
+        given(nestRepository.save(any(Nest.class))).willAnswer(inv -> {
+            Nest nest = inv.getArgument(0);
+            nest.setId(100L);
+            return nest;
+        });
+
+        NestSimpleResponseDto response = nestService.createNest(user.getId(), requestDto);
+
+        assertThat(response.getId()).isEqualTo(100L);
+        assertThat(postcard.isShared()).isTrue();
+        assertThat(postcard.getNest().getId()).isEqualTo(100L);
     }
 
     @Test
