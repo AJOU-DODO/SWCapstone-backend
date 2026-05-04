@@ -3,10 +3,13 @@ package com.dodo.dodoserver.domain.postcard.service;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.nest.dao.UnlockHistoryRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardReactionRepository;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.PostcardExchangeRequestDto;
 import com.dodo.dodoserver.domain.postcard.dto.PostcardResponseDto;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReaction;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -18,12 +21,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -43,6 +49,8 @@ class PostcardServiceTest {
     private UnlockHistoryRepository unlockHistoryRepository;
     @Mock
     private PostcardNotificationService postcardNotificationService;
+    @Mock
+    private PostcardReactionRepository postcardReactionRepository;
     @Mock
     private UserRepository userRepository;
 
@@ -134,5 +142,51 @@ class PostcardServiceTest {
         assertThatThrownBy(() -> postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_SHARED.getMessage());
+    }
+
+    @Test
+    @DisplayName("엽서 인벤토리 조회 성공")
+    void getPostcardInventory_success() {
+        // given
+        List<Postcard> inventory = List.of(myPostcard, targetPostcard);
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(postcardRepository.findInventoryByUser(eq(user), any(Sort.class))).willReturn(inventory);
+        
+        PostcardReaction reaction = PostcardReaction.builder()
+                .postcard(targetPostcard)
+                .reactionType(PostcardReactionType.TOUCHED)
+                .build();
+        given(postcardReactionRepository.findAllByPostcardIn(inventory)).willReturn(List.of(reaction));
+
+        // when
+        List<PostcardResponseDto> result = postcardService.getPostcardInventory(user.getId());
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(myPostcard.getId());
+        assertThat(result.get(0).getReactionType()).isNull();
+        
+        assertThat(result.get(1).getId()).isEqualTo(targetPostcard.getId());
+        assertThat(result.get(1).getReactionType()).isEqualTo(PostcardReactionType.TOUCHED);
+    }
+
+    @Test
+    @DisplayName("엽서 상세 조회 시 리액션 정보 포함 확인")
+    void getPostcardDetail_withReaction() {
+        // given
+        given(postcardRepository.findById(targetPostcard.getId())).willReturn(Optional.of(targetPostcard));
+        
+        PostcardReaction reaction = PostcardReaction.builder()
+                .postcard(targetPostcard)
+                .reactionType(PostcardReactionType.BEST)
+                .build();
+        given(postcardReactionRepository.findByPostcard(targetPostcard)).willReturn(Optional.of(reaction));
+
+        // when
+        PostcardResponseDto response = postcardService.getPostcardDetail(user.getId(), targetPostcard.getId());
+
+        // then
+        assertThat(response.getId()).isEqualTo(targetPostcard.getId());
+        assertThat(response.getReactionType()).isEqualTo(PostcardReactionType.BEST);
     }
 }
