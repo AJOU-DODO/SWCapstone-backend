@@ -5,8 +5,13 @@ import com.dodo.dodoserver.domain.postcard.entity.PostcardReaction;
 import com.dodo.dodoserver.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PostcardReactionRepository extends JpaRepository<PostcardReaction, Long> {
     Optional<PostcardReaction> findByPostcardAndUser(Postcard postcard, User user);
+
+    List<PostcardReaction> findAllByPostcardIn(List<Postcard> postcards);
+
+    Optional<PostcardReaction> findByPostcard(Postcard postcard);
 }

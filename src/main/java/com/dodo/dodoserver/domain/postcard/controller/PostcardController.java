@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -56,6 +58,15 @@ public class PostcardController {
             @PathVariable Long id) {
         postcardService.deletePostcard(userPrincipal.getId(), id);
         return ApiResponseDto.success(null);
+    }
+
+    /**
+     * 엽서 인벤토리 조회 (내가 만든 엽서 + 내가 가져온 엽서)
+     */
+    @GetMapping("/postcards/inventory")
+    public ApiResponseDto<List<PostcardResponseDto>> getPostcardInventory(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ApiResponseDto.success(postcardService.getPostcardInventory(userPrincipal.getId()));
     }
 
     /**

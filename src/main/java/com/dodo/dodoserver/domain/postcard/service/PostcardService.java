@@ -14,8 +14,13 @@ import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,7 +110,34 @@ public class PostcardService {
     public PostcardResponseDto getPostcardDetail(Long userId, Long postcardId) {
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
-        return PostcardResponseDto.from(postcard);
+        
+        PostcardReactionType reactionType = postcardReactionRepository.findByPostcard(postcard)
+                .map(PostcardReaction::getReactionType)
+                .orElse(null);
+                
+        return PostcardResponseDto.from(postcard, reactionType);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostcardResponseDto> getPostcardInventory(Long userId) {
+        User user = getUser(userId);
+        List<Postcard> inventory = postcardRepository.findInventoryByUser(user, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        if (inventory.isEmpty()) {
+            return List.of();
+        }
+
+        // 리액션 일괄 조회 (N+1 방지)
+        Map<Long, PostcardReactionType> reactionMap = postcardReactionRepository.findAllByPostcardIn(inventory)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getPostcard().getId(),
+                        PostcardReaction::getReactionType
+                ));
+
+        return inventory.stream()
+                .map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId())))
+                .collect(Collectors.toList());
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.postcard.dto;
 
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class PostcardResponseDto {
     private boolean isShared;
     private boolean isExchanged;
     private LocalDateTime createdAt;
+    private PostcardReactionType reactionType;
 
     public static PostcardResponseDto from(Postcard postcard) {
         return PostcardResponseDto.builder()
@@ -32,6 +34,20 @@ public class PostcardResponseDto {
                 .isShared(postcard.isShared())
                 .isExchanged(postcard.isExchanged())
                 .createdAt(postcard.getCreatedAt())
+                .build();
+    }
+
+    public static PostcardResponseDto from(Postcard postcard, PostcardReactionType reactionType) {
+        return PostcardResponseDto.builder()
+                .id(postcard.getId())
+                .originalAuthorId(postcard.getOriginalAuthor().getId())
+                .originalAuthorNickname(postcard.getOriginalAuthor().getNickname())
+                .imageUrl(postcard.getImageUrl())
+                .content(postcard.getContent())
+                .isShared(postcard.isShared())
+                .isExchanged(postcard.isExchanged())
+                .createdAt(postcard.getCreatedAt())
+                .reactionType(reactionType)
                 .build();
     }
 }
