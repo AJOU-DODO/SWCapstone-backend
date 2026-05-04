@@ -149,6 +149,10 @@ public class PostcardService {
         Postcard postcard = postcardRepository.findById(postcardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
+        if (postcard.getCurrentOwner() == null || !postcard.getCurrentOwner().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
+        }
+
         postcardReactionRepository.findByPostcardAndUser(postcard, user)
                 .ifPresentOrElse(
                         reaction -> {
