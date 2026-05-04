@@ -21,7 +21,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -148,26 +150,27 @@ class PostcardServiceTest {
     @DisplayName("엽서 인벤토리 조회 성공")
     void getPostcardInventory_success() {
         // given
-        List<Postcard> inventory = List.of(myPostcard, targetPostcard);
+        List<Postcard> inventoryList = List.of(myPostcard, targetPostcard);
+        Page<Postcard> inventoryPage = new PageImpl<>(inventoryList);
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-        given(postcardRepository.findInventoryByUser(eq(user), any(Sort.class))).willReturn(inventory);
+        given(postcardRepository.findInventoryByUser(eq(user), any(Pageable.class))).willReturn(inventoryPage);
         
         PostcardReaction reaction = PostcardReaction.builder()
                 .postcard(targetPostcard)
                 .reactionType(PostcardReactionType.TOUCHED)
                 .build();
-        given(postcardReactionRepository.findAllByPostcardIn(inventory)).willReturn(List.of(reaction));
+        given(postcardReactionRepository.findAllByPostcardIn(inventoryList)).willReturn(List.of(reaction));
 
         // when
-        List<PostcardResponseDto> result = postcardService.getPostcardInventory(user.getId());
+        Page<PostcardResponseDto> result = postcardService.getPostcardInventory(user.getId(), Pageable.unpaged());
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId()).isEqualTo(myPostcard.getId());
-        assertThat(result.get(0).getReactionType()).isNull();
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getId()).isEqualTo(myPostcard.getId());
+        assertThat(result.getContent().get(0).getReactionType()).isNull();
         
-        assertThat(result.get(1).getId()).isEqualTo(targetPostcard.getId());
-        assertThat(result.get(1).getReactionType()).isEqualTo(PostcardReactionType.TOUCHED);
+        assertThat(result.getContent().get(1).getId()).isEqualTo(targetPostcard.getId());
+        assertThat(result.getContent().get(1).getReactionType()).isEqualTo(PostcardReactionType.TOUCHED);
     }
 
     @Test
