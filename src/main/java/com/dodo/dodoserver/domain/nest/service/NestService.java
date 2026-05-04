@@ -331,6 +331,9 @@ public class NestService {
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
+        // 엽서 정보 조회
+        Postcard sharedPostcard = postcardRepository.findSharedPostcardByNest(nest).orElse(null);
+
         return NestDetailResponseDto.builder()
                 .id(nest.getId())
                 .title(nest.getTitle())
@@ -346,6 +349,8 @@ public class NestService {
                 .likeCount(likeCount)
                 .dislikeCount(dislikeCount)
                 .isUnlocked(isUnlocked)
+                .hasPostcard(sharedPostcard != null)
+                .postcardId(sharedPostcard != null ? sharedPostcard.getId() : null)
                 .build();
     }
 
