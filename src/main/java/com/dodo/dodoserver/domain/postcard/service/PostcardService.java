@@ -14,7 +14,8 @@ import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,25 +120,25 @@ public class PostcardService {
     }
 
     @Transactional(readOnly = true)
-    public List<PostcardResponseDto> getPostcardInventory(Long userId) {
+    public Page<PostcardResponseDto> getPostcardInventory(Long userId, Pageable pageable) {
         User user = getUser(userId);
-        List<Postcard> inventory = postcardRepository.findInventoryByUser(user, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Postcard> inventory = postcardRepository.findInventoryByUser(user, pageable);
         
         if (inventory.isEmpty()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
+        List<Postcard> postcardList = inventory.getContent();
+
         // 리액션 일괄 조회 (N+1 방지)
-        Map<Long, PostcardReactionType> reactionMap = postcardReactionRepository.findAllByPostcardIn(inventory)
+        Map<Long, PostcardReactionType> reactionMap = postcardReactionRepository.findAllByPostcardIn(postcardList)
                 .stream()
                 .collect(Collectors.toMap(
                         r -> r.getPostcard().getId(),
                         PostcardReaction::getReactionType
                 ));
 
-        return inventory.stream()
-                .map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId())))
-                .collect(Collectors.toList());
+        return inventory.map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId())));
     }
 
     @Transactional

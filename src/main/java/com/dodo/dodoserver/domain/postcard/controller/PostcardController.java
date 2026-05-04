@@ -6,6 +6,10 @@ import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,9 +68,10 @@ public class PostcardController {
      * 엽서 인벤토리 조회 (내가 만든 엽서 + 내가 가져온 엽서)
      */
     @GetMapping("/postcards/inventory")
-    public ApiResponseDto<List<PostcardResponseDto>> getPostcardInventory(
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return ApiResponseDto.success(postcardService.getPostcardInventory(userPrincipal.getId()));
+    public ApiResponseDto<Page<PostcardResponseDto>> getPostcardInventory(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ApiResponseDto.success(postcardService.getPostcardInventory(userPrincipal.getId(), pageable));
     }
 
     /**
