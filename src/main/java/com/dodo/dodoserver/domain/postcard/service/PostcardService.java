@@ -47,7 +47,7 @@ public class PostcardService {
                 .isExchanged(false)
                 .build();
 
-        return PostcardResponseDto.from(postcardRepository.save(postcard));
+        return PostcardResponseDto.from(postcardRepository.save(postcard), userId);
     }
 
     @Transactional(readOnly = true)
@@ -104,7 +104,7 @@ public class PostcardService {
         // 7. 알림 발행
         postcardNotificationService.sendPostcardExchangedNotification(targetPostcard, nest);
 
-        return PostcardResponseDto.from(targetPostcard);
+        return PostcardResponseDto.from(targetPostcard, userId);
     }
 
     @Transactional(readOnly = true)
@@ -116,7 +116,7 @@ public class PostcardService {
                 .map(PostcardReaction::getReactionType)
                 .orElse(null);
                 
-        return PostcardResponseDto.from(postcard, reactionType);
+        return PostcardResponseDto.from(postcard, reactionType, userId);
     }
 
     @Transactional(readOnly = true)
@@ -138,8 +138,8 @@ public class PostcardService {
                         PostcardReaction::getReactionType
                 ));
 
-        return inventory.map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId())));
-    }
+        return inventory.map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId()), userId));
+        }
 
     @Transactional
     public PostcardResponseDto updatePostcard(Long userId, Long postcardId, PostcardCreateRequestDto requestDto) {
@@ -157,7 +157,7 @@ public class PostcardService {
         postcard.setImageUrl(requestDto.getImageUrl());
         postcard.setContent(requestDto.getContent());
 
-        return PostcardResponseDto.from(postcard);
+        return PostcardResponseDto.from(postcard, userId);
     }
 
     @Transactional

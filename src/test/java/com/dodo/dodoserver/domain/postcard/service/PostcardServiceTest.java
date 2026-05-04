@@ -167,9 +167,11 @@ class PostcardServiceTest {
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).getId()).isEqualTo(myPostcard.getId());
+        assertThat(result.getContent().get(0).isMine()).isTrue(); // 내가 만든 엽서
         assertThat(result.getContent().get(0).getReactionType()).isNull();
         
         assertThat(result.getContent().get(1).getId()).isEqualTo(targetPostcard.getId());
+        assertThat(result.getContent().get(1).isMine()).isFalse(); // 남이 만든 엽서
         assertThat(result.getContent().get(1).getReactionType()).isEqualTo(PostcardReactionType.TOUCHED);
     }
 
@@ -190,6 +192,7 @@ class PostcardServiceTest {
 
         // then
         assertThat(response.getId()).isEqualTo(targetPostcard.getId());
+        assertThat(response.isMine()).isFalse();
         assertThat(response.getReactionType()).isEqualTo(PostcardReactionType.BEST);
     }
 
