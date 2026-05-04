@@ -25,4 +25,6 @@ public class NestUpdateRequestDto {
 
     @Size(max = 5, message = "이미지는 최대 5개까지 등록 가능합니다.")
     private List<String> imageUrls;
+
+    private Long postcardId;
 }

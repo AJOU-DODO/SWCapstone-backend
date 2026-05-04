@@ -176,6 +176,29 @@ public class NestService {
             });
         }
 
+        // 엽서 추가/변경 로직
+        if (requestDto.getPostcardId() != null) {
+            Postcard newPostcard = postcardRepository.findById(requestDto.getPostcardId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
+
+            if (!newPostcard.getCurrentOwner().getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
+            }
+            if (newPostcard.isShared()) {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED);
+            }
+            if (newPostcard.isExchanged()) {
+                throw new BusinessException(ErrorCode.ALREADY_EXCHANGED);
+            }
+
+            // 이미 둥지에 공유된 엽서가 있는지 확인
+            postcardRepository.findSharedPostcardByNest(nest).ifPresent(p -> {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED); // 둥지당 엽서는 하나만 가능
+            });
+
+            newPostcard.shareToNest(nest);
+        }
+
         log.info("둥지 수정 완료: ID={}", nestId);
         return NestSimpleResponseDto.from(nest);
     }
