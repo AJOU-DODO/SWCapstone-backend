@@ -127,7 +127,7 @@ class NestServiceTest {
     void updateNest_success() {
         Long nestId = 1L;
         Nest nest = Nest.builder().id(nestId).creator(user).title("기존제목").images(new ArrayList<>()).build();
-        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", "수정내용", 200, null, null);
+        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", "수정내용", 200, null, null, null);
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
@@ -144,7 +144,7 @@ class NestServiceTest {
         Long nestId = 1L;
         User other = User.builder().id(2L).email("other@example.com").build();
         Nest nest = Nest.builder().id(nestId).creator(other).build();
-        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
+        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null, null);
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));

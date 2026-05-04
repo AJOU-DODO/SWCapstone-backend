@@ -135,7 +135,7 @@ class NestPostControllerTest {
     @WithMockUserPrincipal
     void updateNest_success() throws Exception {
         Long nestId = 1L;
-        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
+        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null, null);
         NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(nestId).build();
 
         given(nestService.updateNest(any(), eq(nestId), any())).willReturn(responseDto);

@@ -186,6 +186,10 @@ public class PostcardService {
             throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
         }
 
+        if (postcard.getOriginalAuthor().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.CANNOT_REACTION_OWN_POSTCARD);
+        }
+
         postcardReactionRepository.findByPostcardAndUser(postcard, user)
                 .ifPresentOrElse(
                         reaction -> {

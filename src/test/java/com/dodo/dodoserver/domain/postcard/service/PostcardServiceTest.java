@@ -192,4 +192,19 @@ class PostcardServiceTest {
         assertThat(response.getId()).isEqualTo(targetPostcard.getId());
         assertThat(response.getReactionType()).isEqualTo(PostcardReactionType.BEST);
     }
+
+    @Test
+    @DisplayName("리액션 추가 실패 - 원작자 본인인 경우")
+    void addReaction_fail_originalAuthor() {
+        // given
+        myPostcard.setOriginalAuthor(user);
+        myPostcard.setCurrentOwner(user);
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(postcardRepository.findById(myPostcard.getId())).willReturn(Optional.of(myPostcard));
+
+        // when & then
+        assertThatThrownBy(() -> postcardService.addReaction(user.getId(), myPostcard.getId(), PostcardReactionType.TOUCHED))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.CANNOT_REACTION_OWN_POSTCARD.getMessage());
+    }
 }

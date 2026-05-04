@@ -51,7 +51,8 @@ public enum ErrorCode {
     NOT_SHARED(HttpStatus.BAD_REQUEST, "PC005", "현재 공유 중인 상태가 아닙니다."),
     EXCHANGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "PC006", "오늘의 엽서 교환 횟수를 모두 사용했습니다. (일일 3회)"),
     NO_AVAILABLE_POSTCARD_IN_NEST(HttpStatus.BAD_REQUEST, "PC007", "현재 둥지에 교환 가능한 엽서가 없습니다."),
-    CANNOT_EXCHANGE_OWN_POSTCARD(HttpStatus.BAD_REQUEST, "PC008", "자신이 등록한 엽서는 교환할 수 없습니다.");
+    CANNOT_EXCHANGE_OWN_POSTCARD(HttpStatus.BAD_REQUEST, "PC008", "자신이 등록한 엽서는 교환할 수 없습니다."),
+    CANNOT_REACTION_OWN_POSTCARD(HttpStatus.BAD_REQUEST, "PC009", "자신이 만든 엽서에는 반응을 남길 수 없습니다.");
 
 
 
