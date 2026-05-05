@@ -70,8 +70,9 @@ public class PostcardController {
     @GetMapping("/postcards/inventory")
     public ApiResponseDto<Page<PostcardResponseDto>> getPostcardInventory(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(required = false, defaultValue = "ALL") String filter,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponseDto.success(postcardService.getPostcardInventory(userPrincipal.getId(), pageable));
+        return ApiResponseDto.success(postcardService.getPostcardInventory(userPrincipal.getId(), filter, pageable));
     }
 
     /**

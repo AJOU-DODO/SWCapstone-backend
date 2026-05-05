@@ -32,4 +32,10 @@ public interface PostcardRepository extends JpaRepository<Postcard, Long> {
 
     @Query("SELECT p FROM Postcard p WHERE p.originalAuthor = :user OR p.currentOwner = :user")
     Page<Postcard> findInventoryByUser(@Param("user") User user, Pageable pageable);
+
+    @Query("SELECT p FROM Postcard p WHERE p.originalAuthor = :user")
+    Page<Postcard> findCreatedByUser(@Param("user") User user, Pageable pageable);
+
+    @Query("SELECT p FROM Postcard p WHERE p.currentOwner = :user AND p.originalAuthor != :user")
+    Page<Postcard> findAcquiredByUser(@Param("user") User user, Pageable pageable);
 }
