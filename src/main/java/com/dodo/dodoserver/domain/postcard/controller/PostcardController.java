@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public class PostcardController {
     @PostMapping("/postcards")
     public ApiResponseDto<PostcardResponseDto> createPostcard(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @RequestBody PostcardCreateRequestDto requestDto) {
+            @Valid @RequestBody PostcardCreateRequestDto requestDto) {
         return ApiResponseDto.success(postcardService.createPostcard(userPrincipal.getId(), requestDto));
     }
 
@@ -49,7 +50,7 @@ public class PostcardController {
     public ApiResponseDto<PostcardResponseDto> updatePostcard(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long id,
-            @RequestBody PostcardCreateRequestDto requestDto) {
+            @Valid @RequestBody PostcardCreateRequestDto requestDto) {
         return ApiResponseDto.success(postcardService.updatePostcard(userPrincipal.getId(), id, requestDto));
     }
 
@@ -91,7 +92,7 @@ public class PostcardController {
     public ApiResponseDto<PostcardResponseDto> exchangePostcard(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable(name = "id") Long nestId,
-            @RequestBody PostcardExchangeRequestDto requestDto) {
+            @Valid @RequestBody PostcardExchangeRequestDto requestDto) {
         return ApiResponseDto.success(postcardService.exchangePostcard(userPrincipal.getId(), nestId, requestDto));
     }
 

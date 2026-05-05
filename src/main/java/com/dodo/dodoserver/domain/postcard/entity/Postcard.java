@@ -43,7 +43,7 @@ public class Postcard {
     @Column(nullable = false)
     private String imageUrl;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Builder.Default

@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.postcard.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,5 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostcardExchangeRequestDto {
+    @NotNull(message = "교환할 내 엽서 ID는 필수입니다.")
     private Long myPostcardId;
 }
