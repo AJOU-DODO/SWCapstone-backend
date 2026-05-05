@@ -1,11 +1,7 @@
 package com.dodo.dodoserver.domain.mypage.controller;
 
-import com.dodo.dodoserver.domain.mypage.dto.MyPageStatisticsResponseDto;
+import com.dodo.dodoserver.domain.mypage.dto.*;
 import com.dodo.dodoserver.domain.mypage.service.MyPageService;
-import com.dodo.dodoserver.domain.nest.dto.NestCommentResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestDraftResponseDto;
-import com.dodo.dodoserver.domain.nest.dto.NestSimpleResponseDto;
-import com.dodo.dodoserver.domain.postcard.dto.PostcardResponseDto;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +23,7 @@ public class MyPageController {
     private final MyPageService myPageService;
 
     @GetMapping("/nests")
-    public ApiResponseDto<Page<NestSimpleResponseDto>> getMyNests(
+    public ApiResponseDto<Page<MyPageNestResponseDto>> getMyNests(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -35,14 +31,14 @@ public class MyPageController {
     }
 
     @GetMapping("/comments")
-    public ApiResponseDto<Page<NestCommentResponseDto>> getMyComments(
+    public ApiResponseDto<Page<MyPageCommentResponseDto>> getMyComments(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponseDto.success(myPageService.getMyComments(userPrincipal.getId(), pageable));
     }
 
     @GetMapping("/drafts")
-    public ApiResponseDto<Page<NestDraftResponseDto>> getMyDrafts(
+    public ApiResponseDto<Page<MyPageDraftResponseDto>> getMyDrafts(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponseDto.success(myPageService.getMyDrafts(userPrincipal.getId(), pageable));
@@ -55,28 +51,28 @@ public class MyPageController {
     }
 
     @GetMapping("/unlocks")
-    public ApiResponseDto<Page<NestSimpleResponseDto>> getMyUnlockedNests(
+    public ApiResponseDto<Page<MyPageNestResponseDto>> getMyUnlockedNests(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponseDto.success(myPageService.getMyUnlockedNests(userPrincipal.getId(), pageable));
     }
 
     @GetMapping("/reactions")
-    public ApiResponseDto<Page<NestCommentResponseDto>> getReactionsOnMyNests(
+    public ApiResponseDto<Page<MyPageCommentResponseDto>> getReactionsOnMyNests(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponseDto.success(myPageService.getReactionsOnMyNests(userPrincipal.getId(), pageable));
     }
 
     @GetMapping("/likes")
-    public ApiResponseDto<Page<NestSimpleResponseDto>> getMyLikedNests(
+    public ApiResponseDto<Page<MyPageNestResponseDto>> getMyLikedNests(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ApiResponseDto.success(myPageService.getMyLikedNests(userPrincipal.getId(), pageable));
     }
 
     @GetMapping("/postcards")
-    public ApiResponseDto<Page<PostcardResponseDto>> getMyPostcards(
+    public ApiResponseDto<Page<MyPagePostcardResponseDto>> getMyPostcards(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(required = false, defaultValue = "ALL") String filter,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
