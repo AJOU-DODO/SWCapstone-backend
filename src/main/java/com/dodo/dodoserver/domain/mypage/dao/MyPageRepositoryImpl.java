@@ -41,23 +41,25 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                 .selectFrom(nest)
                 .where(
                         nest.creator.eq(user),
-                        nest.deletedAt.isNull(),
-                        categoryIdEq(categoryId)
+                        nest.deletedAt.isNull()
+                );
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(nest.count())
+                .from(nest)
+                .where(
+                        nest.creator.eq(user),
+                        nest.deletedAt.isNull()
                 );
 
         if (categoryId != null) {
             query.join(nestCategory).on(nestCategory.nest.eq(nest))
                  .where(nestCategory.category.id.eq(categoryId));
+            countQuery.join(nestCategory).on(nestCategory.nest.eq(nest))
+                      .where(nestCategory.category.id.eq(categoryId));
         }
 
-        Long totalCount = queryFactory
-                .select(nest.count())
-                .from(nest)
-                .where(
-                        nest.creator.eq(user),
-                        nest.deletedAt.isNull(),
-                        categoryIdEq(categoryId)
-                ).fetchOne();
+        Long totalCount = countQuery.fetchOne();
         long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<Nest> content = query
