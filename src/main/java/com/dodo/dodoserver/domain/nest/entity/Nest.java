@@ -56,6 +56,7 @@ public class Nest {
 
     @Builder.Default
     @OneToMany(mappedBy = "nest", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
     private List<NestImage> images = new ArrayList<>();
 
     @CreatedDate
