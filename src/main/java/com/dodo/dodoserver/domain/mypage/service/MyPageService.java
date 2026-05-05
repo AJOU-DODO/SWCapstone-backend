@@ -4,6 +4,7 @@ import com.dodo.dodoserver.domain.mypage.dao.MyPageRepository;
 import com.dodo.dodoserver.domain.mypage.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
+import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -82,7 +83,7 @@ public class MyPageService {
     public Page<MyPagePostcardResponseDto> getMyPostcards(Long userId, String filter, Pageable pageable) {
         User user = getUser(userId);
         
-        Page<com.dodo.dodoserver.domain.postcard.entity.Postcard> postcards;
+        Page<Postcard> postcards;
         if ("CREATED".equalsIgnoreCase(filter)) {
             postcards = postcardRepository.findCreatedByUser(user, pageable);
         } else if ("ACQUIRED".equalsIgnoreCase(filter)) {
