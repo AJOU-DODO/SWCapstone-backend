@@ -58,10 +58,10 @@ public class MyPageController {
     }
 
     @GetMapping("/reactions")
-    public ApiResponseDto<Page<MyPageCommentResponseDto>> getReactionsOnMyNests(
+    public ApiResponseDto<Page<MyPageCommentResponseDto>> getCommentsOnMyNests(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ApiResponseDto.success(myPageService.getReactionsOnMyNests(userPrincipal.getId(), pageable));
+        return ApiResponseDto.success(myPageService.getCommentsOnMyNests(userPrincipal.getId(), pageable));
     }
 
     @GetMapping("/likes")

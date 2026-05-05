@@ -19,11 +19,10 @@ public class MyPageNestResponseDto {
     private String content;
     private String thumbnailUrl;
     private boolean isUnlocked;
-    private ReactionType myReaction;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static MyPageNestResponseDto from(Nest nest, boolean isUnlocked, ReactionType myReaction) {
+    public static MyPageNestResponseDto from(Nest nest, boolean isUnlocked) {
         String thumbnail = nest.getImages().isEmpty() ? null : nest.getImages().get(0).getImageUrl();
         
         return MyPageNestResponseDto.builder()
@@ -32,7 +31,6 @@ public class MyPageNestResponseDto {
                 .content(nest.getContent())
                 .thumbnailUrl(thumbnail)
                 .isUnlocked(isUnlocked)
-                .myReaction(myReaction)
                 .createdAt(nest.getCreatedAt())
                 .updatedAt(nest.getUpdatedAt())
                 .build();

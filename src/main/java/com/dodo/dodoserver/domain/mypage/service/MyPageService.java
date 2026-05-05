@@ -6,8 +6,8 @@ import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
-import com.dodo.dodoserver.global.error.ErrorCode;
-import com.dodo.dodoserver.global.error.exception.BusinessException;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +31,7 @@ public class MyPageService {
     public Page<MyPageNestResponseDto> getMyNests(Long userId, Long categoryId, Pageable pageable) {
         User user = getUser(userId);
         return myPageRepository.findNestsByUserAndCategory(user, categoryId, pageable)
-                .map(nest -> MyPageNestResponseDto.from(nest, true, null));
+                .map(nest -> MyPageNestResponseDto.from(nest, true));
     }
 
     @Transactional(readOnly = true)
@@ -61,11 +61,11 @@ public class MyPageService {
     public Page<MyPageNestResponseDto> getMyUnlockedNests(Long userId, Pageable pageable) {
         User user = getUser(userId);
         return myPageRepository.findUnlockedNestsByUser(user, pageable)
-                .map(nest -> MyPageNestResponseDto.from(nest, true, null));
+                .map(nest -> MyPageNestResponseDto.from(nest, true));
     }
 
     @Transactional(readOnly = true)
-    public Page<MyPageCommentResponseDto> getReactionsOnMyNests(Long userId, Pageable pageable) {
+    public Page<MyPageCommentResponseDto> getCommentsOnMyNests(Long userId, Pageable pageable) {
         User user = getUser(userId);
         return myPageRepository.findCommentsOnUserNests(user, pageable)
                 .map(MyPageCommentResponseDto::from);
@@ -75,7 +75,7 @@ public class MyPageService {
     public Page<MyPageNestResponseDto> getMyLikedNests(Long userId, Pageable pageable) {
         User user = getUser(userId);
         return myPageRepository.findLikedNestsByUser(user, pageable)
-                .map(nest -> MyPageNestResponseDto.from(nest, true, ReactionType.LIKE));
+                .map(nest -> MyPageNestResponseDto.from(nest, true));
     }
 
     @Transactional(readOnly = true)
