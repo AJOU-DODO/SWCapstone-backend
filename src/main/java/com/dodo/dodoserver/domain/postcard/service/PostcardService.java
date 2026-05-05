@@ -71,7 +71,7 @@ public class PostcardService {
     @Transactional
     public PostcardResponseDto exchangePostcard(Long userId, Long nestId, PostcardExchangeRequestDto requestDto) {
         User user = getUser(userId);
-        // 1. 둥지 및 해금 여부 확인
+        // 둥지 및 해금 여부 확인
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -79,29 +79,30 @@ public class PostcardService {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
-        // 2. 일일 교환 횟수 제한 확인 및 증가 (Atomic INCR)
-        postcardRedisService.checkAndIncrementExchangeCount(userId);
 
-        // 3. 내 엽서 락 획득 및 검증
+        // 내 엽서 락 획득 및 검증
         Postcard myPostcard = postcardRepository.findByIdForUpdate(requestDto.getMyPostcardId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
         validateMyPostcard(user, myPostcard);
 
-        // 4. 둥지의 유일한 엽서 락 획득 및 검증
+        // 둥지의 유일한 엽서 락 획득 및 검증
         Postcard targetPostcard = postcardRepository.findSharedPostcardByNestForUpdate(nest)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_AVAILABLE_POSTCARD_IN_NEST));
 
-        // 5. 본인 엽서 교환 차단
+        // 본인 엽서 교환 차단
         if (targetPostcard.getOriginalAuthor().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.CANNOT_EXCHANGE_OWN_POSTCARD);
         }
 
-        // 6. Atomic Swap
+        // 일일 교환 횟수 제한 
+        postcardRedisService.checkAndIncrementExchangeCount(userId);
+
+        // Atomic Swap
         targetPostcard.exchangeToUser(user);
         myPostcard.shareToNest(nest);
 
-        // 7. 알림 발행
+        // 알림 발행
         postcardNotificationService.sendPostcardExchangedNotification(targetPostcard, nest);
 
         return PostcardResponseDto.from(targetPostcard, userId);
