@@ -94,7 +94,7 @@ public class NestService {
             Postcard postcard = postcardRepository.findById(requestDto.getPostcardId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
-            if (!postcard.getCurrentOwner().getId().equals(userId)) {
+            if (postcard.getCurrentOwner() == null || !postcard.getCurrentOwner().getId().equals(userId)) {
                 throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
             }
             if (postcard.isShared()) {
@@ -181,7 +181,7 @@ public class NestService {
             Postcard newPostcard = postcardRepository.findById(requestDto.getPostcardId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
 
-            if (!newPostcard.getCurrentOwner().getId().equals(userId)) {
+            if (newPostcard.getCurrentOwner() == null || !newPostcard.getCurrentOwner().getId().equals(userId)) {
                 throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
             }
             if (newPostcard.isShared()) {
