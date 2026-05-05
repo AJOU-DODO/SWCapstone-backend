@@ -5,14 +5,17 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class NotificationEventListener {
 	private final FcmService fcmService;
 
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
 	public void handleNotification(NotificationEvent event) {
+		log.info("Notification event received: title={}, tokens={}", event.title(), event.tokens());
 		fcmService.sendNotification(event);
 	}
 }
