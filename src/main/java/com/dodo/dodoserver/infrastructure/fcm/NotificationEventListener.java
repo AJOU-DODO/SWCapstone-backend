@@ -15,7 +15,7 @@ public class NotificationEventListener {
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
 	public void handleNotification(NotificationEvent event) {
-		log.info("Notification event received: title={}, tokens={}", event.title(), event.tokens());
+		log.info("Notification event received: title={}, tokenCount={}", event.title(), event.tokens().size());
 		fcmService.sendNotification(event);
 	}
 }
