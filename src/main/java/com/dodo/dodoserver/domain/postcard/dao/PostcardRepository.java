@@ -30,12 +30,12 @@ public interface PostcardRepository extends JpaRepository<Postcard, Long> {
     @Query("SELECT p FROM Postcard p WHERE p.nest IN :nests AND p.isShared = true")
     List<Postcard> findAllByNestInAndIsSharedTrue(@Param("nests") java.util.Collection<Nest> nests);
 
-    @Query("SELECT p FROM Postcard p WHERE p.originalAuthor = :user OR p.currentOwner = :user")
+    @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.originalAuthor = :user OR p.currentOwner = :user")
     Page<Postcard> findInventoryByUser(@Param("user") User user, Pageable pageable);
 
-    @Query("SELECT p FROM Postcard p WHERE p.originalAuthor = :user")
+    @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.originalAuthor = :user")
     Page<Postcard> findCreatedByUser(@Param("user") User user, Pageable pageable);
 
-    @Query("SELECT p FROM Postcard p WHERE p.currentOwner = :user AND p.originalAuthor != :user")
+    @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.currentOwner = :user AND p.originalAuthor != :user")
     Page<Postcard> findAcquiredByUser(@Param("user") User user, Pageable pageable);
 }
