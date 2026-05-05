@@ -77,7 +77,7 @@ class NestPostControllerTest {
     @DisplayName("둥지 생성 성공")
     @WithMockUserPrincipal
     void createNest_success() throws Exception {
-        NestCreateRequestDto requestDto = new NestCreateRequestDto("새둥지", "내용", 37.5, 127.0, 100, List.of(1L), List.of("url"), false);
+        NestCreateRequestDto requestDto = new NestCreateRequestDto("새둥지", "내용", 37.5, 127.0, 100, null, List.of(1L), List.of("url"), false);
         NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(1L).build();
 
         given(nestService.createNest(any(), any())).willReturn(responseDto);
@@ -135,7 +135,7 @@ class NestPostControllerTest {
     @WithMockUserPrincipal
     void updateNest_success() throws Exception {
         Long nestId = 1L;
-        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null);
+        NestUpdateRequestDto requestDto = new NestUpdateRequestDto("수정제목", null, null, null, null, null);
         NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(nestId).build();
 
         given(nestService.updateNest(any(), eq(nestId), any())).willReturn(responseDto);

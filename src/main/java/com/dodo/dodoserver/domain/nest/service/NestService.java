@@ -7,6 +7,8 @@ import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.*;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
+import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -46,6 +48,7 @@ public class NestService {
     private final CommentLikeRepository commentLikeRepository;
     private final NestNotificationService nestNotificationService;
     private final RedisViewCountService redisViewCountService;
+    private final PostcardRepository postcardRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -85,6 +88,24 @@ public class NestService {
         }
 
         Nest savedNest = nestRepository.save(nest);
+
+        // 초기 엽서 등록 처리
+        if (requestDto.getPostcardId() != null) {
+            Postcard postcard = postcardRepository.findById(requestDto.getPostcardId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
+
+            if (postcard.getCurrentOwner() == null || !postcard.getCurrentOwner().getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
+            }
+            if (postcard.isShared()) {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED);
+            }
+            if (postcard.isExchanged()) {
+                throw new BusinessException(ErrorCode.ALREADY_EXCHANGED);
+            }
+
+            postcard.shareToNest(savedNest);
+        }
 
         if (requestDto.getCategoryIds() != null) {
             requestDto.getCategoryIds().forEach(categoryId -> {
@@ -153,6 +174,29 @@ public class NestService {
                         .build();
                 nestCategoryRepository.save(nestCategory);
             });
+        }
+
+        // 엽서 추가/변경 로직
+        if (requestDto.getPostcardId() != null) {
+            Postcard newPostcard = postcardRepository.findById(requestDto.getPostcardId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.POSTCARD_NOT_FOUND));
+
+            if (newPostcard.getCurrentOwner() == null || !newPostcard.getCurrentOwner().getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.NOT_POSTCARD_OWNER);
+            }
+            if (newPostcard.isShared()) {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED);
+            }
+            if (newPostcard.isExchanged()) {
+                throw new BusinessException(ErrorCode.ALREADY_EXCHANGED);
+            }
+
+            // 이미 둥지에 공유된 엽서가 있는지 확인
+            postcardRepository.findSharedPostcardByNest(nest).ifPresent(p -> {
+                throw new BusinessException(ErrorCode.ALREADY_SHARED); // 둥지당 엽서는 하나만 가능
+            });
+
+            newPostcard.shareToNest(nest);
         }
 
         log.info("둥지 수정 완료: ID={}", nestId);
@@ -274,10 +318,14 @@ public class NestService {
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
+        // 엽서 정보 일괄 조회
+        Map<Long, Long> nestPostcardMap = postcardRepository.findAllByNestInAndIsSharedTrue(nestEntities).stream()
+                .collect(Collectors.toMap(p -> p.getNest().getId(), Postcard::getId));
+
         return nestDtos.stream().map(dto -> {
             Nest nest = dto.getNest();
             boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
-            return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
+            return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nest.getId()));
         }).collect(Collectors.toList());
     }
 
@@ -306,6 +354,9 @@ public class NestService {
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
+        // 엽서 정보 조회
+        Postcard sharedPostcard = postcardRepository.findSharedPostcardByNest(nest).orElse(null);
+
         return NestDetailResponseDto.builder()
                 .id(nest.getId())
                 .title(nest.getTitle())
@@ -321,6 +372,8 @@ public class NestService {
                 .likeCount(likeCount)
                 .dislikeCount(dislikeCount)
                 .isUnlocked(isUnlocked)
+                .hasPostcard(sharedPostcard != null)
+                .postcardId(sharedPostcard != null ? sharedPostcard.getId() : null)
                 .build();
     }
 
@@ -474,10 +527,14 @@ public class NestService {
                 .map(uh -> uh.getNest().getId())
                 .collect(Collectors.toSet());
 
+        // 현재 페이지의 엽서 정보 일괄 조회
+        Map<Long, Long> nestPostcardMap = postcardRepository.findAllByNestInAndIsSharedTrue(nestEntities).stream()
+                .collect(Collectors.toMap(p -> p.getNest().getId(), Postcard::getId));
+
         return nests.map(dto -> {
             Nest nestEntity = dto.getNest();
             boolean isUnlocked = nestEntity.getCreator().equals(user) || unlockedNestIds.contains(nestEntity.getId());
-            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames());
+            return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nestEntity.getId()));
         });
     }
 

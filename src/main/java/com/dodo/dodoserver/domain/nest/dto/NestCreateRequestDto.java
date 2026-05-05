@@ -27,6 +27,8 @@ public class NestCreateRequestDto {
     @Min(value = 0, message = "해금 반경은 0 이상이어야 합니다.")
     private Integer unlockRadius;
 
+    private Long postcardId;
+
     private List<Long> categoryIds;
 
     @Size(max = 5, message = "이미지는 최대 5개까지 등록 가능합니다.")

@@ -30,4 +30,8 @@ public class NestDetailResponseDto {
     private long likeCount;
     private long dislikeCount;
     private boolean isUnlocked;
+
+    // 엽서 정보
+    private boolean hasPostcard;
+    private Long postcardId;
 }
