@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.mypage.dto;
 
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,15 +19,21 @@ public class MyPagePostcardResponseDto {
     private String content;
     private String authorNickname;
     private boolean isMine;
+    private PostcardReactionType reactionType;
     private LocalDateTime createdAt;
 
     public static MyPagePostcardResponseDto from(Postcard postcard, Long currentUserId) {
+        return from(postcard, null, currentUserId);
+    }
+
+    public static MyPagePostcardResponseDto from(Postcard postcard, PostcardReactionType reactionType, Long currentUserId) {
         return MyPagePostcardResponseDto.builder()
                 .id(postcard.getId())
                 .imageUrl(postcard.getImageUrl())
                 .content(postcard.getContent())
                 .authorNickname(postcard.getOriginalAuthor().getNickname())
                 .isMine(postcard.getOriginalAuthor().getId().equals(currentUserId))
+                .reactionType(reactionType)
                 .createdAt(postcard.getCreatedAt())
                 .build();
     }

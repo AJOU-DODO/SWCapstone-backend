@@ -3,7 +3,10 @@ package com.dodo.dodoserver.domain.mypage.service;
 import com.dodo.dodoserver.domain.mypage.dao.MyPageRepository;
 import com.dodo.dodoserver.domain.mypage.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardReactionRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReaction;
+import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -15,6 +18,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class MyPageService {
@@ -22,6 +29,7 @@ public class MyPageService {
     private final UserRepository userRepository;
     private final MyPageRepository myPageRepository;
     private final PostcardService postcardService;
+    private final PostcardReactionRepository postcardReactionRepository;
 
     private User getUser(Long userId) {
         return userRepository.findById(userId)
@@ -82,6 +90,22 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public Page<MyPagePostcardResponseDto> getMyPostcards(Long userId, String filter, Pageable pageable) {
         Page<Postcard> postcards = postcardService.getPostcardEntitiesByFilter(userId, filter, pageable);
-        return postcards.map(postcard -> MyPagePostcardResponseDto.from(postcard, userId));
+
+        if (postcards.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Postcard> postcardList = postcards.getContent();
+
+        // 리액션 일괄 조회 (N+1 방지)
+        Map<Long, PostcardReactionType> reactionMap = postcardReactionRepository.findAllByPostcardIn(postcardList)
+                .stream()
+                .collect(Collectors.toMap(
+                        r -> r.getPostcard().getId(),
+                        PostcardReaction::getReactionType
+                ));
+
+        return postcards.map(postcard ->
+                MyPagePostcardResponseDto.from(postcard, reactionMap.get(postcard.getId()), userId));
     }
 }

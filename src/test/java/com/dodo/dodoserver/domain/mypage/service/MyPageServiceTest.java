@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.mypage.service;
 import com.dodo.dodoserver.domain.mypage.dao.MyPageRepository;
 import com.dodo.dodoserver.domain.mypage.dto.MyPagePostcardResponseDto;
 import com.dodo.dodoserver.domain.mypage.dto.MyPageStatisticsResponseDto;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardReactionRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +46,9 @@ class MyPageServiceTest {
 
     @Mock
     private PostcardService postcardService;
+
+    @Mock
+    private PostcardReactionRepository postcardReactionRepository;
 
     @Test
     @DisplayName("유저가 없는 경우 예외 발생")
@@ -75,10 +80,11 @@ class MyPageServiceTest {
     @DisplayName("엽서 인벤토리 조회 - ALL 필터")
     void getMyPostcards_all() {
         // given
-        User user = User.builder().id(1L).build();
+        User user = User.builder().id(1L).nickname("test").build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
         given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardReactionRepository.findAllByPostcardIn(any())).willReturn(Collections.emptyList());
 
         // when
         Page<MyPagePostcardResponseDto> result = myPageService.getMyPostcards(1L, "ALL", pageable);
@@ -86,37 +92,42 @@ class MyPageServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         verify(postcardService).getPostcardEntitiesByFilter(1L, "ALL", pageable);
+        verify(postcardReactionRepository).findAllByPostcardIn(any());
     }
 
     @Test
     @DisplayName("엽서 인벤토리 조회 - CREATED 필터")
     void getMyPostcards_created() {
         // given
-        User user = User.builder().id(1L).build();
+        User user = User.builder().id(1L).nickname("test").build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
         given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardReactionRepository.findAllByPostcardIn(any())).willReturn(Collections.emptyList());
 
         // when
         myPageService.getMyPostcards(1L, "CREATED", pageable);
 
         // then
         verify(postcardService).getPostcardEntitiesByFilter(1L, "CREATED", pageable);
+        verify(postcardReactionRepository).findAllByPostcardIn(any());
     }
 
     @Test
     @DisplayName("엽서 인벤토리 조회 - ACQUIRED 필터")
     void getMyPostcards_acquired() {
         // given
-        User user = User.builder().id(1L).build();
+        User user = User.builder().id(1L).nickname("test").build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
         given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardReactionRepository.findAllByPostcardIn(any())).willReturn(Collections.emptyList());
 
         // when
         myPageService.getMyPostcards(1L, "ACQUIRED", pageable);
 
         // then
         verify(postcardService).getPostcardEntitiesByFilter(1L, "ACQUIRED", pageable);
+        verify(postcardReactionRepository).findAllByPostcardIn(any());
     }
 }
