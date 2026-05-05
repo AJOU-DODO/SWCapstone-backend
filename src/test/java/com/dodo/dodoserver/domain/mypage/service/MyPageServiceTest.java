@@ -3,8 +3,8 @@ package com.dodo.dodoserver.domain.mypage.service;
 import com.dodo.dodoserver.domain.mypage.dao.MyPageRepository;
 import com.dodo.dodoserver.domain.mypage.dto.MyPagePostcardResponseDto;
 import com.dodo.dodoserver.domain.mypage.dto.MyPageStatisticsResponseDto;
-import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -43,7 +43,7 @@ class MyPageServiceTest {
     private MyPageRepository myPageRepository;
 
     @Mock
-    private PostcardRepository postcardRepository;
+    private PostcardService postcardService;
 
     @Test
     @DisplayName("유저가 없는 경우 예외 발생")
@@ -78,15 +78,14 @@ class MyPageServiceTest {
         User user = User.builder().id(1L).build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
-        given(userRepository.findById(anyLong())).willReturn(Optional.of(user));
-        given(postcardRepository.findInventoryByUser(user, pageable)).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
 
         // when
         Page<MyPagePostcardResponseDto> result = myPageService.getMyPostcards(1L, "ALL", pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(postcardRepository).findInventoryByUser(user, pageable);
+        verify(postcardService).getPostcardEntitiesByFilter(1L, "ALL", pageable);
     }
 
     @Test
@@ -96,14 +95,13 @@ class MyPageServiceTest {
         User user = User.builder().id(1L).build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
-        given(userRepository.findById(anyLong())).willReturn(Optional.of(user));
-        given(postcardRepository.findCreatedByUser(user, pageable)).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
 
         // when
         myPageService.getMyPostcards(1L, "CREATED", pageable);
 
         // then
-        verify(postcardRepository).findCreatedByUser(user, pageable);
+        verify(postcardService).getPostcardEntitiesByFilter(1L, "CREATED", pageable);
     }
 
     @Test
@@ -113,13 +111,12 @@ class MyPageServiceTest {
         User user = User.builder().id(1L).build();
         Pageable pageable = PageRequest.of(0, 10);
         Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
-        given(userRepository.findById(anyLong())).willReturn(Optional.of(user));
-        given(postcardRepository.findAcquiredByUser(user, pageable)).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
 
         // when
         myPageService.getMyPostcards(1L, "ACQUIRED", pageable);
 
         // then
-        verify(postcardRepository).findAcquiredByUser(user, pageable);
+        verify(postcardService).getPostcardEntitiesByFilter(1L, "ACQUIRED", pageable);
     }
 }

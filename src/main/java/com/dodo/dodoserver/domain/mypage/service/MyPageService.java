@@ -3,8 +3,8 @@ package com.dodo.dodoserver.domain.mypage.service;
 import com.dodo.dodoserver.domain.mypage.dao.MyPageRepository;
 import com.dodo.dodoserver.domain.mypage.dto.*;
 import com.dodo.dodoserver.domain.nest.entity.ReactionType;
-import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
+import com.dodo.dodoserver.domain.postcard.service.PostcardService;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -21,7 +21,7 @@ public class MyPageService {
 
     private final UserRepository userRepository;
     private final MyPageRepository myPageRepository;
-    private final PostcardRepository postcardRepository;
+    private final PostcardService postcardService;
 
     private User getUser(Long userId) {
         return userRepository.findById(userId)
@@ -81,17 +81,7 @@ public class MyPageService {
 
     @Transactional(readOnly = true)
     public Page<MyPagePostcardResponseDto> getMyPostcards(Long userId, String filter, Pageable pageable) {
-        User user = getUser(userId);
-        
-        Page<Postcard> postcards;
-        if ("CREATED".equalsIgnoreCase(filter)) {
-            postcards = postcardRepository.findCreatedByUser(user, pageable);
-        } else if ("ACQUIRED".equalsIgnoreCase(filter)) {
-            postcards = postcardRepository.findAcquiredByUser(user, pageable);
-        } else {
-            postcards = postcardRepository.findInventoryByUser(user, pageable);
-        }
-
+        Page<Postcard> postcards = postcardService.getPostcardEntitiesByFilter(userId, filter, pageable);
         return postcards.map(postcard -> MyPagePostcardResponseDto.from(postcard, userId));
     }
 }
