@@ -21,6 +21,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import com.dodo.dodoserver.domain.user.entity.QUser;
+
 import static com.dodo.dodoserver.domain.nest.entity.QNest.nest;
 import static com.dodo.dodoserver.domain.nest.entity.QNestCategory.nestCategory;
 import static com.dodo.dodoserver.domain.nest.entity.QNestComment.nestComment;
@@ -28,6 +30,7 @@ import static com.dodo.dodoserver.domain.nest.entity.QNestDraft.nestDraft;
 import static com.dodo.dodoserver.domain.nest.entity.QNestReaction.nestReaction;
 import static com.dodo.dodoserver.domain.nest.entity.QUnlockHistory.unlockHistory;
 import static com.dodo.dodoserver.domain.postcard.entity.QPostcard.postcard;
+import static com.dodo.dodoserver.domain.user.entity.QUser.user;
 
 @Repository
 @RequiredArgsConstructor
@@ -75,6 +78,8 @@ public class MyPageRepositoryImpl implements MyPageRepository {
     public Page<NestComment> findCommentsByUser(User user, Pageable pageable) {
         JPAQuery<NestComment> query = queryFactory
                 .selectFrom(nestComment)
+                .join(nestComment.nest, nest).fetchJoin()
+                .join(nestComment.user, QUser.user).fetchJoin()
                 .where(
                         nestComment.user.eq(user),
                         nestComment.deletedAt.isNull()
@@ -154,7 +159,8 @@ public class MyPageRepositoryImpl implements MyPageRepository {
     public Page<NestComment> findCommentsOnUserNests(User user, Pageable pageable) {
         JPAQuery<NestComment> query = queryFactory
                 .selectFrom(nestComment)
-                .join(nestComment.nest, nest)
+                .join(nestComment.nest, nest).fetchJoin()
+                .join(nestComment.user, QUser.user).fetchJoin()
                 .where(
                         nest.creator.eq(user),
                         nestComment.user.ne(user),
