@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.dodo.dodoserver.domain.nest.entity.QNest.nest;
 import static com.dodo.dodoserver.domain.nest.entity.QNestCategory.nestCategory;
@@ -49,7 +50,15 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                  .where(nestCategory.category.id.eq(categoryId));
         }
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nest.count())
+                .from(nest)
+                .where(
+                        nest.creator.eq(user),
+                        nest.deletedAt.isNull(),
+                        categoryIdEq(categoryId)
+                ).fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<Nest> content = query
                 .offset(pageable.getOffset())
@@ -69,7 +78,14 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                         nestComment.deletedAt.isNull()
                 );
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nestComment.count())
+                .from(nestComment)
+                .where(
+                        nestComment.user.eq(user),
+                        nestComment.deletedAt.isNull()
+                ).fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<NestComment> content = query
                 .offset(pageable.getOffset())
@@ -86,7 +102,12 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                 .selectFrom(nestDraft)
                 .where(nestDraft.creator.eq(user));
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nestDraft.count())
+                .from(nestDraft)
+                .where(nestDraft.creator.eq(user))
+                .fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<NestDraft> content = query
                 .offset(pageable.getOffset())
@@ -108,7 +129,15 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                         nest.deletedAt.isNull()
                 );
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nest.count())
+                .from(unlockHistory)
+                .join(unlockHistory.nest, nest)
+                .where(
+                        unlockHistory.user.eq(user),
+                        nest.deletedAt.isNull()
+                ).fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<Nest> content = query
                 .offset(pageable.getOffset())
@@ -126,11 +155,20 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                 .join(nestComment.nest, nest)
                 .where(
                         nest.creator.eq(user),
-                        nestComment.user.ne(user), // Optional: exclude user's own comments on their own nests
+                        nestComment.user.ne(user),
                         nestComment.deletedAt.isNull()
                 );
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nestComment.count())
+                .from(nestComment)
+                .join(nestComment.nest, nest)
+                .where(
+                        nest.creator.eq(user),
+                        nestComment.user.ne(user),
+                        nestComment.deletedAt.isNull()
+                ).fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<NestComment> content = query
                 .offset(pageable.getOffset())
@@ -153,7 +191,16 @@ public class MyPageRepositoryImpl implements MyPageRepository {
                         nest.deletedAt.isNull()
                 );
 
-        long total = query.fetchCount();
+        Long totalCount = queryFactory
+                .select(nest.count())
+                .from(nestReaction)
+                .join(nestReaction.nest, nest)
+                .where(
+                        nestReaction.user.eq(user),
+                        nestReaction.reactionType.eq(ReactionType.LIKE),
+                        nest.deletedAt.isNull()
+                ).fetchOne();
+        long total = Optional.ofNullable(totalCount).orElse(0L);
 
         List<Nest> content = query
                 .offset(pageable.getOffset())
@@ -166,26 +213,32 @@ public class MyPageRepositoryImpl implements MyPageRepository {
 
     @Override
     public long countNestsByUser(User user) {
-        return queryFactory
-                .selectFrom(nest)
+        Long count = queryFactory
+                .select(nest.count())
+                .from(nest)
                 .where(nest.creator.eq(user), nest.deletedAt.isNull())
-                .fetchCount();
+                .fetchOne();
+        return Optional.ofNullable(count).orElse(0L);
     }
 
     @Override
     public long countCommentsByUser(User user) {
-        return queryFactory
-                .selectFrom(nestComment)
+        Long count = queryFactory
+                .select(nestComment.count())
+                .from(nestComment)
                 .where(nestComment.user.eq(user), nestComment.deletedAt.isNull())
-                .fetchCount();
+                .fetchOne();
+        return Optional.ofNullable(count).orElse(0L);
     }
 
     @Override
     public long countPostcardsByUser(User user) {
-        return queryFactory
-                .selectFrom(postcard)
+        Long count = queryFactory
+                .select(postcard.count())
+                .from(postcard)
                 .where(postcard.currentOwner.eq(user), postcard.deletedAt.isNull())
-                .fetchCount();
+                .fetchOne();
+        return Optional.ofNullable(count).orElse(0L);
     }
 
     private BooleanExpression categoryIdEq(Long categoryId) {
