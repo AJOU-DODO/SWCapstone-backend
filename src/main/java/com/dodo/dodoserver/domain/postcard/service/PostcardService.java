@@ -122,16 +122,7 @@ public class PostcardService {
 
     @Transactional(readOnly = true)
     public Page<PostcardResponseDto> getPostcardInventory(Long userId, String filter, Pageable pageable) {
-        User user = getUser(userId);
-        
-        Page<Postcard> inventory;
-        if ("CREATED".equalsIgnoreCase(filter)) {
-            inventory = postcardRepository.findCreatedByUser(user, pageable);
-        } else if ("ACQUIRED".equalsIgnoreCase(filter)) {
-            inventory = postcardRepository.findAcquiredByUser(user, pageable);
-        } else {
-            inventory = postcardRepository.findInventoryByUser(user, pageable);
-        }
+        Page<Postcard> inventory = getPostcardEntitiesByFilter(userId, filter, pageable);
         
         if (inventory.isEmpty()) {
             return Page.empty(pageable);
@@ -148,7 +139,21 @@ public class PostcardService {
                 ));
 
         return inventory.map(p -> PostcardResponseDto.from(p, reactionMap.get(p.getId()), userId));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Postcard> getPostcardEntitiesByFilter(Long userId, String filter, Pageable pageable) {
+        User user = getUser(userId);
+
+        if ("CREATED".equalsIgnoreCase(filter)) {
+            return postcardRepository.findCreatedByUser(user, pageable);
+        } else if ("ACQUIRED".equalsIgnoreCase(filter)) {
+            return postcardRepository.findAcquiredByUser(user, pageable);
+        } else {
+            return postcardRepository.findInventoryByUser(user, pageable);
         }
+    }
+
 
     @Transactional
     public PostcardResponseDto updatePostcard(Long userId, Long postcardId, PostcardCreateRequestDto requestDto) {
