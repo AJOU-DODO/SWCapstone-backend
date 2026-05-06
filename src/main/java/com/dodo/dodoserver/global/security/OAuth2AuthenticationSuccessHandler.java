@@ -37,6 +37,19 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         User user = userRepository.findById(principal.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 제재 여부 확인
+        if (user.getSanctionedUntil() != null && user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now())) {
+            response.setContentType("application/json;charset=UTF-8");
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            
+            String result = objectMapper.writeValueAsString(ApiResponseDto.error(
+                ErrorCode.FORBIDDEN.getCode(), 
+                "귀하의 계정은 제재 중입니다. 만료일: " + user.getSanctionedUntil()
+            ));
+            response.getWriter().write(result);
+            return;
+        }
         
         String role = principal.getRole();
 
