@@ -43,11 +43,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             response.setContentType("application/json;charset=UTF-8");
             response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
             
-            String result = objectMapper.writeValueAsString(ApiResponseDto.error(
+            ApiResponseDto<Void> errorResponse = ApiResponseDto.error(
                 ErrorCode.USER_SANCTIONED.getCode(), 
                 ErrorCode.USER_SANCTIONED.getMessage() + " 만료일: " + user.getSanctionedUntil()
-            ));
-            response.getWriter().write(result);
+            );
+            
+            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
             return;
         }
         
