@@ -18,10 +18,11 @@ public class CorsConfig {
         // setAllowedOrigins 대신 setAllowedOriginPatterns 사용 (와일드카드 패턴 지원)
         configuration.setAllowedOriginPatterns(List.of(
             "http://localhost:3000",
-            "https://sw-capstone-frontend-*-jeonguihoons-projects.vercel.app"
+            "https://sw-capstone-frontend-*-jeonguihoons-projects.vercel.app",
+            "https://sw-capstone-frontend.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
