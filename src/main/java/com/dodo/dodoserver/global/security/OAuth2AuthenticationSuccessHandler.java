@@ -41,11 +41,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // 제재 여부 확인
         if (user.getSanctionedUntil() != null && user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now())) {
             response.setContentType("application/json;charset=UTF-8");
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
             
             String result = objectMapper.writeValueAsString(ApiResponseDto.error(
-                ErrorCode.FORBIDDEN.getCode(), 
-                "귀하의 계정은 제재 중입니다. 만료일: " + user.getSanctionedUntil()
+                ErrorCode.USER_SANCTIONED.getCode(), 
+                ErrorCode.USER_SANCTIONED.getMessage() + " 만료일: " + user.getSanctionedUntil()
             ));
             response.getWriter().write(result);
             return;

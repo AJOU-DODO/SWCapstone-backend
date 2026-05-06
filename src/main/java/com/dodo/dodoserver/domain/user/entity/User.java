@@ -41,9 +41,11 @@ public class User {
     @Column(nullable = false)
     private String providerId; // 제공자로부터 받은 고유 ID
 
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false; // Soft Delete용 플래그
 
+    @Builder.Default
     @Column(name = "is_onboarded", nullable = false)
     private boolean isOnboarded = false; // 상세 정보 회원 가입
 
