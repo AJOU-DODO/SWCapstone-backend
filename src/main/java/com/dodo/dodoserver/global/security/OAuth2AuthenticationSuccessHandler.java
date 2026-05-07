@@ -39,16 +39,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 제재 여부 확인
-        if (user.getSanctionedUntil() != null && user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now())) {
-            response.setContentType("application/json;charset=UTF-8");
-            response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
-            
-            ApiResponseDto<Void> errorResponse = ApiResponseDto.error(
-                ErrorCode.USER_SANCTIONED.getCode(), 
-                ErrorCode.USER_SANCTIONED.getMessage() + " 만료일: " + user.getSanctionedUntil()
-            );
-            
-            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+        if (isSanctioned(user)) {
+            sendSanctionResponse(response, user);
             return;
         }
         
@@ -67,5 +59,22 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         ));
 
         response.getWriter().write(result);
+    }
+
+    private boolean isSanctioned(User user) {
+        return user.getSanctionedUntil() != null && 
+               user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now());
+    }
+
+    private void sendSanctionResponse(HttpServletResponse response, User user) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
+
+        ApiResponseDto<Void> errorResponse = ApiResponseDto.error(
+            ErrorCode.USER_SANCTIONED.getCode(),
+            ErrorCode.USER_SANCTIONED.getMessage() + " 만료일: " + user.getSanctionedUntil()
+        );
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }
