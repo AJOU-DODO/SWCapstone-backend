@@ -1,10 +1,10 @@
 package com.dodo.dodoserver.domain.admin.service;
 
 import com.dodo.dodoserver.domain.admin.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.dao.UserAdminRepository;
 import com.dodo.dodoserver.domain.admin.dto.UserSanctionRequestDto;
 import com.dodo.dodoserver.domain.admin.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.entity.SanctionType;
-import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class AdminServiceTest {
     private AdminService adminService;
 
     @Mock
-    private UserRepository userRepository;
+    private UserAdminRepository userAdminRepository;
 
     @Mock
     private SanctionHistoryRepository sanctionHistoryRepository;
@@ -45,7 +45,7 @@ class AdminServiceTest {
         requestDto.setSanctionType(SanctionType.SEVEN_DAYS);
         requestDto.setReason("테스트 제재");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userAdminRepository.findById(userId)).willReturn(Optional.of(user));
 
         // when
         adminService.sanctionUser(userId, requestDto);
@@ -68,7 +68,7 @@ class AdminServiceTest {
         requestDto.setSanctionType(SanctionType.PERMANENT);
         requestDto.setReason("영구 정지 테스트");
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(userAdminRepository.findById(userId)).willReturn(Optional.of(user));
 
         // when
         adminService.sanctionUser(userId, requestDto);

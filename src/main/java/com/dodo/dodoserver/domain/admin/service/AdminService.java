@@ -1,11 +1,11 @@
 package com.dodo.dodoserver.domain.admin.service;
 
 import com.dodo.dodoserver.domain.admin.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.dao.UserAdminRepository;
 import com.dodo.dodoserver.domain.admin.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.dto.UserSanctionRequestDto;
 import com.dodo.dodoserver.domain.admin.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.entity.SanctionType;
-import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -22,14 +22,14 @@ import java.time.LocalDateTime;
 @Transactional(readOnly = true)
 public class AdminService {
 
-    private final UserRepository userRepository;
+    private final UserAdminRepository userAdminRepository;
     private final SanctionHistoryRepository sanctionHistoryRepository;
 
     /**
      * 전체 유저 관리자용 정보 조회 (페이징)
      */
     public Page<UserAdminResponseDto> getAllUsers(Pageable pageable) {
-        return userRepository.findAllUserAdminInfo(pageable);
+        return userAdminRepository.findAllUserAdminInfo(pageable);
     }
 
     /**
@@ -37,7 +37,7 @@ public class AdminService {
      */
     @Transactional
     public void sanctionUser(Long userId, UserSanctionRequestDto requestDto) {
-        User user = userRepository.findById(userId)
+        User user = userAdminRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         LocalDateTime endedAt = calculateEndedAt(requestDto.getSanctionType());
