@@ -40,10 +40,10 @@ public class AdminService {
         User user = userAdminRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        LocalDateTime endedAt = calculateEndedAt(requestDto.getSanctionType());
+        LocalDateTime endedAt = requestDto.getSanctionType().calculateEndedAt();
         
-        // 1. User 엔티티의 sanctionedUntil 업데이트
-        user.setSanctionedUntil(endedAt);
+        // 1. User 엔티티의 제재 정보 업데이트
+        user.applySanction(endedAt);
 
         // 2. 제재 이력 저장
         SanctionHistory history = SanctionHistory.builder()
@@ -54,13 +54,5 @@ public class AdminService {
                 .build();
         
         sanctionHistoryRepository.save(history);
-    }
-
-    private LocalDateTime calculateEndedAt(SanctionType type) {
-        if (type == SanctionType.PERMANENT) {
-            // 영구 정지: 9999년 12월 31일
-            return LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-        }
-        return LocalDateTime.now().plusDays(type.getDays());
     }
 }

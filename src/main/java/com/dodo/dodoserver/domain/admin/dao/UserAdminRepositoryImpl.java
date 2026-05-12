@@ -6,11 +6,12 @@ import com.dodo.dodoserver.domain.nest.entity.QNestComment;
 import com.dodo.dodoserver.domain.user.entity.QUser;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Wildcard;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,8 +35,8 @@ public class UserAdminRepositoryImpl implements UserAdminRepositoryCustom {
                         user.email,
                         user.role,
                         user.createdAt,
-                        nest.count(),
-                        comment.count(),
+                        nest.id.countDistinct(),
+                        comment.id.countDistinct(),
                         user.sanctionedUntil
                 ))
                 .from(user)
@@ -46,11 +47,10 @@ public class UserAdminRepositoryImpl implements UserAdminRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        JPAQuery<Long> totalQuery = queryFactory
                 .select(Wildcard.count)
-                .from(user)
-                .fetchFirst();
+                .from(user);
 
-        return new PageImpl<>(content, pageable, total);
+        return PageableExecutionUtils.getPage(content, pageable, totalQuery::fetchOne);
     }
 }

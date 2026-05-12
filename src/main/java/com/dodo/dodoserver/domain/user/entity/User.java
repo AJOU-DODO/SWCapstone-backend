@@ -58,4 +58,11 @@ public class User {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    /**
+     * 유저에게 제재를 적용합니다.
+     */
+    public void applySanction(LocalDateTime endedAt) {
+        this.sanctionedUntil = endedAt;
+    }
 }
