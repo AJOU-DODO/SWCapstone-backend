@@ -1,11 +1,10 @@
-package com.dodo.dodoserver.domain.admin.service;
+package com.dodo.dodoserver.domain.admin.user.service;
 
-import com.dodo.dodoserver.domain.admin.dao.SanctionHistoryRepository;
-import com.dodo.dodoserver.domain.admin.dao.UserAdminRepository;
-import com.dodo.dodoserver.domain.admin.dto.UserAdminResponseDto;
-import com.dodo.dodoserver.domain.admin.dto.UserSanctionRequestDto;
-import com.dodo.dodoserver.domain.admin.entity.SanctionHistory;
-import com.dodo.dodoserver.domain.admin.entity.SanctionType;
+import com.dodo.dodoserver.domain.admin.user.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.user.dao.UserAdminRepository;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;

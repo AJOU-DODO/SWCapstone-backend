@@ -1,6 +1,6 @@
-package com.dodo.dodoserver.domain.admin.dao;
+package com.dodo.dodoserver.domain.admin.user.dao;
 
-import com.dodo.dodoserver.domain.admin.entity.SanctionHistory;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

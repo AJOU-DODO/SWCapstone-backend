@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.domain.admin.dto;
+package com.dodo.dodoserver.domain.admin.user.dto;
 
 import com.dodo.dodoserver.domain.user.entity.Role;
 import lombok.*;

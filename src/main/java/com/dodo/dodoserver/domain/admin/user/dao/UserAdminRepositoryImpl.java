@@ -1,6 +1,6 @@
-package com.dodo.dodoserver.domain.admin.dao;
+package com.dodo.dodoserver.domain.admin.user.dao;
 
-import com.dodo.dodoserver.domain.admin.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.nest.entity.QNest;
 import com.dodo.dodoserver.domain.nest.entity.QNestComment;
 import com.dodo.dodoserver.domain.user.entity.QUser;

@@ -1,8 +1,8 @@
-package com.dodo.dodoserver.domain.admin.controller;
+package com.dodo.dodoserver.domain.admin.user.controller;
 
-import com.dodo.dodoserver.domain.admin.dto.UserAdminResponseDto;
-import com.dodo.dodoserver.domain.admin.dto.UserSanctionRequestDto;
-import com.dodo.dodoserver.domain.admin.service.AdminService;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
+import com.dodo.dodoserver.domain.admin.user.service.AdminService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

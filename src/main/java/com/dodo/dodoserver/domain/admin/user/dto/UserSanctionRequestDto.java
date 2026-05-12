@@ -1,6 +1,6 @@
-package com.dodo.dodoserver.domain.admin.dto;
+package com.dodo.dodoserver.domain.admin.user.dto;
 
-import com.dodo.dodoserver.domain.admin.entity.SanctionType;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

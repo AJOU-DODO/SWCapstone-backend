@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.domain.admin.dao;
+package com.dodo.dodoserver.domain.admin.user.dao;
 
 import com.dodo.dodoserver.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

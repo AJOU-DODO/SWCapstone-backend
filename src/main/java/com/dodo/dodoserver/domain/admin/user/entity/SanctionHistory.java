@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.domain.admin.entity;
+package com.dodo.dodoserver.domain.admin.user.entity;
 
 import com.dodo.dodoserver.domain.user.entity.User;
 import jakarta.persistence.*;

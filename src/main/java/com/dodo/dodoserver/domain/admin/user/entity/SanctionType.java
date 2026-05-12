@@ -1,4 +1,4 @@
-package com.dodo.dodoserver.domain.admin.entity;
+package com.dodo.dodoserver.domain.admin.user.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,10 @@
-package com.dodo.dodoserver.domain.admin.controller;
+package com.dodo.dodoserver.domain.admin.user.controller;
 
-import com.dodo.dodoserver.domain.admin.dto.UserAdminResponseDto;
-import com.dodo.dodoserver.domain.admin.dto.UserSanctionRequestDto;
-import com.dodo.dodoserver.domain.admin.entity.SanctionType;
-import com.dodo.dodoserver.domain.admin.service.AdminService;
+import com.dodo.dodoserver.domain.admin.user.controller.AdminController;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
+import com.dodo.dodoserver.domain.admin.user.service.AdminService;
 import com.dodo.dodoserver.domain.user.entity.Role;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.global.config.SecurityConfig;
