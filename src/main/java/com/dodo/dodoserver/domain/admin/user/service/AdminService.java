@@ -1,0 +1,57 @@
+package com.dodo.dodoserver.domain.admin.user.service;
+
+import com.dodo.dodoserver.domain.admin.user.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.user.dao.UserAdminRepository;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
+import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class AdminService {
+
+    private final UserAdminRepository userAdminRepository;
+    private final SanctionHistoryRepository sanctionHistoryRepository;
+
+    /**
+     * 전체 유저 관리자용 정보 조회 (페이징)
+     */
+    public Page<UserAdminResponseDto> getAllUsers(Pageable pageable) {
+        return userAdminRepository.findAllUserAdminInfo(pageable);
+    }
+
+    /**
+     * 유저 제재 처리
+     */
+    @Transactional
+    public void sanctionUser(Long userId, UserSanctionRequestDto requestDto) {
+        User user = userAdminRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        LocalDateTime endedAt = requestDto.getSanctionType().calculateEndedAt();
+        
+        // 1. User 엔티티의 제재 정보 업데이트
+        user.applySanction(endedAt);
+
+        // 2. 제재 이력 저장
+        SanctionHistory history = SanctionHistory.builder()
+                .user(user)
+                .sanctionType(requestDto.getSanctionType())
+                .reason(requestDto.getReason())
+                .endedAt(endedAt)
+                .build();
+        
+        sanctionHistoryRepository.save(history);
+    }
+}

@@ -41,11 +41,16 @@ public class User {
     @Column(nullable = false)
     private String providerId; // 제공자로부터 받은 고유 ID
 
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false; // Soft Delete용 플래그
 
+    @Builder.Default
     @Column(name = "is_onboarded", nullable = false)
     private boolean isOnboarded = false; // 상세 정보 회원 가입
+
+    @Column(name = "sanctioned_until")
+    private LocalDateTime sanctionedUntil; // 제재 종료일 (null이면 정상, 현재보다 미래면 제재 중)
 
     @CreatedDate
     @Column(updatable = false)
@@ -53,4 +58,11 @@ public class User {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    /**
+     * 유저에게 제재를 적용합니다.
+     */
+    public void applySanction(LocalDateTime endedAt) {
+        this.sanctionedUntil = endedAt;
+    }
 }

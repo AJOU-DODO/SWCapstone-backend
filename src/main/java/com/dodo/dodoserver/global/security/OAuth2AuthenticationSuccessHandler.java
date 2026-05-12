@@ -21,6 +21,9 @@ import java.io.IOException;
  */
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.domain.admin.user.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionErrorResponseDto;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
     private final UserRepository userRepository; // 추가: 유저 조회를 위함
+    private final SanctionHistoryRepository sanctionHistoryRepository;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -37,6 +41,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         User user = userRepository.findById(principal.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 제재 여부 확인
+        if (isSanctioned(user)) {
+            sendSanctionResponse(response, user);
+            return;
+        }
         
         String role = principal.getRole();
 
@@ -53,5 +63,33 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         ));
 
         response.getWriter().write(result);
+    }
+
+    private boolean isSanctioned(User user) {
+        return user.getSanctionedUntil() != null && 
+               user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now());
+    }
+
+    private void sendSanctionResponse(HttpServletResponse response, User user) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
+
+        // 가장 최근의 제재 사유 조회
+        String reason = sanctionHistoryRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .findFirst()
+                .map(SanctionHistory::getReason)
+                .orElse("사유가 등록되지 않았습니다.");
+
+        ApiResponseDto<UserSanctionErrorResponseDto> errorResponse = ApiResponseDto.error(
+            ErrorCode.USER_SANCTIONED.getCode(),
+            ErrorCode.USER_SANCTIONED.getMessage(),
+            UserSanctionErrorResponseDto.builder()
+                .sanctionedUntil(user.getSanctionedUntil())
+                .reason(reason)
+                .build()
+        );
+
+        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }

@@ -29,6 +29,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "U003", "이미 사용 중인 닉네임입니다."),
     ALREADY_ONBOARDED(HttpStatus.BAD_REQUEST, "U004", "이미 온보딩이 완료된 사용자입니다."),
     ONBOARDING_REQUIRED(HttpStatus.BAD_REQUEST, "U005", "온보딩이 완료되지 않은 사용자입니다."),
+    USER_SANCTIONED(HttpStatus.FORBIDDEN, "U006", "해당 계정은 서비스 정책 위반으로 인해 제재 중입니다."),
 
     // Category
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "카테고리를 찾을 수 없습니다."),
