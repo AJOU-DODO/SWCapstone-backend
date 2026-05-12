@@ -24,7 +24,7 @@ public class CategoryAdminRepositoryImpl implements CategoryAdminRepository {
 
     @Override
     public List<AdminCategoryResponseDto> findAllAdminCategories(boolean includeDeleted, String sortBy) {
-        NumberExpression<Long> nestCount = Expressions.asNumber(
+        NumberExpression<Long> nestCount = Expressions.numberTemplate(Long.class, "({0})",
                 JPAExpressions.select(nestCategory.count())
                         .from(nestCategory)
                         .join(nestCategory.nest, nest)
@@ -33,13 +33,13 @@ public class CategoryAdminRepositoryImpl implements CategoryAdminRepository {
         ).coalesce(0L);
 
         JPAQuery<AdminCategoryResponseDto> query = queryFactory
-                .select(Projections.fields(AdminCategoryResponseDto.class,
+                .select(Projections.constructor(AdminCategoryResponseDto.class,
                         category.id,
                         category.name,
                         category.sortOrder,
                         category.createdAt,
                         category.deletedAt,
-                        nestCount.as("nestCount")
+                        nestCount
                 ))
                 .from(category);
 
