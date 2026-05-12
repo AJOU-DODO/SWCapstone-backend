@@ -34,6 +34,7 @@ public enum ErrorCode {
     // Category
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CA001", "카테고리를 찾을 수 없습니다."),
     DUPLICATE_CATEGORY_NAME(HttpStatus.BAD_REQUEST, "CA002", "이미 존재하는 카테고리 이름입니다."),
+    ALREADY_DELETED_CATEGORY(HttpStatus.BAD_REQUEST, "CA003", "이미 삭제된 카테고리입니다."),
 
     // Nest (N)
     NEST_NOT_FOUND(HttpStatus.NOT_FOUND, "N001", "둥지를 찾을 수 없습니다."),
