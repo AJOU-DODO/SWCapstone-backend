@@ -33,13 +33,13 @@ public class CategoryAdminRepositoryImpl implements CategoryAdminRepository {
         ).coalesce(0L);
 
         JPAQuery<AdminCategoryResponseDto> query = queryFactory
-                .select(Projections.constructor(AdminCategoryResponseDto.class,
+                .select(Projections.fields(AdminCategoryResponseDto.class,
                         category.id,
                         category.name,
                         category.sortOrder,
                         category.createdAt,
                         category.deletedAt,
-                        nestCount
+                        nestCount.as("nestCount")
                 ))
                 .from(category);
 
