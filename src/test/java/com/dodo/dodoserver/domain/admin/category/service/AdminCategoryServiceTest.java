@@ -57,15 +57,23 @@ class AdminCategoryServiceTest {
     void createCategory_success() {
         // given
         AdminCategoryRequestDto requestDto = new AdminCategoryRequestDto("운동");
+        Category category = Category.builder()
+                .id(1L)
+                .name("운동")
+                .sortOrder(1)
+                .build();
+        
         given(categoryRepository.findByName("운동")).willReturn(Optional.empty());
-        given(categoryRepository.findAll()).willReturn(List.of());
+        given(categoryRepository.findMaxSortOrder()).willReturn(Optional.of(0));
+        given(categoryRepository.save(any(Category.class))).willReturn(category);
 
         // when
         AdminCategoryResponseDto result = adminCategoryService.createCategory(requestDto);
 
         // then
         assertThat(result.getName()).isEqualTo("운동");
-        assertThat(result.getSortOrder()).isEqualTo(0);
+        assertThat(result.getSortOrder()).isEqualTo(1);
+        assertThat(result.getId()).isEqualTo(1L);
         verify(categoryRepository, times(1)).save(any(Category.class));
     }
 
@@ -102,7 +110,7 @@ class AdminCategoryServiceTest {
         adminCategoryService.deleteCategory(categoryId);
 
         // then
-        assertThat(category.getDeletedAt()).isNotNull();
+        verify(categoryRepository, times(1)).delete(category);
     }
 
     @Test
