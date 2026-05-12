@@ -35,26 +35,23 @@ public class AdminCategoryService {
             throw new BusinessException(ErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
-        // 가장 마지막 순서 찾기
-        Integer maxSortOrder = categoryRepository.findAll().stream()
-                .map(Category::getSortOrder)
-                .max(Integer::compareTo)
-                .orElse(-1);
+        // 가장 마지막 순서 찾기 (최적화: DB에서 직접 MAX 조회)
+        Integer maxSortOrder = categoryRepository.findMaxSortOrder().orElse(-1);
 
         Category category = Category.builder()
                 .name(requestDto.getName())
                 .sortOrder(maxSortOrder + 1)
                 .build();
 
-        categoryRepository.save(category);
+        Category savedCategory = categoryRepository.save(category);
         
         // 새로 생성된 카테고리 정보 반환 (nestCount는 0)
         return AdminCategoryResponseDto.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .sortOrder(category.getSortOrder())
-                .createdAt(category.getCreatedAt())
-                .deletedAt(category.getDeletedAt())
+                .id(savedCategory.getId())
+                .name(savedCategory.getName())
+                .sortOrder(savedCategory.getSortOrder())
+                .createdAt(savedCategory.getCreatedAt())
+                .deletedAt(savedCategory.getDeletedAt())
                 .nestCount(0L)
                 .build();
     }
@@ -81,14 +78,17 @@ public class AdminCategoryService {
                 .collect(Collectors.toList());
 
         List<Category> categories = categoryRepository.findAllById(categoryIds);
+        
+        if (categories.size() != categoryIds.size()) {
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
         Map<Long, Category> categoryMap = categories.stream()
                 .collect(Collectors.toMap(Category::getId, c -> c));
 
         requestDto.getOrders().forEach(orderDto -> {
             Category category = categoryMap.get(orderDto.getId());
-            if (category != null) {
-                category.setSortOrder(orderDto.getSortOrder());
-            }
+            category.setSortOrder(orderDto.getSortOrder());
         });
     }
 
@@ -101,6 +101,6 @@ public class AdminCategoryService {
             throw new BusinessException(ErrorCode.ALREADY_DELETED_CATEGORY);
         }
 
-        category.setDeletedAt(LocalDateTime.now());
+        categoryRepository.delete(category);
     }
 }
