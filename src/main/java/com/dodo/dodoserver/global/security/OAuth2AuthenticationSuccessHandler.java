@@ -21,6 +21,7 @@ import java.io.IOException;
  */
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionErrorResponseDto;
 
 @Component
 @RequiredArgsConstructor
@@ -70,9 +71,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
 
-        ApiResponseDto<Void> errorResponse = ApiResponseDto.error(
+        ApiResponseDto<UserSanctionErrorResponseDto> errorResponse = ApiResponseDto.error(
             ErrorCode.USER_SANCTIONED.getCode(),
-            ErrorCode.USER_SANCTIONED.getMessage() + " 만료일: " + user.getSanctionedUntil()
+            ErrorCode.USER_SANCTIONED.getMessage(),
+            new UserSanctionErrorResponseDto(user.getSanctionedUntil())
         );
 
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
