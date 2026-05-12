@@ -35,7 +35,6 @@ public class AdminCategoryService {
             throw new BusinessException(ErrorCode.DUPLICATE_CATEGORY_NAME);
         }
 
-        // 가장 마지막 순서 찾기 (최적화: DB에서 직접 MAX 조회)
         Integer maxSortOrder = categoryRepository.findMaxSortOrder().orElse(-1);
 
         Category category = Category.builder()
@@ -45,7 +44,6 @@ public class AdminCategoryService {
 
         Category savedCategory = categoryRepository.save(category);
         
-        // 새로 생성된 카테고리 정보 반환 (nestCount는 0)
         return AdminCategoryResponseDto.builder()
                 .id(savedCategory.getId())
                 .name(savedCategory.getName())
