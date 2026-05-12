@@ -21,6 +21,8 @@ import java.io.IOException;
  */
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.domain.admin.user.dao.SanctionHistoryRepository;
+import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionErrorResponseDto;
 
 @Component
@@ -30,6 +32,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
     private final UserRepository userRepository; // 추가: 유저 조회를 위함
+    private final SanctionHistoryRepository sanctionHistoryRepository;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -71,10 +74,20 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(ErrorCode.USER_SANCTIONED.getStatus().value());
 
+        // 가장 최근의 제재 사유 조회
+        String reason = sanctionHistoryRepository.findAllByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .findFirst()
+                .map(SanctionHistory::getReason)
+                .orElse("사유가 등록되지 않았습니다.");
+
         ApiResponseDto<UserSanctionErrorResponseDto> errorResponse = ApiResponseDto.error(
             ErrorCode.USER_SANCTIONED.getCode(),
             ErrorCode.USER_SANCTIONED.getMessage(),
-            new UserSanctionErrorResponseDto(user.getSanctionedUntil())
+            UserSanctionErrorResponseDto.builder()
+                .sanctionedUntil(user.getSanctionedUntil())
+                .reason(reason)
+                .build()
         );
 
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
