@@ -89,7 +89,7 @@ class AdminNoticeControllerTest {
                         .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.data").value(1L));
+                .andExpect(jsonPath("$.data.id").value(1L));
     }
 
     @Test

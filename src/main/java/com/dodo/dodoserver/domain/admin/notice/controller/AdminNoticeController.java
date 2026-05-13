@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.notice.controller;
 
+import com.dodo.dodoserver.domain.admin.notice.dto.NoticeCreateResponseDto;
 import com.dodo.dodoserver.domain.admin.notice.dto.NoticeRequestDto;
 import com.dodo.dodoserver.domain.admin.notice.service.AdminNoticeService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
@@ -22,8 +23,8 @@ public class AdminNoticeController {
 
     @Operation(summary = "공지사항 등록 (초안)")
     @PostMapping
-    public ApiResponseDto<Long> createNotice(@RequestBody @Valid NoticeRequestDto requestDto) {
-        return ApiResponseDto.success(adminNoticeService.createNotice(requestDto));
+    public ApiResponseDto<NoticeCreateResponseDto> createNotice(@RequestBody @Valid NoticeRequestDto requestDto) {
+        return ApiResponseDto.success(NoticeCreateResponseDto.from(adminNoticeService.createNotice(requestDto)));
     }
 
     @Operation(summary = "공지사항 수정")
