@@ -80,7 +80,7 @@ public class AdminNoticeService {
         notice.publish();
         
         // Batch Job 실행 (비동기 위임)
-        runPublishJobAsync(notice.getTitle(), notice.getCategory().getDescription());
+        runPublishJobAsync(notice.getId(), notice.getTitle(), notice.getCategory().getDescription());
     }
 
     /**
@@ -101,9 +101,10 @@ public class AdminNoticeService {
     }
 
     @Async("fcmExecutor")
-    public void runPublishJobAsync(String title, String content) {
+    public void runPublishJobAsync(Long noticeId, String title, String content) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
+                    .addLong("noticeId", noticeId)
                     .addString("title", title)
                     .addString("content", content)
                     .addLong("time", System.currentTimeMillis())

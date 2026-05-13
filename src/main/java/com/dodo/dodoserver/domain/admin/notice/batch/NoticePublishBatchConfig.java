@@ -52,7 +52,7 @@ public class NoticePublishBatchConfig {
         return new StepBuilder("noticePublishStep", jobRepository)
                 .<UserDevice, String>chunk(CHUNK_SIZE, transactionManager)
                 .reader(userDeviceTokenReader())
-                .writer(fcmTokenWriter(null, null)) // 파라미터는 late binding으로 주입됨
+                .writer(fcmTokenWriter(null, null, null)) // 파라미터는 late binding으로 주입됨
                 .build();
     }
 
@@ -70,19 +70,23 @@ public class NoticePublishBatchConfig {
     @Bean
     @StepScope
     public ItemWriter<String> fcmTokenWriter(
+            @Value("#{jobParameters['noticeId']}") Long noticeId,
             @Value("#{jobParameters['title']}") String title,
             @Value("#{jobParameters['content']}") String content) {
         
         return items -> {
             List<String> tokens = items.getItems().stream().collect(Collectors.toList());
             
-            log.info("Sending FCM Notifications to {} tokens", tokens.size());
+            log.info("Sending FCM Notifications to {} tokens for noticeId: {}", tokens.size(), noticeId);
             
             NotificationEvent event = new NotificationEvent(
                     tokens,
                     title,
                     content,
-                    Map.of("type", "NOTICE")
+                    Map.of(
+                            "type", "NOTICE",
+                            "noticeId", String.valueOf(noticeId)
+                    )
             );
             
             fcmService.sendNotification(event);
