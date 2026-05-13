@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.notice.service;
 
+import com.dodo.dodoserver.domain.admin.notice.batch.NoticeBatchLauncher;
 import com.dodo.dodoserver.domain.admin.notice.dao.NoticeAdminRepository;
 import com.dodo.dodoserver.domain.admin.notice.dto.NoticeRequestDto;
 import com.dodo.dodoserver.domain.notice.dao.NoticeRepository;
@@ -9,13 +10,8 @@ import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +23,7 @@ public class AdminNoticeService {
 
     private final NoticeRepository noticeRepository;
     private final NoticeAdminRepository noticeAdminRepository;
-    private final JobLauncher jobLauncher;
-    private final Job noticePublishJob;
+    private final NoticeBatchLauncher noticeBatchLauncher;
 
     /**
      * 공지사항 등록 (초안)
@@ -80,7 +75,7 @@ public class AdminNoticeService {
         notice.publish();
         
         // Batch Job 실행 (비동기 위임)
-        runPublishJobAsync(notice.getId(), notice.getTitle(), notice.getCategory().getDescription());
+        noticeBatchLauncher.runPublishJobAsync(notice.getId(), notice.getTitle(), notice.getCategory().getDescription());
     }
 
     /**
@@ -98,22 +93,5 @@ public class AdminNoticeService {
         return noticeAdminRepository.findByIdWithDeleted(noticeId)
                 .map(NoticeResponseDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTICE_NOT_FOUND));
-    }
-
-    @Async("fcmExecutor")
-    public void runPublishJobAsync(Long noticeId, String title, String content) {
-        try {
-            JobParameters jobParameters = new JobParametersBuilder()
-                    .addLong("noticeId", noticeId)
-                    .addString("title", title)
-                    .addString("content", content)
-                    .addLong("time", System.currentTimeMillis())
-                    .toJobParameters();
-
-            jobLauncher.run(noticePublishJob, jobParameters);
-            log.info("Successfully launched Notice Publish Batch Job for: {}", title);
-        } catch (Exception e) {
-            log.error("Failed to launch Notice Publish Batch Job", e);
-        }
     }
 }

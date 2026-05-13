@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.notice.service;
 
+import com.dodo.dodoserver.domain.admin.notice.batch.NoticeBatchLauncher;
 import com.dodo.dodoserver.domain.admin.notice.dao.NoticeAdminRepository;
 import com.dodo.dodoserver.domain.admin.notice.dto.NoticeRequestDto;
 import com.dodo.dodoserver.domain.notice.dao.NoticeRepository;
@@ -14,13 +15,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,10 +41,7 @@ class AdminNoticeServiceTest {
     private NoticeAdminRepository noticeAdminRepository;
 
     @Mock
-    private JobLauncher jobLauncher;
-
-    @Mock
-    private Job noticePublishJob;
+    private NoticeBatchLauncher noticeBatchLauncher;
 
     @Test
     @DisplayName("공지사항 등록 성공")
@@ -131,7 +125,7 @@ class AdminNoticeServiceTest {
 
         // then
         assertThat(notice.isPublished()).isTrue();
-        // 비동기 메소드 호출 자체는 spy나 별도 검증이 필요하지만, 로직 흐름상 publish() 호출 확인
+        verify(noticeBatchLauncher).runPublishJobAsync(eq(noticeId), anyString(), anyString());
     }
 
     @Test
