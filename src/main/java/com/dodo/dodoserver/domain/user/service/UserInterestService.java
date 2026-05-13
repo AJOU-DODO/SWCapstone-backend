@@ -61,6 +61,11 @@ public class UserInterestService {
                 .map(categoryId -> {
                     Category category = categoryRepository.findById(categoryId)
                             .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+
+                    if (category.getDeletedAt() != null) {
+                        throw new BusinessException(ErrorCode.ALREADY_DELETED_CATEGORY);
+                    }
+
                     return UserInterest.builder()
                             .user(user)
                             .category(category)

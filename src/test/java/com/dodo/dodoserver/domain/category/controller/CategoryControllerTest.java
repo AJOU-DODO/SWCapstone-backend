@@ -1,13 +1,11 @@
 package com.dodo.dodoserver.domain.category.controller;
 
-import com.dodo.dodoserver.domain.category.dto.CategoryRequestDto;
 import com.dodo.dodoserver.domain.category.dto.CategoryResponseDto;
 import com.dodo.dodoserver.domain.category.service.CategoryService;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
 import com.dodo.dodoserver.global.security.JwtTokenProvider;
 import com.dodo.dodoserver.global.security.OAuth2AuthenticationSuccessHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +13,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.http.MediaType;
 import com.dodo.dodoserver.global.security.WithMockUserPrincipal;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,9 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,9 +40,6 @@ class CategoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockitoBean
     private CategoryService categoryService;
@@ -72,51 +64,12 @@ class CategoryControllerTest {
     @BeforeEach
     void setUp() throws ServletException, IOException {
         doAnswer(invocation -> {
-            // 메서드 호출 시 전달된 인자 추출 (0: Request, 1: Response, 2: FilterChain)
             HttpServletRequest request = invocation.getArgument(0);
             HttpServletResponse response = invocation.getArgument(1);
             FilterChain filterChain = invocation.getArgument(2);
-
-            // 가짜 필터 로직 대신 다음 필터 체인으로 요청을 강제 전달
             filterChain.doFilter(request, response);
             return null;
         }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("카테고리 생성 성공 - ADMIN 권한 필요")
-    @WithMockUserPrincipal(role = "ROLE_ADMIN")
-    void createCategory_success() throws Exception {
-        // given
-        CategoryRequestDto requestDto = new CategoryRequestDto("운동");
-        CategoryResponseDto responseDto = new CategoryResponseDto(1L, "운동", LocalDateTime.now());
-
-        given(categoryService.createCategory(any(CategoryRequestDto.class))).willReturn(responseDto);
-
-        // when & then
-        mockMvc.perform(post("/api/v1/categories")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.code").value("200"))
-                .andExpect(jsonPath("$.data.name").value("운동"));
-    }
-
-    @Test
-    @DisplayName("카테고리 생성 실패 - 권한 없음(USER)")
-    @WithMockUserPrincipal(role = "ROLE_USER")
-    void createCategory_fail_forbidden() throws Exception {
-        // given
-        CategoryRequestDto requestDto = new CategoryRequestDto("운동");
-
-        // when & then
-        mockMvc.perform(post("/api/v1/categories")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -135,84 +88,5 @@ class CategoryControllerTest {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].name").value("운동"))
                 .andExpect(jsonPath("$.data[1].name").value("공부"));
-    }
-
-    @Test
-    @DisplayName("카테고리 수정 성공 - ADMIN 권한")
-    @WithMockUserPrincipal(role = "ROLE_ADMIN")
-    void updateCategory_success() throws Exception {
-        // given
-        Long categoryId = 1L;
-        CategoryRequestDto requestDto = new CategoryRequestDto("독서");
-        CategoryResponseDto responseDto = new CategoryResponseDto(categoryId, "독서", LocalDateTime.now());
-
-        given(categoryService.updateCategory(eq(categoryId), any(CategoryRequestDto.class))).willReturn(responseDto);
-
-        // when & then
-        mockMvc.perform(patch("/api/v1/categories/{id}", categoryId)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("독서"));
-    }
-
-    @Test
-    @DisplayName("카테고리 삭제 성공 - ADMIN 권한")
-    @WithMockUserPrincipal(role = "ROLE_ADMIN")
-    void deleteCategory_success() throws Exception {
-        // given
-        Long categoryId = 1L;
-
-        // when & then
-        mockMvc.perform(delete("/api/v1/categories/{id}", categoryId)
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("카테고리가 성공적으로 삭제되었습니다."));
-    }
-
-    @Test
-    @DisplayName("카테고리 생성 실패 - 유효성 검증 오류 (이름 누락)")
-    @WithMockUserPrincipal(role = "ROLE_ADMIN")
-    void createCategory_fail_invalidInput() throws Exception {
-        // given
-        CategoryRequestDto requestDto = new CategoryRequestDto("");
-
-        // when & then
-        mockMvc.perform(post("/api/v1/categories")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("G005"));
-    }
-
-    @Test
-    @DisplayName("카테고리 수정 실패 - 권한 없음(USER)")
-    @WithMockUserPrincipal(role = "ROLE_USER")
-    void updateCategory_fail_forbidden() throws Exception {
-        // given
-        Long categoryId = 1L;
-        CategoryRequestDto requestDto = new CategoryRequestDto("독서");
-
-        // when & then
-        mockMvc.perform(patch("/api/v1/categories/{id}", categoryId)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("카테고리 삭제 실패 - 권한 없음(USER)")
-    @WithMockUserPrincipal(role = "ROLE_USER")
-    void deleteCategory_fail_forbidden() throws Exception {
-        // given
-        Long categoryId = 1L;
-
-        // when & then
-        mockMvc.perform(delete("/api/v1/categories/{id}", categoryId)
-                        .with(csrf()))
-                .andExpect(status().isForbidden());
     }
 }

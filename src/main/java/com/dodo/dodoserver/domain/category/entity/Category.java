@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.category.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @Table(name = "categories")
 @EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE categories SET deleted_at = NOW() WHERE id = ?")
 public class Category {
 
     @Id
@@ -25,7 +27,14 @@ public class Category {
     @Column(nullable = false, unique = true, length = 50)
     private String name;
 
+    @Builder.Default
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder = 0;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
