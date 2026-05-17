@@ -19,6 +19,7 @@ public class MyPagePostcardResponseDto {
     private String content;
     private String authorNickname;
     private boolean isMine;
+    private boolean isShared;
     private PostcardReactionType reactionType;
     private LocalDateTime createdAt;
 
@@ -33,6 +34,7 @@ public class MyPagePostcardResponseDto {
                 .content(postcard.getContent())
                 .authorNickname(postcard.getOriginalAuthor().getNickname())
                 .isMine(postcard.getOriginalAuthor().getId().equals(currentUserId))
+                .isShared(postcard.isShared())
                 .reactionType(reactionType)
                 .createdAt(postcard.getCreatedAt())
                 .build();
