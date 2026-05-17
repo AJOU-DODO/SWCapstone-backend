@@ -23,12 +23,12 @@ public class NoticeBatchLauncher {
      * 상위 트랜잭션과 분리된 스레드에서 실행되도록 합니다.
      */
     @Async("batchLauncherExecutor")
-    public void runPublishJobAsync(Long noticeId, String title, String content) {
+    public void runPublishJobAsync(Long noticeId, String title, String noticeCategoryName) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addLong("noticeId", noticeId)
                     .addString("title", title)
-                    .addString("content", content)
+                    .addString("noticeCategoryName", noticeCategoryName)
                     .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
 

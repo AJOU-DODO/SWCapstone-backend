@@ -72,7 +72,7 @@ public class NoticePublishBatchConfig {
     public ItemWriter<UserDevice> fcmTokenWriter(
             @Value("#{jobParameters['noticeId']}") Long noticeId,
             @Value("#{jobParameters['title']}") String title,
-            @Value("#{jobParameters['content']}") String content) {
+            @Value("#{jobParameters['noticeCategoryName']}") String noticeCategoryName) {
         
         return items -> {
             List<String> tokens = items.getItems().stream()
@@ -88,7 +88,7 @@ public class NoticePublishBatchConfig {
             NotificationEvent event = new NotificationEvent(
                     tokens,
                     title,
-                    content,
+                    noticeCategoryName,
                     Map.of(
                             "type", "NOTICE",
                             "noticeId", String.valueOf(noticeId)
