@@ -45,7 +45,7 @@ class NoticeServiceTest {
                 .build();
         Page<Notice> page = new PageImpl<>(List.of(notice));
 
-        given(noticeRepository.findAllByIsPublishedTrue(pageable)).willReturn(page);
+        given(noticeRepository.findAllByIsPublishedTrueAndDeletedAtIsNull(pageable)).willReturn(page);
 
         // when
         Page<NoticeResponseDto> result = noticeService.getPublishedNotices(pageable);
@@ -67,7 +67,7 @@ class NoticeServiceTest {
                 .isPublished(true)
                 .build();
 
-        given(noticeRepository.findByIdAndIsPublishedTrue(noticeId)).willReturn(Optional.of(notice));
+        given(noticeRepository.findByIdAndIsPublishedTrueAndDeletedAtIsNull(noticeId)).willReturn(Optional.of(notice));
 
         // when
         NoticeResponseDto response = noticeService.getNoticeDetail(noticeId);
@@ -81,7 +81,7 @@ class NoticeServiceTest {
     void getNoticeDetail_fail_notFound() {
         // given
         Long noticeId = 1L;
-        given(noticeRepository.findByIdAndIsPublishedTrue(noticeId)).willReturn(Optional.empty());
+        given(noticeRepository.findByIdAndIsPublishedTrueAndDeletedAtIsNull(noticeId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> noticeService.getNoticeDetail(noticeId))
