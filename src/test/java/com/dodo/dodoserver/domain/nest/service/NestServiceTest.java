@@ -246,6 +246,7 @@ class NestServiceTest {
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
+        given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
         given(redisViewCountService.getCachedViewCount(nestId)).willReturn(5L);
 
@@ -253,7 +254,29 @@ class NestServiceTest {
 
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
+        assertThat(response.getMyReaction()).isNull();
         verify(redisViewCountService).incrementViewCount(nestId, user.getId());
+    }
+
+    @Test
+    @DisplayName("둥지 상세 조회 - 리액션 정보 포함 확인")
+    void getNestDetail_withReaction() {
+        Long nestId = 1L;
+        Nest nest = Nest.builder().id(nestId).creator(user).images(new ArrayList<>()).build();
+        NestReaction reaction = NestReaction.builder().user(user).nest(nest).reactionType(ReactionType.LIKE).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
+        given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.of(reaction));
+        given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
+        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(0L);
+
+        NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
+
+        assertThat(response.getId()).isEqualTo(nestId);
+        assertThat(response.getMyReaction()).isEqualTo(ReactionType.LIKE);
     }
 
     @Test
