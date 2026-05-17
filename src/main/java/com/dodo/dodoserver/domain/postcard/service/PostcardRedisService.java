@@ -15,7 +15,7 @@ public class PostcardRedisService {
 
     private final StringRedisTemplate redisTemplate;
     private static final String KEY_PREFIX = "postcard_exchange:date:";
-    private static final int MAX_EXCHANGE_COUNT = 3;
+    private static final int MAX_EXCHANGE_COUNT = 100;
 
     public void checkAndIncrementExchangeCount(Long userId) {
         String key = generateKey(userId);
