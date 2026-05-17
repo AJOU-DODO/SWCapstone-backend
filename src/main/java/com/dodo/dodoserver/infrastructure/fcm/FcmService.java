@@ -23,6 +23,10 @@ public class FcmService {
 
 	@Async("fcmExecutor")
 	public void sendNotification(NotificationEvent event) {
+		sendNotificationSync(event);
+	}
+
+	public void sendNotificationSync(NotificationEvent event) {
 		if (event.tokens() == null || event.tokens().isEmpty()) {
 			log.warn("FCM tokens are empty for the event: {}", event.title());
 			return;
@@ -44,8 +48,13 @@ public class FcmService {
 			BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
 			log.info("FCM Sent Successfully. Success count: {}, Failure count: {}", 
 				response.getSuccessCount(), response.getFailureCount());
+			
+			if (response.getFailureCount() > 0) {
+				log.warn("FCM Partial Failures detected. Check logs for details.");
+			}
 		} catch (FirebaseMessagingException e) {
 			log.error("FCM Multicast Send Failed: {}", e.getMessage());
+			throw new RuntimeException("FCM 전송 중 오류 발생", e);
 		}
 	}
 

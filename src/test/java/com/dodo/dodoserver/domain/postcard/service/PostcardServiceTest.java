@@ -65,7 +65,8 @@ class PostcardServiceTest {
     void setUp() {
         user = User.builder().id(1L).nickname("나").build();
         User author = User.builder().id(2L).nickname("작가").build();
-        nest = Nest.builder().id(1L).title("테스트 둥지").build();
+        User nestCreator = User.builder().id(3L).nickname("둥지주인").build();
+        nest = Nest.builder().id(1L).title("테스트 둥지").creator(nestCreator).build();
         
         myPostcard = Postcard.builder()
                 .id(10L)
@@ -107,6 +108,27 @@ class PostcardServiceTest {
 
         verify(postcardRedisService).checkAndIncrementExchangeCount(user.getId());
         verify(postcardNotificationService).sendPostcardExchangedNotification(targetPostcard, nest);
+    }
+
+    @Test
+    @DisplayName("엽서 교환 성공 - 둥지 작성자인 경우 해금 이력 없이도 가능")
+    void exchangePostcard_success_asNestCreator() {
+        // given
+        nest.setCreator(user); // 내가 둥지 작성자
+        PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
+        // unlockHistoryRepository.existsByUserAndNest 호출하지 않아도 성공해야 함
+        given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
+        given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
+
+        // when
+        PostcardResponseDto response = postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto);
+
+        // then
+        assertThat(response.getId()).isEqualTo(targetPostcard.getId());
+        assertThat(targetPostcard.getCurrentOwner()).isEqualTo(user);
     }
 
     @Test

@@ -75,7 +75,8 @@ public class PostcardService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        // 둥지 작성자가 아니고, 해금 이력도 없는 경우에만 에러 발생
+        if (!nest.getCreator().getId().equals(userId) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
