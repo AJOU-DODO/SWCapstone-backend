@@ -23,4 +23,16 @@ public class AsyncConfig {
 		executor.initialize();
 		return executor;
 	}
+
+	@Bean(name = "batchLauncherExecutor")
+	public Executor batchLauncherExecutor() {
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(2);         // 배치 런처는 동시에 많이 뜰 필요가 없으므로 적게 설정
+		executor.setMaxPoolSize(5);          // 최대 확장 쓰레드
+		executor.setQueueCapacity(100);      // 대기 큐
+		executor.setThreadNamePrefix("Batch-Launcher-");
+		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+		executor.initialize();
+		return executor;
+	}
 }

@@ -22,7 +22,7 @@ public class NoticeBatchLauncher {
      * 별도의 컴포넌트로 분리하여 Self-invocation 문제를 해결하고, 
      * 상위 트랜잭션과 분리된 스레드에서 실행되도록 합니다.
      */
-    @Async("fcmExecutor")
+    @Async("batchLauncherExecutor")
     public void runPublishJobAsync(Long noticeId, String title, String content) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
