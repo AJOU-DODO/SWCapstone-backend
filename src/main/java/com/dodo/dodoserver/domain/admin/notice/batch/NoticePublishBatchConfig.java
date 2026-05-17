@@ -95,7 +95,7 @@ public class NoticePublishBatchConfig {
                     )
             );
             
-            fcmService.sendNotification(event);
+            fcmService.sendNotificationSync(event);
         };
     }
 }
