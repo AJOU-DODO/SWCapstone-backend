@@ -62,7 +62,7 @@ public class NoticePublishBatchConfig {
         return new JpaPagingItemReaderBuilder<UserDevice>()
                 .name("userDeviceTokenReader")
                 .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT ud FROM UserDevice ud")
+                .queryString("SELECT ud FROM UserDevice ud ORDER BY ud.id ASC")
                 .pageSize(CHUNK_SIZE)
                 .build();
     }
