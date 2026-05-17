@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.postcard.service;
-
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -21,14 +22,18 @@ public class PostcardRedisService {
         String key = generateKey(userId);
         Long count = redisTemplate.opsForValue().increment(key);
 
+        if (count == null) {
+            return;
+        }
+
         if (count == 1) {
             // 처음 생성된 키인 경우 자정까지의 TTL 설정
             redisTemplate.expire(key, getDurationUntilMidnight());
         }
 
         if (count > MAX_EXCHANGE_COUNT) {
-            // 롤백은 따로 하지 않음 (이미 3을 넘었으므로)
-            throw new com.dodo.dodoserver.error.exception.BusinessException(com.dodo.dodoserver.error.ErrorCode.EXCHANGE_LIMIT_EXCEEDED);
+            // 롤백은 따로 하지 않음 (이미 MAX를 넘었으므로)
+            throw new BusinessException(ErrorCode.EXCHANGE_LIMIT_EXCEEDED);
         }
     }
 
