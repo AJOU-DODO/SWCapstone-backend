@@ -30,7 +30,6 @@ import static com.dodo.dodoserver.domain.nest.entity.QNestDraft.nestDraft;
 import static com.dodo.dodoserver.domain.nest.entity.QNestReaction.nestReaction;
 import static com.dodo.dodoserver.domain.nest.entity.QUnlockHistory.unlockHistory;
 import static com.dodo.dodoserver.domain.postcard.entity.QPostcard.postcard;
-import static com.dodo.dodoserver.domain.user.entity.QUser.user;
 
 @Repository
 @RequiredArgsConstructor
@@ -244,7 +243,11 @@ public class MyPageRepositoryImpl implements MyPageRepository {
         Long count = queryFactory
                 .select(postcard.count())
                 .from(postcard)
-                .where(postcard.currentOwner.eq(user), postcard.deletedAt.isNull())
+                .where(
+                        postcard.currentOwner.eq(user),
+                        postcard.isExchanged.isTrue(),
+                        postcard.deletedAt.isNull()
+                )
                 .fetchOne();
         return Optional.ofNullable(count).orElse(0L);
     }
