@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
-    // 사용자용 레포지토리 - @SQLRestriction("deleted_at IS NULL") 자동 적용됨
-    Optional<Notice> findByIdAndIsPublishedTrue(Long id);
-    org.springframework.data.domain.Page<Notice> findAllByIsPublishedTrue(org.springframework.data.domain.Pageable pageable);
+    // 사용자용 레포지토리 - 명시적으로 삭제되지 않은(deleted_at IS NULL) 항목만 조회
+    Optional<Notice> findByIdAndIsPublishedTrueAndDeletedAtIsNull(Long id);
+    org.springframework.data.domain.Page<Notice> findAllByIsPublishedTrueAndDeletedAtIsNull(org.springframework.data.domain.Pageable pageable);
 }

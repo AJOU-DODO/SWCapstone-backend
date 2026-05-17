@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 @Table(name = "notices")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE notices SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class Notice {
 
     @Id

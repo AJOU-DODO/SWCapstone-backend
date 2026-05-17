@@ -21,7 +21,7 @@ public class NoticeService {
      * 사용자용 공지사항 목록 조회 (발행된 항목만)
      */
     public Page<NoticeResponseDto> getPublishedNotices(Pageable pageable) {
-        return noticeRepository.findAllByIsPublishedTrue(pageable)
+        return noticeRepository.findAllByIsPublishedTrueAndDeletedAtIsNull(pageable)
                 .map(NoticeResponseDto::from);
     }
 
@@ -29,7 +29,7 @@ public class NoticeService {
      * 사용자용 공지사항 상세 조회 (발행된 항목만)
      */
     public NoticeResponseDto getNoticeDetail(Long noticeId) {
-        return noticeRepository.findByIdAndIsPublishedTrue(noticeId)
+        return noticeRepository.findByIdAndIsPublishedTrueAndDeletedAtIsNull(noticeId)
                 .map(NoticeResponseDto::from)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTICE_NOT_FOUND));
     }
