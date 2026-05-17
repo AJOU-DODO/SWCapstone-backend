@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.nest.dto;
 
+import com.dodo.dodoserver.domain.nest.entity.ReactionType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class NestDetailResponseDto {
     private long likeCount;
     private long dislikeCount;
     private boolean isUnlocked;
+    private ReactionType myReaction;
 
     // 엽서 정보
     private boolean hasPostcard;

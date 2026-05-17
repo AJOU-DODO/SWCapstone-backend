@@ -358,6 +358,11 @@ public class NestService {
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
         long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
 
+        // 현재 사용자의 리액션 상태 조회
+        ReactionType myReaction = nestReactionRepository.findByUserAndNest(user, nest)
+                .map(NestReaction::getReactionType)
+                .orElse(null);
+
         List<String> categoryNames = nestCategoryRepository.findAllByNest(nest).stream()
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
@@ -380,6 +385,7 @@ public class NestService {
                 .likeCount(likeCount)
                 .dislikeCount(dislikeCount)
                 .isUnlocked(isUnlocked)
+                .myReaction(myReaction)
                 .hasPostcard(sharedPostcard != null)
                 .postcardId(sharedPostcard != null ? sharedPostcard.getId() : null)
                 .build();
