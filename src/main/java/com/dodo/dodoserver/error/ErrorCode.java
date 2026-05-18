@@ -58,7 +58,11 @@ public enum ErrorCode {
 
     // Notice (NO)
     NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NO001", "공지사항을 찾을 수 없습니다."),
-    ALREADY_PUBLISHED_NOTICE(HttpStatus.BAD_REQUEST, "NO002", "이미 발행된 공지사항입니다.");
+    ALREADY_PUBLISHED_NOTICE(HttpStatus.BAD_REQUEST, "NO002", "이미 발행된 공지사항입니다."),
+
+    // Whitelist (W)
+    WHITELIST_NOT_FOUND(HttpStatus.NOT_FOUND, "W001", "화이트리스트 정보를 찾을 수 없습니다."),
+    DUPLICATE_WHITELIST_EMAIL(HttpStatus.BAD_REQUEST, "W002", "이미 화이트리스트에 등록된 이메일입니다.");
 
 
 
