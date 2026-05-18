@@ -36,7 +36,19 @@ public class TestService {
         entityManager.createNativeQuery("DELETE FROM nest_reactions WHERE user_id = :userId").setParameter("userId", userId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM unlock_histories WHERE user_id = :userId").setParameter("userId", userId).executeUpdate();
 
-        // 3. 사용자가 만든 둥지 관련 전체 삭제
+        // 3. 엽서 및 엽서 반응 정리
+        // 유저가 한 엽서 반응 삭제
+        entityManager.createNativeQuery("DELETE FROM postcard_reactions WHERE user_id = :userId")
+                .setParameter("userId", userId).executeUpdate();
+
+        // 유저와 관련된 엽서(본인 제작, 본인 소유, 또는 본인 둥지에 등록된 엽서)의 반응 및 엽서 자체 삭제
+        String userPostcardIds = "SELECT id FROM postcards WHERE original_author_id = :userId OR current_owner_id = :userId OR nest_id IN (SELECT id FROM nests WHERE creator_id = :userId)";
+        entityManager.createNativeQuery("DELETE FROM postcard_reactions WHERE postcard_id IN (" + userPostcardIds + ")")
+                .setParameter("userId", userId).executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM postcards WHERE original_author_id = :userId OR current_owner_id = :userId OR nest_id IN (SELECT id FROM nests WHERE creator_id = :userId)")
+                .setParameter("userId", userId).executeUpdate();
+
+        // 4. 사용자가 만든 둥지 관련 전체 삭제
         // 둥지에 달린 타인의 댓글/좋아요/반응 먼저 삭제
         String nestIdSubQuery = "(SELECT id FROM nests WHERE creator_id = :userId)";
         entityManager.createNativeQuery("DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM nest_comments WHERE nest_id IN " + nestIdSubQuery + ")")
@@ -57,13 +69,13 @@ public class TestService {
         entityManager.createNativeQuery("DELETE FROM nests WHERE creator_id = :userId")
                 .setParameter("userId", userId).executeUpdate();
 
-        // 4. 기타 정보 삭제
+        // 5. 기타 정보 삭제
         entityManager.createNativeQuery("DELETE FROM nest_drafts WHERE creator_id = :userId").setParameter("userId", userId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM user_devices WHERE user_id = :userId").setParameter("userId", userId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM user_interests WHERE user_id = :userId").setParameter("userId", userId).executeUpdate();
         entityManager.createNativeQuery("DELETE FROM user_profiles WHERE user_id = :userId").setParameter("userId", userId).executeUpdate();
 
-        // 5. 최종 유저 삭제
+        // 6. 최종 유저 삭제
         entityManager.createNativeQuery("DELETE FROM users WHERE id = :userId").setParameter("userId", userId).executeUpdate();
 
         log.info("회원 하드 삭제 완료: userId={}", userId);
