@@ -1,19 +1,16 @@
 package com.dodo.dodoserver.global.security;
 
+import com.dodo.dodoserver.domain.admin.user.dao.AdminEmailWhitelistRepository;
 import com.dodo.dodoserver.domain.user.entity.Role;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
 
 /**
  * 구글 등 소셜 서버로부터 사용자 정보를 전달받아 처리하는 서비스 클래스입니다.
@@ -23,6 +20,7 @@ import java.util.Collections;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
+    private final AdminEmailWhitelistRepository adminEmailWhitelistRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -50,6 +48,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     /**
      * 기존 회원이면 정보를 업데이트하고, 신규 회원이면 새로운 User 엔티티를 생성하여 저장합니다.
+     * 화이트리스트에 포함된 이메일인 경우 관리자 권한과 자동 온보딩을 처리합니다.
      */
     private User saveOrUpdate(String provider, String providerId, String email, String nickname) {
         User user = userRepository.findByProviderAndProviderId(provider, providerId)
@@ -59,13 +58,22 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                     }
                     return entity;
                 })
-                .orElse(User.builder()
-                        .email(email)
-                        .nickname(nickname)
-                        .provider(provider)
-                        .providerId(providerId)
-                        .role(Role.USER) // 기본 권한 부여
-                        .build());
+                .orElseGet(() -> adminEmailWhitelistRepository.findByEmail(email)
+                        .map(whitelist -> User.builder()
+                                .email(email)
+                                .nickname("관리자_" + whitelist.getId())
+                                .provider(provider)
+                                .providerId(providerId)
+                                .role(Role.ADMIN)
+                                .isOnboarded(true)
+                                .build())
+                        .orElse(User.builder()
+                                .email(email)
+                                .nickname(nickname)
+                                .provider(provider)
+                                .providerId(providerId)
+                                .role(Role.USER)
+                                .build()));
 
         return userRepository.save(user);
     }

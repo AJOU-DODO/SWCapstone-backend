@@ -55,6 +55,7 @@ public class AuthService {
                 .refreshToken(newRefreshToken)
                 .accessTokenExpiresIn(tokenProvider.getAccessTokenExpiration())
                 .isOnboarded(user.isOnboarded())
+                .role(user.getRole().getKey())
                 .build();
     }
 

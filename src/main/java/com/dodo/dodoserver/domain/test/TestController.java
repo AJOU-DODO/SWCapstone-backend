@@ -60,7 +60,7 @@ public class TestController {
         String accessToken = jwtTokenProvider.createAccessToken(id, email, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(email);
 
-        return ApiResponseDto.success(TokenResponseDto.of(accessToken, refreshToken, 3600L, false));
+        return ApiResponseDto.success(TokenResponseDto.of(accessToken, refreshToken, 3600L, false, role));
     }
 
     @GetMapping("/hello")

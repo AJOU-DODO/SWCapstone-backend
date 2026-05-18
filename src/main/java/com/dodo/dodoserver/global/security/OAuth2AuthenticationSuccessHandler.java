@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 /*
   소셜 로그인(OAuth2)이 최종 성공했을 때 실행되는 핸들러
@@ -59,7 +60,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // TokenResponseDto 생성 시 isOnboarded 값을 함께 전달
         String result = objectMapper.writeValueAsString(ApiResponseDto.success(
-            TokenResponseDto.of(accessToken, refreshToken, 1800L, user.isOnboarded())
+            TokenResponseDto.of(accessToken, refreshToken, 1800L, user.isOnboarded(), role)
         ));
 
         response.getWriter().write(result);
@@ -67,7 +68,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private boolean isSanctioned(User user) {
         return user.getSanctionedUntil() != null && 
-               user.getSanctionedUntil().isAfter(java.time.LocalDateTime.now());
+               user.getSanctionedUntil().isAfter(LocalDateTime.now());
     }
 
     private void sendSanctionResponse(HttpServletResponse response, User user) throws IOException {
