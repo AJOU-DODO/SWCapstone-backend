@@ -71,7 +71,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 성공 - 온보딩 상태 포함 확인")
+    @DisplayName("토큰 재발급 성공 - 온보딩 상태 및 권한 포함 확인")
     @WithMockUserPrincipal
     void reissue_success() throws Exception {
         // given
@@ -81,6 +81,7 @@ class AuthControllerTest {
                 .refreshToken("new-refresh")
                 .accessTokenExpiresIn(3600L)
                 .isOnboarded(true)
+                .role("ROLE_USER")
                 .build();
 
         given(authService.reissue("refresh-token")).willReturn(responseDto);
@@ -93,7 +94,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.accessToken").value("new-access"))
-                .andExpect(jsonPath("$.data.onboarded").value(true));
+                .andExpect(jsonPath("$.data.onboarded").value(true))
+                .andExpect(jsonPath("$.data.role").value("ROLE_USER"));
     }
 
     @Test

@@ -59,7 +59,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         // TokenResponseDto 생성 시 isOnboarded 값을 함께 전달
         String result = objectMapper.writeValueAsString(ApiResponseDto.success(
-            TokenResponseDto.of(accessToken, refreshToken, 1800L, user.isOnboarded())
+            TokenResponseDto.of(accessToken, refreshToken, 1800L, user.isOnboarded(), role)
         ));
 
         response.getWriter().write(result);
