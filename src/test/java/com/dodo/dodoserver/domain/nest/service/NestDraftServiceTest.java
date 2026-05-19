@@ -151,7 +151,7 @@ class NestDraftServiceTest {
         given(nestService.createNest(eq(userId), any())).willReturn(NestSimpleResponseDto.builder().id(100L).build());
 
         // when
-        NestSimpleResponseDto response = nestDraftService.publishDraft(userId, draftId);
+        NestSimpleResponseDto response = nestDraftService.publishDraft(userId, draftId, null);
 
         // then
         assertThat(response.getId()).isEqualTo(100L);
@@ -178,7 +178,7 @@ class NestDraftServiceTest {
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
+        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId, null))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.DRAFT_NOT_PUBLISHABLE.getMessage());
     }
@@ -202,7 +202,7 @@ class NestDraftServiceTest {
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
+        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId, null))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -225,7 +225,7 @@ class NestDraftServiceTest {
         given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
 
         // when & then
-        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId))
+        assertThatThrownBy(() -> nestDraftService.publishDraft(userId, draftId, null))
                 .isInstanceOf(BusinessException.class);
     }
 }

@@ -151,7 +151,7 @@ class NestDraftControllerTest {
         Long draftId = 1L;
         NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(100L).build();
 
-        given(nestDraftService.publishDraft(any(), eq(draftId))).willReturn(responseDto);
+        given(nestDraftService.publishDraft(any(), eq(draftId), any())).willReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/nests/drafts/{id}/publish", draftId)
                         .with(csrf()))
