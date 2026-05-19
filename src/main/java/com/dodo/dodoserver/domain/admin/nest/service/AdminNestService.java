@@ -86,6 +86,11 @@ public class AdminNestService {
     }
 
     public List<AdminCommentResponseDto> getNestCommentsForAdmin(Long nestId) {
+        // 0. 둥지 존재 여부 확인 (소프트 삭제된 경우 N001 에러)
+        if (!nestRepository.existsById(nestId)) {
+            throw new BusinessException(ErrorCode.NEST_NOT_FOUND);
+        }
+
         // 1. 해당 둥지의 모든 댓글 조회 (삭제된 댓글 포함)
         List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
 

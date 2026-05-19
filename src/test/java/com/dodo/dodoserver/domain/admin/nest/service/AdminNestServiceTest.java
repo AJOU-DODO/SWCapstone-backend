@@ -12,6 +12,8 @@ import com.dodo.dodoserver.domain.user.entity.UserDevice;
 import com.dodo.dodoserver.infrastructure.fcm.FcmService;
 import com.dodo.dodoserver.infrastructure.fcm.NotificationEvent;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +22,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -88,5 +93,34 @@ class AdminNestServiceTest {
         verify(nestReactionRepository, times(1)).deleteByNest(nest);
         verify(nestCommentRepository, times(1)).deleteAllByNest(nest);
         verify(nestRepository, times(1)).delete(nest);
+    }
+
+    @Test
+    @DisplayName("둥지 댓글 조회 실패 - 둥지가 존재하지 않거나 삭제된 경우")
+    void getNestComments_fail_nestNotFound() {
+        // given
+        given(nestRepository.existsById(100L)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> adminNestService.getNestCommentsForAdmin(100L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.NEST_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("둥지 댓글 조회 성공 - 빈 목록 반환")
+    void getNestComments_success_emptyList() {
+        // given
+        given(nestRepository.existsById(100L)).willReturn(true);
+        given(nestCommentRepository.findAllByNestIdIncludingDeletedNative(100L)).willReturn(Collections.emptyList());
+
+        // when
+        var result = adminNestService.getNestCommentsForAdmin(100L);
+
+        // then
+        assertThat(result).isEmpty();
+        verify(nestRepository, times(1)).existsById(100L);
+        verify(nestCommentRepository, times(1)).findAllByNestIdIncludingDeletedNative(100L);
     }
 }
