@@ -400,12 +400,14 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        List<NestComment> allComments = nestCommentRepository.findAllByNestWithUser(nest);
+        // [수정] 네이티브 쿼리를 사용하여 삭제된 댓글도 포함하여 조회
+        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
 
         if (allComments.isEmpty()) return Collections.emptyList();
 
+        // [수정] 네이티브 쿼리 결과로 인해 LAZY 로딩이 발생할 수 있으므로 유저 정보 별도 로드 (기존 profileImageMap 로직 활용을 위해 User 객체 유지 필요 시 보완)
         Set<User> authors = allComments.stream().map(NestComment::getUser).collect(Collectors.toSet());
-        Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream() // (profile Id, image url)
+        Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream()
                 .filter(p -> p.getUser() != null)
                 .collect(Collectors.toMap(p -> p.getUser().getId(), UserProfile::getProfileImageUrl, (oldV, newV) -> oldV));
 
@@ -463,11 +465,11 @@ public class NestService {
 
         return CommentResponseDto.builder()
                 .id(comment.getId())
-                .content(comment.getContent())
-                .nickname(comment.getUser().getNickname())
-                .profileImageUrl(profileImageMap.get(comment.getUser().getId()))
+                .content(comment.getDeletedAt() != null ? "삭제된 댓글 입니다." : comment.getContent())
+                .nickname(comment.getDeletedAt() != null ? "익명" : comment.getUser().getNickname())
+                .profileImageUrl(comment.getDeletedAt() != null ? null : profileImageMap.get(comment.getUser().getId()))
                 .createdAt(comment.getCreatedAt())
-                .likeCount(comment.getLikeCount())
+                .likeCount(comment.getDeletedAt() != null ? 0L : comment.getLikeCount())
                 .isLiked(likedCommentIds.contains(comment.getId()))
                 .children(children.stream()
                         .map(child -> convertToCommentResponseDto(child, childrenMap, profileImageMap, likedCommentIds))
