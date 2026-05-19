@@ -108,11 +108,13 @@ public class NestDraftService {
      * 임시 저장 데이터를 둥지로 정식 발행
      */
     @Transactional
-    public NestSimpleResponseDto publishDraft(Long userId, Long draftId) {
+    public NestSimpleResponseDto publishDraft(Long userId, Long draftId, NestDraftPublishRequestDto requestDto) {
         NestDraft draft = getDraftIfOwner(userId, draftId);
 
         // 발행 시 필수 값 검증
         validatePublishable(draft);
+
+        Long postcardId = (requestDto != null) ? requestDto.getPostcardId() : null;
 
         // NestService의 createNest를 활용하기 위해 DTO 변환
         NestCreateRequestDto nestCreateRequestDto = new NestCreateRequestDto(
@@ -121,7 +123,7 @@ public class NestDraftService {
                 draft.getLatitude(),
                 draft.getLongitude(),
                 draft.getUnlockRadius(),
-                null, // postcardId
+                postcardId,
                 draft.getCategoryIds(),
                 draft.getImageUrls(),
                 false // isAd 기본값

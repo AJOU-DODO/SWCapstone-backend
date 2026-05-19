@@ -75,7 +75,8 @@ public class NestDraftController {
     @PostMapping("/{id}/publish")
     public ApiResponseDto<NestSimpleResponseDto> publishDraft(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @PathVariable Long id) {
-        return ApiResponseDto.success(nestDraftService.publishDraft(userPrincipal.getId(), id));
+            @PathVariable Long id,
+            @RequestBody(required = false) NestDraftPublishRequestDto requestDto) {
+        return ApiResponseDto.success(nestDraftService.publishDraft(userPrincipal.getId(), id, requestDto));
     }
 }
