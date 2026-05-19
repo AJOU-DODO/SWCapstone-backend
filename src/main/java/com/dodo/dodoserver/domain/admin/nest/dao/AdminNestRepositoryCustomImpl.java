@@ -74,14 +74,14 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(nest.id.count())
                 .from(nest)
                 .where(dateCondition, deletedCondition)
                 .fetchOne();
 
         if (results.isEmpty()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, total);
+            return new PageImpl<>(Collections.emptyList(), pageable, total != null ? total : 0L);
         }
 
         List<Long> nestIds = results.stream()
@@ -95,23 +95,30 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                 .where(report.targetId.in(nestIds), report.reportType.eq(ReportType.NEST))
                 .fetch()
                 .stream()
+                .filter(t -> t.get(report.targetId) != null && t.get(report.reason) != null)
                 .collect(Collectors.groupingBy(
                         t -> t.get(report.targetId),
                         Collectors.mapping(t -> t.get(report.reason), Collectors.toList())
                 ));
 
-        List<AdminNestResponseDto> content = results.stream().map(t -> AdminNestResponseDto.builder()
-                .nestId(t.get(nest.id))
-                .authorNickname(t.get(user.nickname))
-                .content(t.get(nest.content))
-                .createdAt(t.get(nest.createdAt))
-                .likeCount(t.get(nestReaction.countDistinct()))
-                .commentCount(t.get(nestComment.countDistinct()))
-                .reportCount(t.get(report.countDistinct()))
-                .reasons(reasonMap.getOrDefault(t.get(nest.id), Collections.emptyList()).stream().distinct().toList())
-                .build()).collect(Collectors.toList());
+        List<AdminNestResponseDto> content = results.stream().map(t -> {
+            Long likeCount = t.get(nestReaction.countDistinct());
+            Long commentCount = t.get(nestComment.countDistinct());
+            Long reportCount = t.get(report.countDistinct());
 
-        return new PageImpl<>(content, pageable, total);
+            return AdminNestResponseDto.builder()
+                    .nestId(t.get(nest.id))
+                    .authorNickname(t.get(user.nickname))
+                    .content(t.get(nest.content))
+                    .createdAt(t.get(nest.createdAt))
+                    .likeCount(likeCount != null ? likeCount : 0L)
+                    .commentCount(commentCount != null ? commentCount : 0L)
+                    .reportCount(reportCount != null ? reportCount : 0L)
+                    .reasons(reasonMap.getOrDefault(t.get(nest.id), Collections.emptyList()).stream().distinct().toList())
+                    .build();
+        }).collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     private BooleanExpression getDeletedCondition(String includeDeleted) {

@@ -53,18 +53,17 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
-                .select(report.targetId)
+        Long total = queryFactory
+                .select(report.targetId.countDistinct())
                 .from(report)
                 .where(
                         report.reportType.eq(ReportType.NEST),
                         report.status.ne(ReportStatus.REJECTED)
                 )
-                .groupBy(report.targetId)
-                .fetch().size();
+                .fetchOne();
 
         if (results.isEmpty()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, total);
+            return new PageImpl<>(Collections.emptyList(), pageable, total != null ? total : 0L);
         }
 
         List<Long> targetIds = results.stream()
@@ -78,6 +77,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .where(report.targetId.in(targetIds), report.reportType.eq(ReportType.NEST))
                 .fetch()
                 .stream()
+                .filter(t -> t.get(report.targetId) != null && t.get(report.reason) != null)
                 .collect(Collectors.groupingBy(
                         t -> t.get(report.targetId),
                         Collectors.mapping(t -> t.get(report.reason), Collectors.toList())
@@ -97,19 +97,21 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
         List<AdminNestReportResponseDto> content = results.stream().map(t -> {
             Long id = t.get(report.targetId);
             Tuple info = nestInfoMap.get(id);
+            Long reportCount = t.get(report.targetId.count());
+            
             return AdminNestReportResponseDto.builder()
                     .nestId(id)
                     .authorNickname(info != null ? info.get(user.nickname) : "알 수 없음")
                     .content(info != null ? info.get(nest.content) : "")
                     .firstReportedAt(t.get(report.createdAt.min()))
                     .lastReportedAt(t.get(report.createdAt.max()))
-                    .reportCount(t.get(report.targetId.count()))
+                    .reportCount(reportCount != null ? reportCount : 0L)
                     .reasons(reasonMap.getOrDefault(id, Collections.emptyList()).stream().distinct().toList())
                     .status(info != null ? info.get(report.status) : ReportStatus.PENDING)
                     .build();
         }).collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     @Override
@@ -133,18 +135,17 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
-                .select(report.targetId)
+        Long total = queryFactory
+                .select(report.targetId.countDistinct())
                 .from(report)
                 .where(
                         report.reportType.eq(ReportType.COMMENT),
                         report.status.ne(ReportStatus.REJECTED)
                 )
-                .groupBy(report.targetId)
-                .fetch().size();
+                .fetchOne();
 
         if (results.isEmpty()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, total);
+            return new PageImpl<>(Collections.emptyList(), pageable, total != null ? total : 0L);
         }
 
         List<Long> targetIds = results.stream()
@@ -157,6 +158,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .where(report.targetId.in(targetIds), report.reportType.eq(ReportType.COMMENT))
                 .fetch()
                 .stream()
+                .filter(t -> t.get(report.targetId) != null && t.get(report.reason) != null)
                 .collect(Collectors.groupingBy(
                         t -> t.get(report.targetId),
                         Collectors.mapping(t -> t.get(report.reason), Collectors.toList())
@@ -177,6 +179,8 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
         List<AdminCommentReportResponseDto> content = results.stream().map(t -> {
             Long id = t.get(report.targetId);
             Tuple info = commentInfoMap.get(id);
+            Long reportCount = t.get(report.targetId.count());
+
             return AdminCommentReportResponseDto.builder()
                     .commentId(id)
                     .authorNickname(info != null ? info.get(user.nickname) : "알 수 없음")
@@ -184,13 +188,13 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                     .nestId(info != null ? info.get(nest.id) : null)
                     .nestTitle(info != null ? info.get(nest.title) : "알 수 없음")
                     .lastReportedAt(t.get(report.createdAt.max()))
-                    .reportCount(t.get(report.targetId.count()))
+                    .reportCount(reportCount != null ? reportCount : 0L)
                     .reasons(reasonMap.getOrDefault(id, Collections.emptyList()).stream().distinct().toList())
                     .status(info != null ? info.get(report.status) : ReportStatus.PENDING)
                     .build();
         }).collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     @Override
