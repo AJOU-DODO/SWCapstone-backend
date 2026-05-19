@@ -226,6 +226,14 @@ public class NestService {
             throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
         }
 
+        // [추가] 데이터 무결성을 위해 연관 데이터 정리
+        // 1. 연관 엽서 원상복구
+        postcardRepository.recoverSharedPostcardsByNest(nest);
+
+        // 2. 하위 댓글 일괄 소프트 삭제
+        nestCommentRepository.deleteAllByNest(nest);
+
+        // 3. 둥지 본체 삭제
         nestRepository.delete(nest);
         log.info("둥지 삭제 완료: ID={}", nestId);
     }
