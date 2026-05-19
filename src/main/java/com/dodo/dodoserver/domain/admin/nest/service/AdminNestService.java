@@ -8,7 +8,6 @@ import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
-import com.dodo.dodoserver.domain.nest.entity.NestCategory;
 import com.dodo.dodoserver.domain.nest.entity.NestComment;
 import com.dodo.dodoserver.domain.nest.entity.NestImage;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
@@ -55,7 +54,7 @@ public class AdminNestService {
     private final FcmService fcmService;
     private final JPAQueryFactory queryFactory;
 
-    public Page<AdminNestResponseDto> getNests(
+    public Page<AdminNestResponseDto> getNestsForAdmin(
             Pageable pageable, 
             LocalDate startDate, 
             LocalDate endDate, 
@@ -64,7 +63,7 @@ public class AdminNestService {
         return nestRepository.findNestsForAdmin(pageable, startDate, endDate, sort, includeDeleted);
     }
 
-    public AdminNestDetailResponseDto getNestDetail(Long nestId) {
+    public AdminNestDetailResponseDto getNestDetailForAdmin(Long nestId) {
         // @SQLRestriction을 우회하여 삭제된 둥지도 상세 조회가 가능해야 함
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
@@ -86,7 +85,7 @@ public class AdminNestService {
                 .build();
     }
 
-    public List<AdminCommentResponseDto> getNestComments(Long nestId) {
+    public List<AdminCommentResponseDto> getNestCommentsForAdmin(Long nestId) {
         // 1. 해당 둥지의 모든 댓글 조회 (삭제된 댓글 포함)
         List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
 
@@ -157,7 +156,7 @@ public class AdminNestService {
     }
 
     @Transactional
-    public void deleteNest(Long nestId, AdminNestDeleteRequestDto requestDto) {
+    public void deleteNestForAdmin(Long nestId, AdminNestDeleteRequestDto requestDto) {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -186,7 +185,7 @@ public class AdminNestService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId) {
+    public void deleteCommentForAdmin(Long commentId) {
         NestComment comment = nestCommentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
         

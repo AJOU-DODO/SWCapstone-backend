@@ -33,19 +33,19 @@ public class AdminNestController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false, defaultValue = "ACTIVE_ONLY") String includeDeleted) {
-        return ApiResponseDto.success(adminNestService.getNests(pageable, startDate, endDate, sort, includeDeleted));
+        return ApiResponseDto.success(adminNestService.getNestsForAdmin(pageable, startDate, endDate, sort, includeDeleted));
     }
 
     @Operation(summary = "관리자 전용 게시물 상세 조회", description = "위치 검증이나 해금 이력과 관계없이 게시물의 원본 상세 데이터(본문, 이미지 등)를 조회합니다.")
     @GetMapping("/{nestId}")
     public ApiResponseDto<AdminNestDetailResponseDto> getNestDetail(@PathVariable Long nestId) {
-        return ApiResponseDto.success(adminNestService.getNestDetail(nestId));
+        return ApiResponseDto.success(adminNestService.getNestDetailForAdmin(nestId));
     }
 
     @Operation(summary = "관리자 전용 둥지별 댓글 목록 조회", description = "해당 둥지의 모든 댓글(삭제된 것 포함)을 조회하며, 각 댓글의 대기 신고 수를 포함합니다.")
     @GetMapping("/{nestId}/comments")
     public ApiResponseDto<List<AdminCommentResponseDto>> getNestComments(@PathVariable Long nestId) {
-        return ApiResponseDto.success(adminNestService.getNestComments(nestId));
+        return ApiResponseDto.success(adminNestService.getNestCommentsForAdmin(nestId));
     }
 
     @Operation(summary = "관리자 전용 게시물 삭제", description = "게시물을 소프트 삭제 처리하며, 작성자에게 FCM 알림을 발송하고 연관 엽서를 원상복구합니다.")
@@ -53,7 +53,7 @@ public class AdminNestController {
     public ApiResponseDto<Void> deleteNest(
             @PathVariable Long nestId,
             @RequestBody AdminNestDeleteRequestDto requestDto) {
-        adminNestService.deleteNest(nestId, requestDto);
+        adminNestService.deleteNestForAdmin(nestId, requestDto);
         return ApiResponseDto.success(null);
     }
 }

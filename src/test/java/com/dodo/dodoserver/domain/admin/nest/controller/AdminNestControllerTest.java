@@ -1,7 +1,6 @@
 package com.dodo.dodoserver.domain.admin.nest.controller;
 
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
-import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.service.AdminNestService;
@@ -32,7 +31,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -92,7 +90,7 @@ class AdminNestControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
         Page<AdminNestResponseDto> page = new PageImpl<>(Collections.singletonList(responseDto), PageRequest.of(0, 10), 1);
-        given(adminNestService.getNests(any(), any(), any(), any(), any())).willReturn(page);
+        given(adminNestService.getNestsForAdmin(any(), any(), any(), any(), any())).willReturn(page);
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/nests"))
@@ -114,7 +112,7 @@ class AdminNestControllerTest {
                 .latitude(37.2844)
                 .longitude(127.0442)
                 .build();
-        given(adminNestService.getNestDetail(1L)).willReturn(responseDto);
+        given(adminNestService.getNestDetailForAdmin(1L)).willReturn(responseDto);
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/nests/1"))
@@ -151,7 +149,7 @@ class AdminNestControllerTest {
                 .content("댓글")
                 .children(Collections.singletonList(child))
                 .build();
-        given(adminNestService.getNestComments(1L)).willReturn(Collections.singletonList(parent));
+        given(adminNestService.getNestCommentsForAdmin(1L)).willReturn(Collections.singletonList(parent));
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/nests/1/comments"))

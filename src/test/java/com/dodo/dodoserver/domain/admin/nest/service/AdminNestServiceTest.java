@@ -63,7 +63,7 @@ class AdminNestServiceTest {
 
     @Test
     @DisplayName("둥지 삭제 성공 - FCM 알림 및 엽서 회수 포함")
-    void deleteNest_success() {
+    void deleteNest_ForAdmin_success() {
         // given
         User creator = User.builder().id(1L).build();
         Nest nest = Nest.builder().id(100L).creator(creator).build();
@@ -75,7 +75,7 @@ class AdminNestServiceTest {
         given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
 
         // when
-        adminNestService.deleteNest(100L, requestDto);
+        adminNestService.deleteNestForAdmin(100L, requestDto);
 
         // then
         verify(fcmService, times(1)).sendNotification(any(NotificationEvent.class));

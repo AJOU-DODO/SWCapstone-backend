@@ -21,7 +21,7 @@ public class AdminCommentController {
     @Operation(summary = "관리자 전용 댓글 삭제", description = "댓글을 소프트 삭제 처리합니다. 대댓글 구조를 유지하기 위해 논리 삭제만 수행합니다.")
     @DeleteMapping("/{commentId}")
     public ApiResponseDto<Void> deleteComment(@PathVariable Long commentId) {
-        adminNestService.deleteComment(commentId);
+        adminNestService.deleteCommentForAdmin(commentId);
         return ApiResponseDto.success(null);
     }
 }
