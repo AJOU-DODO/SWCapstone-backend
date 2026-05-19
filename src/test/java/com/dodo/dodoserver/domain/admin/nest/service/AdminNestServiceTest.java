@@ -1,9 +1,7 @@
 package com.dodo.dodoserver.domain.admin.nest.service;
 
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
-import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
-import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
-import com.dodo.dodoserver.domain.nest.dao.NestRepository;
+import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
@@ -44,6 +42,12 @@ class AdminNestServiceTest {
     private NestCategoryRepository nestCategoryRepository;
 
     @Mock
+    private NestReactionRepository nestReactionRepository;
+
+    @Mock
+    private CommentLikeRepository commentLikeRepository;
+
+    @Mock
     private PostcardRepository postcardRepository;
 
     @Mock
@@ -62,7 +66,7 @@ class AdminNestServiceTest {
     private JPAQueryFactory queryFactory;
 
     @Test
-    @DisplayName("둥지 삭제 성공 - FCM 알림 및 엽서 회수 포함")
+    @DisplayName("둥지 삭제 성공 - FCM 알림 및 소셜 데이터 정리 포함")
     void deleteNest_ForAdmin_success() {
         // given
         User creator = User.builder().id(1L).build();
@@ -70,9 +74,10 @@ class AdminNestServiceTest {
         UserDevice device = UserDevice.builder().fcmToken("token").build();
         AdminNestDeleteRequestDto requestDto = new AdminNestDeleteRequestDto();
         // Reflection을 통해 사유 설정 또는 JSON 역직렬화 흉내
-        
+
         given(nestRepository.findById(100L)).willReturn(Optional.of(nest));
         given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
+        given(nestCommentRepository.findAllByNestIdIncludingDeletedNative(100L)).willReturn(Collections.emptyList());
 
         // when
         adminNestService.deleteNestForAdmin(100L, requestDto);
@@ -80,6 +85,7 @@ class AdminNestServiceTest {
         // then
         verify(fcmService, times(1)).sendNotification(any(NotificationEvent.class));
         verify(postcardRepository, times(1)).recoverSharedPostcardsByNest(nest);
+        verify(nestReactionRepository, times(1)).deleteByNest(nest);
         verify(nestCommentRepository, times(1)).deleteAllByNest(nest);
         verify(nestRepository, times(1)).delete(nest);
     }

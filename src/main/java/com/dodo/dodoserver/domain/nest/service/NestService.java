@@ -226,14 +226,21 @@ public class NestService {
             throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
         }
 
-        // [추가] 데이터 무결성을 위해 연관 데이터 정리
+        // 데이터 무결성을 위해 연관 데이터 정리
         // 1. 연관 엽서 원상복구
         postcardRepository.recoverSharedPostcardsByNest(nest);
 
-        // 2. 하위 댓글 일괄 소프트 삭제
+        // 2. 연관 소셜 데이터 정리 (좋아요, 리액션) - 하드 딜리트
+        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        if (!allComments.isEmpty()) {
+            commentLikeRepository.deleteByCommentIn(allComments);
+        }
+        nestReactionRepository.deleteByNest(nest);
+
+        // 3. 하위 댓글 일괄 소프트 삭제
         nestCommentRepository.deleteAllByNest(nest);
 
-        // 3. 둥지 본체 삭제
+        // 4. 둥지 본체 삭제
         nestRepository.delete(nest);
         log.info("둥지 삭제 완료: ID={}", nestId);
     }
@@ -311,11 +318,14 @@ public class NestService {
             throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
         }
 
+        // 해당 댓글의 좋아요 데이터 정리 (하드 딜리트)
+        commentLikeRepository.deleteByComment(comment);
+
         nestCommentRepository.delete(comment);
     }
 
     /**
-     * ID 리스트 둥지 요약 정보 조회 (정렬 추가)
+     * ID 리스트 둥지 요약 정보 조회
      */
     @Transactional(readOnly = true)
     public List<NestSummaryResponseDto> getNestsByIds(Long userId, List<Long> nestIds, Sort sort) {
@@ -348,7 +358,7 @@ public class NestService {
     /**
      * 둥지 상세 정보 조회
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public NestDetailResponseDto getNestDetail(Long userId, Long nestId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -400,7 +410,7 @@ public class NestService {
     }
 
     /**
-     * 둥지 ID로 댓글 리스트 조회 (트리 구조, N+1 문제 완벽 해결)
+     * 둥지 ID로 댓글 리스트 조회
      */
     @Transactional(readOnly = true)
     public List<CommentResponseDto> getCommentsByNestId(Long currentUserId, Long nestId, String sortBy) {
@@ -408,12 +418,12 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // [수정] 네이티브 쿼리를 사용하여 삭제된 댓글도 포함하여 조회
+        // 네이티브 쿼리를 사용하여 삭제된 댓글도 포함하여 조회
         List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
 
         if (allComments.isEmpty()) return Collections.emptyList();
 
-        // [수정] 네이티브 쿼리 결과로 인해 LAZY 로딩이 발생할 수 있으므로 유저 정보 별도 로드 (기존 profileImageMap 로직 활용을 위해 User 객체 유지 필요 시 보완)
+        // 네이티브 쿼리 결과로 인해 LAZY 로딩이 발생할 수 있으므로 유저 정보 별도 로드 (기존 profileImageMap 로직 활용을 위해 User 객체 유지 필요 시 보완)
         Set<User> authors = allComments.stream().map(NestComment::getUser).collect(Collectors.toSet());
         Map<Long, String> profileImageMap = userProfileRepository.findAllByUserIn(authors).stream()
                 .filter(p -> p.getUser() != null)

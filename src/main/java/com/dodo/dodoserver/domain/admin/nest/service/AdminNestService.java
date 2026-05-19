@@ -4,9 +4,7 @@ import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
-import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
-import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
-import com.dodo.dodoserver.domain.nest.dao.NestRepository;
+import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.nest.entity.NestComment;
 import com.dodo.dodoserver.domain.nest.entity.NestImage;
@@ -47,6 +45,8 @@ public class AdminNestService {
     private final NestRepository nestRepository;
     private final NestCommentRepository nestCommentRepository;
     private final NestCategoryRepository nestCategoryRepository;
+    private final NestReactionRepository nestReactionRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final PostcardRepository postcardRepository;
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
@@ -177,10 +177,17 @@ public class AdminNestService {
         // 2. 연관 엽서 원상복구
         postcardRepository.recoverSharedPostcardsByNest(nest);
 
-        // 3. 하위 댓글 일괄 소프트 삭제
+        // 3. 연관 소셜 데이터 정리 (좋아요, 리액션) - 하드 딜리트
+        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        if (!allComments.isEmpty()) {
+            commentLikeRepository.deleteByCommentIn(allComments);
+        }
+        nestReactionRepository.deleteByNest(nest);
+
+        // 4. 하위 댓글 일괄 소프트 삭제
         nestCommentRepository.deleteAllByNest(nest);
 
-        // 4. 둥지 소프트 삭제
+        // 5. 둥지 소프트 삭제
         nestRepository.delete(nest);
     }
 
@@ -189,7 +196,10 @@ public class AdminNestService {
         NestComment comment = nestCommentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
         
-        // 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
+        // 1. 해당 댓글의 좋아요 데이터 정리 (하드 딜리트)
+        commentLikeRepository.deleteByComment(comment);
+
+        // 2. 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
         nestCommentRepository.delete(comment);
     }
 }
