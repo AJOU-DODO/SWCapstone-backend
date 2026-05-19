@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.admin.nest.controller;
 
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
+import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.service.AdminNestService;
@@ -39,5 +40,13 @@ public class AdminNestController {
     @GetMapping("/{nestId}/comments")
     public ApiResponseDto<List<AdminCommentResponseDto>> getNestComments(@PathVariable Long nestId) {
         return ApiResponseDto.success(adminNestService.getNestComments(nestId));
+    }
+
+    @DeleteMapping("/{nestId}")
+    public ApiResponseDto<Void> deleteNest(
+            @PathVariable Long nestId,
+            @RequestBody AdminNestDeleteRequestDto requestDto) {
+        adminNestService.deleteNest(nestId, requestDto);
+        return ApiResponseDto.success(null);
     }
 }

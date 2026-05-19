@@ -16,4 +16,6 @@ public interface NestCommentRepository extends JpaRepository<NestComment, Long> 
     // [어드민/가림처리용] 삭제된 댓글을 포함하여 특정 둥지의 모든 댓글 조회 (Native Query로 SQLRestriction 우회)
     @Query(value = "SELECT * FROM nest_comments WHERE nest_id = :nestId", nativeQuery = true)
     List<NestComment> findAllByNestIdIncludingDeletedNative(@Param("nestId") Long nestId);
+
+    void deleteAllByNest(Nest nest);
 }

@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.admin.nest.service;
 
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
+import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
 import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
@@ -10,8 +11,13 @@ import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.nest.entity.NestCategory;
 import com.dodo.dodoserver.domain.nest.entity.NestComment;
 import com.dodo.dodoserver.domain.nest.entity.NestImage;
+import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
+import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
+import com.dodo.dodoserver.domain.user.entity.UserDevice;
+import com.dodo.dodoserver.infrastructure.fcm.FcmService;
+import com.dodo.dodoserver.infrastructure.fcm.NotificationEvent;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
@@ -30,6 +36,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dodo.dodoserver.domain.report.entity.QReport.report;
+import static com.dodo.dodoserver.global.common.constants.NotificationConstants.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +46,11 @@ public class AdminNestService {
     private final NestRepository nestRepository;
     private final NestCommentRepository nestCommentRepository;
     private final NestCategoryRepository nestCategoryRepository;
+    private final PostcardRepository postcardRepository;
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final UserDeviceRepository userDeviceRepository;
+    private final FcmService fcmService;
     private final JPAQueryFactory queryFactory;
 
     public Page<AdminNestResponseDto> getNests(
@@ -54,8 +64,6 @@ public class AdminNestService {
 
     public AdminNestDetailResponseDto getNestDetail(Long nestId) {
         // @SQLRestriction을 우회하여 삭제된 둥지도 상세 조회가 가능해야 함
-        // 여기서는 findById 대신 네이티브 쿼리나 직접 쿼리 작성을 고려할 수 있으나, 
-        // 일단 요구사항에 따라 원본 데이터를 상세하게 보여주는 것에 집중
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -112,5 +120,43 @@ public class AdminNestService {
                 .isDeleted(c.getDeletedAt() != null)
                 .pendingReportCount(pendingReportCounts.getOrDefault(c.getId(), 0L))
                 .build()).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteNest(Long nestId, AdminNestDeleteRequestDto requestDto) {
+        Nest nest = nestRepository.findById(nestId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        // 1. FCM 알림 발송 (비동기 권장되나 FcmService 내부에 @Async 적용됨)
+        List<String> tokens = userDeviceRepository.findByUserId(nest.getCreator().getId()).stream()
+                .map(UserDevice::getFcmToken)
+                .collect(Collectors.toList());
+        
+        if (!tokens.isEmpty()) {
+            fcmService.sendNotification(new NotificationEvent(
+                    tokens,
+                    TITLE_NEST_DELETED,
+                    requestDto.getReason(),
+                    Map.of(KEY_TYPE, TYPE_NEST_DELETED, KEY_NEST_ID, nestId.toString())
+            ));
+        }
+
+        // 2. 연관 엽서 원상복구
+        postcardRepository.recoverSharedPostcardsByNest(nest);
+
+        // 3. 하위 댓글 일괄 소프트 삭제
+        nestCommentRepository.deleteAllByNest(nest);
+
+        // 4. 둥지 소프트 삭제
+        nestRepository.delete(nest);
+    }
+
+    @Transactional
+    public void deleteComment(Long commentId) {
+        NestComment comment = nestCommentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+        
+        // 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
+        nestCommentRepository.delete(comment);
     }
 }
