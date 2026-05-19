@@ -127,16 +127,37 @@ class AdminNestControllerTest {
     @DisplayName("어드민 게시물 삭제 성공 - 관리자 권한")
     @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void deleteNest_success() throws Exception {
-        // given
-        AdminNestDeleteRequestDto requestDto = new AdminNestDeleteRequestDto();
-        // Reflection이나 세터를 통해 reason 설정 (여기선 간단히)
-        
-        // when & then
+        // ... (existing test)
         mockMvc.perform(delete("/api/v1/admin/nests/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\":\"운영 정책 위반\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
+
+    @Test
+    @DisplayName("어드민 둥지별 댓글 목록 조회 성공 - 트리 구조 검증")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void getNestComments_success() throws Exception {
+        // given
+        AdminCommentResponseDto child = AdminCommentResponseDto.builder()
+                .commentId(2L)
+                .parentId(1L)
+                .content("대댓글")
+                .build();
+        AdminCommentResponseDto parent = AdminCommentResponseDto.builder()
+                .commentId(1L)
+                .content("댓글")
+                .children(Collections.singletonList(child))
+                .build();
+        given(adminNestService.getNestComments(1L)).willReturn(Collections.singletonList(parent));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/admin/nests/1/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data[0].commentId").value(1))
+                .andExpect(jsonPath("$.data[0].children[0].commentId").value(2));
     }
 }

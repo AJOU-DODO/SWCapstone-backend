@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.admin.nest.dto;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -16,4 +17,5 @@ public class AdminCommentResponseDto {
     private LocalDateTime createdAt;
     private boolean isDeleted;
     private long pendingReportCount;
+    private List<AdminCommentResponseDto> children;
 }

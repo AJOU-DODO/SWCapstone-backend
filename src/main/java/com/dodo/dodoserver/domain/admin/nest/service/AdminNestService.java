@@ -31,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,7 +89,7 @@ public class AdminNestService {
     public List<AdminCommentResponseDto> getNestComments(Long nestId) {
         // 1. 해당 둥지의 모든 댓글 조회 (삭제된 댓글 포함)
         List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
-        
+
         if (allComments.isEmpty()) return List.of();
 
         // 2. 유저 정보 일괄 조회 (Native Query 결과이므로 LAZY 로딩 방지)
@@ -110,16 +112,48 @@ public class AdminNestService {
                 .stream()
                 .collect(Collectors.toMap(t -> t.get(report.targetId), t -> t.get(report.count())));
 
-        // 4. DTO 변환
-        return allComments.stream().map(c -> AdminCommentResponseDto.builder()
-                .commentId(c.getId())
-                .parentId(c.getParent() != null ? c.getParent().getId() : null)
-                .authorNickname(nicknameMap.getOrDefault(c.getUser().getId(), "알 수 없음"))
-                .content(c.getContent())
-                .createdAt(c.getCreatedAt())
-                .isDeleted(c.getDeletedAt() != null)
-                .pendingReportCount(pendingReportCounts.getOrDefault(c.getId(), 0L))
-                .build()).collect(Collectors.toList());
+        // 4. 부모 ID를 기준으로 그룹화 (트리 구조 생성용)
+        Map<Long, List<NestComment>> childrenMap = allComments.stream()
+                .filter(c -> c.getParent() != null)
+                .collect(Collectors.groupingBy(c -> c.getParent().getId()));
+
+        // 5. 최상위 댓글 추출 및 정렬 (최신순)
+        List<NestComment> topComments = allComments.stream()
+                .filter(c -> c.getParent() == null)
+                .sorted(Comparator.comparing(NestComment::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+
+        // 6. 트리 구조 변환
+        return topComments.stream()
+                .map(c -> convertToAdminCommentResponseDto(c, childrenMap, nicknameMap, pendingReportCounts))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 관리자용 댓글 DTO 변환 (재귀를 통한 트리 구조 생성)
+     */
+    private AdminCommentResponseDto convertToAdminCommentResponseDto(
+            NestComment comment,
+            Map<Long, List<NestComment>> childrenMap,
+            Map<Long, String> nicknameMap,
+            Map<Long, Long> pendingReportCounts) {
+
+        List<NestComment> children = childrenMap.getOrDefault(comment.getId(), Collections.emptyList());
+        // 대댓글은 생성순으로 정렬
+        children.sort(Comparator.comparing(NestComment::getCreatedAt));
+
+        return AdminCommentResponseDto.builder()
+                .commentId(comment.getId())
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
+                .authorNickname(nicknameMap.getOrDefault(comment.getUser().getId(), "알 수 없음"))
+                .content(comment.getContent())
+                .createdAt(comment.getCreatedAt())
+                .isDeleted(comment.getDeletedAt() != null)
+                .pendingReportCount(pendingReportCounts.getOrDefault(comment.getId(), 0L))
+                .children(children.stream()
+                        .map(child -> convertToAdminCommentResponseDto(child, childrenMap, nicknameMap, pendingReportCounts))
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     @Transactional
