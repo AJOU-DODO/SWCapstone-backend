@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.nest.controller;
 
 import com.dodo.dodoserver.domain.nest.dto.*;
+import com.dodo.dodoserver.domain.nest.dto.NestDraftPublishRequestDto;
 import com.dodo.dodoserver.domain.nest.service.NestDraftService;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
@@ -155,6 +156,25 @@ class NestDraftControllerTest {
 
         mockMvc.perform(post("/api/v1/nests/drafts/{id}/publish", draftId)
                         .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(100L));
+    }
+
+    @Test
+    @DisplayName("임시 저장 발행 성공 - 엽서 포함")
+    @WithMockUserPrincipal
+    void publishDraft_withPostcard_success() throws Exception {
+        Long draftId = 1L;
+        Long postcardId = 5L;
+        NestDraftPublishRequestDto requestDto = new NestDraftPublishRequestDto(postcardId);
+        NestSimpleResponseDto responseDto = NestSimpleResponseDto.builder().id(100L).build();
+
+        given(nestDraftService.publishDraft(any(), eq(draftId), any(NestDraftPublishRequestDto.class))).willReturn(responseDto);
+
+        mockMvc.perform(post("/api/v1/nests/drafts/{id}/publish", draftId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(100L));
     }

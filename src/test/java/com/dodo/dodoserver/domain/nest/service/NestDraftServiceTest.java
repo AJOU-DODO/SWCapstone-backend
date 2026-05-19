@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.nest.service;
 
 import com.dodo.dodoserver.domain.nest.dao.NestDraftRepository;
 import com.dodo.dodoserver.domain.nest.dto.*;
+import com.dodo.dodoserver.domain.nest.dto.NestDraftPublishRequestDto;
 import com.dodo.dodoserver.domain.nest.entity.NestDraft;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -155,7 +156,40 @@ class NestDraftServiceTest {
 
         // then
         assertThat(response.getId()).isEqualTo(100L);
-        verify(nestService, times(1)).createNest(eq(userId), any());
+        verify(nestService, times(1)).createNest(eq(userId), argThat(dto -> dto.getPostcardId() == null));
+        verify(nestDraftRepository, times(1)).delete(draft);
+    }
+
+    @Test
+    @DisplayName("임시 저장 발행 성공 - 엽서 포함")
+    void publishDraft_withPostcard_success() {
+        // given
+        Long userId = 1L;
+        Long draftId = 10L;
+        Long postcardId = 5L;
+        User user = User.builder().id(userId).build();
+        Point point = geometryFactory.createPoint(new Coordinate(127.0, 37.5));
+        NestDraft draft = NestDraft.builder()
+                .id(draftId)
+                .creator(user)
+                .point(point)
+                .title("발행제목")
+                .content("발행내용")
+                .unlockRadius(100)
+                .categoryIds(List.of(1L))
+                .build();
+
+        NestDraftPublishRequestDto publishRequestDto = new NestDraftPublishRequestDto(postcardId);
+
+        given(nestDraftRepository.findById(draftId)).willReturn(Optional.of(draft));
+        given(nestService.createNest(eq(userId), any())).willReturn(NestSimpleResponseDto.builder().id(100L).build());
+
+        // when
+        NestSimpleResponseDto response = nestDraftService.publishDraft(userId, draftId, publishRequestDto);
+
+        // then
+        assertThat(response.getId()).isEqualTo(100L);
+        verify(nestService, times(1)).createNest(eq(userId), argThat(dto -> dto.getPostcardId().equals(postcardId)));
         verify(nestDraftRepository, times(1)).delete(draft);
     }
 
