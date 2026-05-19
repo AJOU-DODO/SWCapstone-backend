@@ -41,7 +41,7 @@ public class NestComment {
     private NestComment parent;
 
     @Builder.Default
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parent", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<NestComment> children = new ArrayList<>();
 
     @Column(nullable = false, columnDefinition = "TEXT")
