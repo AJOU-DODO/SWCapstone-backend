@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.dto.ReportRequestDto;
 import com.dodo.dodoserver.domain.report.entity.Report;
 import com.dodo.dodoserver.domain.report.entity.ReportReason;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -23,18 +24,22 @@ public class ReportService {
     private final NestRepository nestRepository;
     private final NestCommentRepository nestCommentRepository;
     private final PostcardRepository postcardRepository;
+    private final UserRepository userRepository;
 
-    public void createReport(User reporter, ReportRequestDto requestDto) {
-        // 1. 대상 존재 여부 검증
+    public void createReport(Long userId, ReportRequestDto requestDto) {
+        User reporter = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 대상 존재 여부 검증
         validateTargetExistence(requestDto);
 
-        // 2. 기타 사유일 경우 상세 내용 필수 체크
+        // 기타 사유일 경우 상세 내용 필수 체크
         if (requestDto.getReason() == ReportReason.OTHER && 
             (requestDto.getContent() == null || requestDto.getContent().isBlank())) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // 3. 신고 생성 및 저장
+        // 신고 생성 및 저장
         Report report = Report.builder()
                 .reporter(reporter)
                 .reportType(requestDto.getReportType())

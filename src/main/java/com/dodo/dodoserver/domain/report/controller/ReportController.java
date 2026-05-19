@@ -24,7 +24,7 @@ public class ReportController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody ReportRequestDto requestDto) {
         
-        reportService.createReport(userPrincipal.getUser(), requestDto);
+        reportService.createReport(userPrincipal.getId(), requestDto);
         return ApiResponseDto.success(null);
     }
 }
