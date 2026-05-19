@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.nest.controller;
 
 import com.dodo.dodoserver.domain.nest.dto.*;
+import com.dodo.dodoserver.domain.nest.dto.NestDraftPublishRequestDto;
 import com.dodo.dodoserver.domain.nest.service.NestDraftService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.UserPrincipal;
