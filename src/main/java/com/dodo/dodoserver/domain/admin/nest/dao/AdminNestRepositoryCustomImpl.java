@@ -125,6 +125,7 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                     .likeCount(likeCountMap.getOrDefault(n.getId(), 0L))
                     .commentCount(commentCountMap.getOrDefault(n.getId(), 0L))
                     .reportCount(reportCountMap.getOrDefault(n.getId(), 0L))
+                    .isDeleted(n.getDeletedAt() != null)
                     .reasons(reasonMap.getOrDefault(n.getId(), Collections.emptyList()).stream().distinct().toList())
                     .build();
         }).collect(Collectors.toList());

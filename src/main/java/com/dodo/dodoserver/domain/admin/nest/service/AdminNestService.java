@@ -82,6 +82,7 @@ public class AdminNestService {
                 .imageUrls(nest.getImages().stream().map(NestImage::getImageUrl).collect(Collectors.toList()))
                 .categoryIds(categoryIds)
                 .createdAt(nest.getCreatedAt())
+                .isDeleted(nest.getDeletedAt() != null)
                 .build();
     }
 

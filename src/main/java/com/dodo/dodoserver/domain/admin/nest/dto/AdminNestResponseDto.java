@@ -18,5 +18,6 @@ public class AdminNestResponseDto {
     private long likeCount;
     private long commentCount;
     private long reportCount;
+    private boolean isDeleted;
     private List<ReportReason> reasons;
 }

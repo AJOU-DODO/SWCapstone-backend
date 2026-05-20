@@ -19,4 +19,5 @@ public class AdminNestDetailResponseDto {
     private List<String> imageUrls;
     private List<Long> categoryIds;
     private LocalDateTime createdAt;
+    private boolean isDeleted;
 }
