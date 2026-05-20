@@ -4,8 +4,9 @@ import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -21,7 +22,8 @@ import java.time.LocalDateTime;
 @Table(name = "postcards")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE postcards SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@FilterDef(name = "deletedFilter")
+@Filter(name = "deletedFilter", condition = "deleted_at IS NULL")
 public class Postcard {
 
     @Id
