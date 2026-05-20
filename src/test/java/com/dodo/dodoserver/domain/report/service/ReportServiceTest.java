@@ -87,6 +87,26 @@ class ReportServiceTest {
     }
 
     @Test
+    @DisplayName("신고 생성 실패 - 이미 신고한 콘텐츠")
+    void createReport_fail_alreadyReported() {
+        // given
+        User reporter = User.builder().id(1L).nickname("신고자").build();
+        ReportRequestDto requestDto = ReportRequestDto.builder()
+                .reportType(ReportType.NEST)
+                .targetId(100L)
+                .reason(ReportReason.ABUSE)
+                .build();
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(reporter));
+        given(nestRepository.existsById(100L)).willReturn(true);
+        given(reportRepository.existsByReporterIdAndReportTypeAndTargetId(1L, ReportType.NEST, 100L))
+                .willReturn(true);
+
+        // when & then
+        assertThrows(BusinessException.class, () -> reportService.createReport(1L, requestDto));
+    }
+
+    @Test
     @DisplayName("신고 생성 실패 - 기타 사유 상세 내용 누락")
     void createReport_fail_missingOtherContent() {
         // given
