@@ -20,6 +20,7 @@ public final class NotificationConstants {
 
     // Message Templates
     public static final String TITLE_NEST_DELETED = "둥지 삭제 알림";
+    public static final String DEFAULT_NEST_DELETE_REASON = "커뮤니티 가이드라인 위반으로 인해 삭제되었습니다.";
     public static final String TITLE_NEW_COMMENT = "둥지에 새 댓글이 달렸습니다!";
     public static final String BODY_NEW_COMMENT = "%s님이 댓글을 남겼습니다.";
     public static final String TITLE_NEW_REPLY = "내 댓글에 답글이 달렸습니다!";

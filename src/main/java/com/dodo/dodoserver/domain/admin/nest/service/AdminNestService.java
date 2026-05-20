@@ -172,10 +172,14 @@ public class AdminNestService {
                 .collect(Collectors.toList());
         
         if (!tokens.isEmpty()) {
+            String reason = (requestDto.getReason() == null || requestDto.getReason().isBlank()) 
+                    ? DEFAULT_NEST_DELETE_REASON 
+                    : requestDto.getReason();
+
             fcmService.sendNotification(new NotificationEvent(
                     tokens,
                     TITLE_NEST_DELETED,
-                    requestDto.getReason(),
+                    reason,
                     Map.of(KEY_TYPE, TYPE_NEST_DELETED, KEY_NEST_ID, nestId.toString())
             ));
         }
