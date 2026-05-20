@@ -330,6 +330,8 @@ class NestServiceTest {
         assertThat(response.getContent()).isEqualTo("삭제된 댓글 입니다.");
         assertThat(response.getNickname()).isEqualTo("익명");
         assertThat(response.getProfileImageUrl()).isNull();
+        assertThat(response.getLikeCount()).isEqualTo(0L);
+        assertThat(response.isLiked()).isFalse();
     }
 
     @Test

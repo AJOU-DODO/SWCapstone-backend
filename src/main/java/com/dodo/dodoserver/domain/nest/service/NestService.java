@@ -481,14 +481,16 @@ public class NestService {
         // 대댓글은 생성순으로 정렬
         children.sort(Comparator.comparing(NestComment::getCreatedAt));
 
+        boolean isDeleted = comment.getDeletedAt() != null;
+
         return CommentResponseDto.builder()
                 .id(comment.getId())
-                .content(comment.getDeletedAt() != null ? "삭제된 댓글 입니다." : comment.getContent())
-                .nickname(comment.getDeletedAt() != null ? "익명" : comment.getUser().getNickname())
-                .profileImageUrl(comment.getDeletedAt() != null ? null : profileImageMap.get(comment.getUser().getId()))
+                .content(isDeleted ? "삭제된 댓글 입니다." : comment.getContent())
+                .nickname(isDeleted ? "익명" : comment.getUser().getNickname())
+                .profileImageUrl(isDeleted ? null : profileImageMap.get(comment.getUser().getId()))
                 .createdAt(comment.getCreatedAt())
-                .likeCount(comment.getDeletedAt() != null ? 0L : comment.getLikeCount())
-                .isLiked(likedCommentIds.contains(comment.getId()))
+                .likeCount(isDeleted ? 0L : comment.getLikeCount())
+                .isLiked(!isDeleted && likedCommentIds.contains(comment.getId()))
                 .children(children.stream()
                         .map(child -> convertToCommentResponseDto(child, childrenMap, profileImageMap, likedCommentIds))
                         .collect(Collectors.toList()))
