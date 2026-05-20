@@ -61,14 +61,8 @@ class AdminReportServiceTest {
         Map<String, Long> stats = Map.of("pendingAbuseCount", 5L);
         given(reportRepository.countPendingReportsByTarget(ReportType.NEST, 1L)).willReturn(stats);
 
-        Report report = Report.builder()
-                .reportType(ReportType.NEST)
-                .targetId(1L)
-                .reason(ReportReason.OTHER)
-                .content("기타 사유 상세")
-                .status(ReportStatus.PENDING)
-                .build();
-        given(reportRepository.findAll()).willReturn(Collections.singletonList(report));
+        List<String> contents = List.of("기타 사유 상세");
+        given(reportRepository.findOtherReportContents(ReportType.NEST, 1L)).willReturn(contents);
 
         // when
         ReportDetailResponseDto result = adminReportService.getReportDetails(ReportType.NEST, 1L);

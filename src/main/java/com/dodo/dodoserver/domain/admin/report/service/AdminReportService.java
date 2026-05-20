@@ -37,16 +37,8 @@ public class AdminReportService {
         // 1. 통계 조회
         Map<String, Long> stats = reportRepository.countPendingReportsByTarget(targetType, targetId);
 
-        // 2. OTHER 사유의 상세 내용 리스트 조회
-        // (네이티브 쿼리 대신 간단하므로 JpaRepository 기본 메서드 활용을 고려할 수 있으나, 
-        // 필터링 조건이 명확하므로 별도 쿼리가 유리할 수 있음. 여기서는 일단 전체 조회 후 필터링)
-        List<String> otherReportContents = reportRepository.findAll().stream()
-                .filter(r -> r.getReportType() == targetType && 
-                             r.getTargetId().equals(targetId) && 
-                             r.getReason() == ReportReason.OTHER && 
-                             r.getStatus() == ReportStatus.PENDING)
-                .map(Report::getContent)
-                .collect(Collectors.toList());
+        // 2. OTHER 사유의 상세 내용 리스트 조회 (전용 쿼리 사용으로 성능 최적화)
+        List<String> otherReportContents = reportRepository.findOtherReportContents(targetType, targetId);
 
         return ReportDetailResponseDto.builder()
                 .targetType(targetType)

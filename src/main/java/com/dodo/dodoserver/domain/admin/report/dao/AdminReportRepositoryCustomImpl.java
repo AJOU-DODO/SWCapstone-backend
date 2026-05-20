@@ -239,6 +239,20 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
         return stats;
     }
 
+    @Override
+    public List<String> findOtherReportContents(ReportType targetType, Long targetId) {
+        return queryFactory
+                .select(report.content)
+                .from(report)
+                .where(
+                        report.reportType.eq(targetType),
+                        report.targetId.eq(targetId),
+                        report.reason.eq(ReportReason.OTHER),
+                        report.status.eq(ReportStatus.PENDING)
+                )
+                .fetch();
+    }
+
     private OrderSpecifier<?> getNestOrderSpecifier(String sort) {
         if (sort == null) return new OrderSpecifier<>(Order.DESC, report.createdAt.max());
         return switch (sort) {
