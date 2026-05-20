@@ -18,6 +18,7 @@ public class AdminNestDetailResponseDto {
     private Double longitude;
     private List<String> imageUrls;
     private List<Long> categoryIds;
+    private List<String> categoryNames;
     private LocalDateTime createdAt;
     private boolean isDeleted;
 }

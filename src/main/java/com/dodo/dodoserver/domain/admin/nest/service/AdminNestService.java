@@ -68,8 +68,14 @@ public class AdminNestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        List<Long> categoryIds = nestCategoryRepository.findAllByNest(nest).stream()
+        var nestCategories = nestCategoryRepository.findAllByNest(nest);
+        
+        List<Long> categoryIds = nestCategories.stream()
                 .map(nc -> nc.getCategory().getId())
+                .collect(Collectors.toList());
+
+        List<String> categoryNames = nestCategories.stream()
+                .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
         return AdminNestDetailResponseDto.builder()
@@ -81,6 +87,7 @@ public class AdminNestService {
                 .longitude(nest.getLocation().getPoint().getX())
                 .imageUrls(nest.getImages().stream().map(NestImage::getImageUrl).collect(Collectors.toList()))
                 .categoryIds(categoryIds)
+                .categoryNames(categoryNames)
                 .createdAt(nest.getCreatedAt())
                 .isDeleted(nest.getDeletedAt() != null)
                 .build();
