@@ -25,9 +25,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.dodo.dodoserver.global.common.constants.NotificationConstants.DEFAULT_NEST_DELETE_REASON;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -77,8 +79,9 @@ class AdminNestServiceTest {
         User creator = User.builder().id(1L).build();
         Nest nest = Nest.builder().id(100L).creator(creator).build();
         UserDevice device = UserDevice.builder().fcmToken("token").build();
-        AdminNestDeleteRequestDto requestDto = new AdminNestDeleteRequestDto();
-        // Reflection을 통해 사유 설정 또는 JSON 역직렬화 흉내
+        AdminNestDeleteRequestDto requestDto = AdminNestDeleteRequestDto.builder()
+                .reason("사유")
+                .build();
 
         given(nestRepository.findById(100L)).willReturn(Optional.of(nest));
         given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
@@ -88,11 +91,34 @@ class AdminNestServiceTest {
         adminNestService.deleteNestForAdmin(100L, requestDto);
 
         // then
-        verify(fcmService, times(1)).sendNotification(any(NotificationEvent.class));
+        verify(fcmService, times(1)).sendNotification(argThat(event -> 
+                event.body().equals("사유")));
         verify(postcardRepository, times(1)).recoverSharedPostcardsByNest(nest);
         verify(nestReactionRepository, times(1)).deleteByNest(nest);
         verify(nestCommentRepository, times(1)).deleteAllByNest(nest);
         verify(nestRepository, times(1)).delete(nest);
+    }
+
+    @Test
+    @DisplayName("둥지 삭제 시 사유가 없으면 기본 사유로 알림 전송")
+    void deleteNest_useDefaultReason_whenReasonIsMissing() {
+        // given
+        User creator = User.builder().id(1L).build();
+        Nest nest = Nest.builder().id(100L).creator(creator).build();
+        UserDevice device = UserDevice.builder().fcmToken("token").build();
+        AdminNestDeleteRequestDto requestDto = new AdminNestDeleteRequestDto(); // reason is null
+
+        given(nestRepository.findById(100L)).willReturn(Optional.of(nest));
+        given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
+        given(nestCommentRepository.findAllByNestId(100L)).willReturn(Collections.emptyList());
+
+        // when
+        adminNestService.deleteNestForAdmin(100L, requestDto);
+
+        // then
+        verify(fcmService).sendNotification(argThat(event -> 
+            event.body().equals(DEFAULT_NEST_DELETE_REASON)
+        ));
     }
 
     @Test
