@@ -50,10 +50,10 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
 
         BooleanExpression deletedCondition = getDeletedCondition(includeDeleted);
 
-        // 2. 메인 쿼리: Nest 엔티티 조회 (정렬 및 필터링 적용)
-        List<Nest> results = queryFactory
-                .selectFrom(nest)
-                .join(nest.creator, user).fetchJoin()
+        // 2. 메인 쿼리 Phase 1: 페이징 처리를 위한 ID 목록 조회 (집계 및 정렬 조건 포함)
+        List<Long> nestIds = queryFactory
+                .select(nest.id)
+                .from(nest)
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
                 .leftJoin(nestComment).on(nestComment.nest.eq(nest))
                 .leftJoin(report).on(report.targetId.eq(nest.id).and(report.reportType.eq(ReportType.NEST)))
@@ -70,12 +70,23 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                 .where(dateCondition, deletedCondition)
                 .fetchOne();
 
-        if (results.isEmpty()) {
+        if (nestIds.isEmpty()) {
             return new PageImpl<>(Collections.emptyList(), pageable, total != null ? total : 0L);
         }
 
-        List<Long> nestIds = results.stream()
-                .map(Nest::getId)
+        // 2. 메인 쿼리 Phase 2: 선별된 ID를 기반으로 엔티티 Fetch Join (groupBy 불필요)
+        List<Nest> entities = queryFactory
+                .selectFrom(nest)
+                .join(nest.creator, user).fetchJoin()
+                .where(nest.id.in(nestIds))
+                .fetch();
+
+        // IN 절 결과의 순서를 nestIds 순서대로 재정렬 (Map 활용)
+        Map<Long, Nest> nestMap = entities.stream()
+                .collect(Collectors.toMap(Nest::getId, n -> n));
+        
+        List<Nest> results = nestIds.stream()
+                .map(nestMap::get)
                 .collect(Collectors.toList());
 
         // 3. 통계 데이터 일괄 조회 (N+1 방지)
