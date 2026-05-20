@@ -33,6 +33,12 @@ public class ReportService {
         // 대상 존재 여부 검증
         validateTargetExistence(requestDto);
 
+        // 중복 신고 검증
+        if (reportRepository.existsByReporterIdAndReportTypeAndTargetId(
+                userId, requestDto.getReportType(), requestDto.getTargetId())) {
+            throw new BusinessException(ErrorCode.ALREADY_REPORTED);
+        }
+
         // 기타 사유일 경우 상세 내용 필수 체크
         if (requestDto.getReason() == ReportReason.OTHER && 
             (requestDto.getContent() == null || requestDto.getContent().isBlank())) {
