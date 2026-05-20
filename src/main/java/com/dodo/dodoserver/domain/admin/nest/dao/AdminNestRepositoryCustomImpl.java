@@ -1,6 +1,7 @@
 package com.dodo.dodoserver.domain.admin.nest.dao;
 
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
+import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.report.entity.ReportReason;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.querydsl.core.Tuple;
@@ -49,26 +50,15 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
 
         BooleanExpression deletedCondition = getDeletedCondition(includeDeleted);
 
-        // 2. 메인 쿼리: Nest 정보와 각종 카운트 집계
-        // @SQLRestriction 우회를 위해 selectFrom(nest) 대신 필드를 직접 선택
-        List<Tuple> results = queryFactory
-                .select(
-                        nest.id,
-                        user.nickname,
-                        nest.content,
-                        nest.createdAt,
-                        nestReaction.countDistinct(),
-                        nestComment.countDistinct(),
-                        report.countDistinct(),
-                        nest.viewCount
-                )
-                .from(nest)
-                .join(nest.creator, user)
+        // 2. 메인 쿼리: Nest 엔티티 조회 (정렬 및 필터링 적용)
+        List<Nest> results = queryFactory
+                .selectFrom(nest)
+                .join(nest.creator, user).fetchJoin()
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
                 .leftJoin(nestComment).on(nestComment.nest.eq(nest))
                 .leftJoin(report).on(report.targetId.eq(nest.id).and(report.reportType.eq(ReportType.NEST)))
                 .where(dateCondition, deletedCondition)
-                .groupBy(nest.id, user.nickname, nest.content, nest.createdAt, nest.viewCount)
+                .groupBy(nest.id)
                 .orderBy(getOrderSpecifier(sort))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -85,10 +75,35 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
         }
 
         List<Long> nestIds = results.stream()
-                .map(t -> t.get(nest.id))
+                .map(Nest::getId)
                 .collect(Collectors.toList());
 
-        // 3. 신고 사유 리스트 별도 조회 (N+1 방지)
+        // 3. 통계 데이터 일괄 조회 (N+1 방지)
+        Map<Long, Long> likeCountMap = queryFactory
+                .select(nestReaction.nest.id, nestReaction.count())
+                .from(nestReaction)
+                .where(nestReaction.nest.id.in(nestIds))
+                .groupBy(nestReaction.nest.id)
+                .fetch().stream()
+                .collect(Collectors.toMap(t -> t.get(nestReaction.nest.id), t -> t.get(nestReaction.count())));
+
+        Map<Long, Long> commentCountMap = queryFactory
+                .select(nestComment.nest.id, nestComment.count())
+                .from(nestComment)
+                .where(nestComment.nest.id.in(nestIds))
+                .groupBy(nestComment.nest.id)
+                .fetch().stream()
+                .collect(Collectors.toMap(t -> t.get(nestComment.nest.id), t -> t.get(nestComment.count())));
+
+        Map<Long, Long> reportCountMap = queryFactory
+                .select(report.targetId, report.count())
+                .from(report)
+                .where(report.targetId.in(nestIds), report.reportType.eq(ReportType.NEST))
+                .groupBy(report.targetId)
+                .fetch().stream()
+                .collect(Collectors.toMap(t -> t.get(report.targetId), t -> t.get(report.count())));
+
+        // 4. 신고 사유 리스트 별도 조회
         Map<Long, List<ReportReason>> reasonMap = queryFactory
                 .select(report.targetId, report.reason)
                 .from(report)
@@ -101,20 +116,16 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                         Collectors.mapping(t -> t.get(report.reason), Collectors.toList())
                 ));
 
-        List<AdminNestResponseDto> content = results.stream().map(t -> {
-            Long likeCount = t.get(nestReaction.countDistinct());
-            Long commentCount = t.get(nestComment.countDistinct());
-            Long reportCount = t.get(report.countDistinct());
-
+        List<AdminNestResponseDto> content = results.stream().map(n -> {
             return AdminNestResponseDto.builder()
-                    .nestId(t.get(nest.id))
-                    .authorNickname(t.get(user.nickname))
-                    .content(t.get(nest.content))
-                    .createdAt(t.get(nest.createdAt))
-                    .likeCount(likeCount != null ? likeCount : 0L)
-                    .commentCount(commentCount != null ? commentCount : 0L)
-                    .reportCount(reportCount != null ? reportCount : 0L)
-                    .reasons(reasonMap.getOrDefault(t.get(nest.id), Collections.emptyList()).stream().distinct().toList())
+                    .nestId(n.getId())
+                    .authorNickname(n.getCreator().getNickname())
+                    .content(n.getContent())
+                    .createdAt(n.getCreatedAt())
+                    .likeCount(likeCountMap.getOrDefault(n.getId(), 0L))
+                    .commentCount(commentCountMap.getOrDefault(n.getId(), 0L))
+                    .reportCount(reportCountMap.getOrDefault(n.getId(), 0L))
+                    .reasons(reasonMap.getOrDefault(n.getId(), Collections.emptyList()).stream().distinct().toList())
                     .build();
         }).collect(Collectors.toList());
 

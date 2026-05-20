@@ -231,7 +231,7 @@ public class NestService {
         postcardRepository.recoverSharedPostcardsByNest(nest);
 
         // 2. 연관 소셜 데이터 정리 (좋아요, 리액션) - 하드 딜리트
-        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        List<NestComment> allComments = nestCommentRepository.findAllByNestId(nestId);
         if (!allComments.isEmpty()) {
             commentLikeRepository.deleteByCommentIn(allComments);
         }
@@ -418,8 +418,8 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 네이티브 쿼리를 사용하여 삭제된 댓글도 포함하여 조회
-        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        // 삭제된 댓글도 포함하여 조회 (AOP 필터가 이 경로에서는 비활성화됨)
+        List<NestComment> allComments = nestCommentRepository.findAllByNestId(nestId);
 
         if (allComments.isEmpty()) return Collections.emptyList();
 

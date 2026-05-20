@@ -82,7 +82,7 @@ class AdminNestServiceTest {
 
         given(nestRepository.findById(100L)).willReturn(Optional.of(nest));
         given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
-        given(nestCommentRepository.findAllByNestIdIncludingDeletedNative(100L)).willReturn(Collections.emptyList());
+        given(nestCommentRepository.findAllByNestId(100L)).willReturn(Collections.emptyList());
 
         // when
         adminNestService.deleteNestForAdmin(100L, requestDto);
@@ -113,7 +113,7 @@ class AdminNestServiceTest {
     void getNestComments_success_emptyList() {
         // given
         given(nestRepository.existsById(100L)).willReturn(true);
-        given(nestCommentRepository.findAllByNestIdIncludingDeletedNative(100L)).willReturn(Collections.emptyList());
+        given(nestCommentRepository.findAllByNestId(100L)).willReturn(Collections.emptyList());
 
         // when
         var result = adminNestService.getNestCommentsForAdmin(100L);
@@ -121,6 +121,6 @@ class AdminNestServiceTest {
         // then
         assertThat(result).isEmpty();
         verify(nestRepository, times(1)).existsById(100L);
-        verify(nestCommentRepository, times(1)).findAllByNestIdIncludingDeletedNative(100L);
+        verify(nestCommentRepository, times(1)).findAllByNestId(100L);
     }
 }

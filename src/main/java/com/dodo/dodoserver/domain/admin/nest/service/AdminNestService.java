@@ -91,8 +91,8 @@ public class AdminNestService {
             throw new BusinessException(ErrorCode.NEST_NOT_FOUND);
         }
 
-        // 1. 해당 둥지의 모든 댓글 조회 (삭제된 댓글 포함)
-        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        // 1. 해당 둥지의 모든 댓글 조회 (삭제된 댓글 포함 - 관리자 API는 필터 자동 비활성화)
+        List<NestComment> allComments = nestCommentRepository.findAllByNestId(nestId);
 
         if (allComments.isEmpty()) return List.of();
 
@@ -183,7 +183,7 @@ public class AdminNestService {
         postcardRepository.recoverSharedPostcardsByNest(nest);
 
         // 3. 연관 소셜 데이터 정리 (좋아요, 리액션) - 하드 딜리트
-        List<NestComment> allComments = nestCommentRepository.findAllByNestIdIncludingDeletedNative(nestId);
+        List<NestComment> allComments = nestCommentRepository.findAllByNestId(nestId);
         if (!allComments.isEmpty()) {
             commentLikeRepository.deleteByCommentIn(allComments);
         }
