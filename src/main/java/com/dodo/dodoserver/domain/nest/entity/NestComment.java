@@ -22,8 +22,8 @@ import java.util.List;
 @Table(name = "nest_comments")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE nest_comments SET deleted_at = NOW() WHERE id = ?")
-@FilterDef(name = "deletedFilter")
-@Filter(name = "deletedFilter", condition = "deleted_at IS NULL")
+@FilterDef(name = "commentFilter")
+@Filter(name = "commentFilter", condition = "deleted_at IS NULL")
 public class NestComment {
 
     @Id

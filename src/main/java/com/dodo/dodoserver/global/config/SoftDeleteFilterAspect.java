@@ -28,20 +28,26 @@ public class SoftDeleteFilterAspect {
         String requestURI = request.getRequestURI();
         Session session = entityManager.unwrap(Session.class);
 
-        // 1. 관리자 API는 필터 비활성화 (모든 데이터 조회)
+        // 1. 관리자 API는 모든 필터 비활성화 (모든 데이터 조회)
         if (requestURI.startsWith("/api/v1/admin")) {
-            session.disableFilter("deletedFilter");
+            session.disableFilter("nestFilter");
+            session.disableFilter("commentFilter");
+            session.disableFilter("postcardFilter");
             return;
         }
 
-        // 2. 둥지 댓글 조회 API는 필터 비활성화 (삭제된 댓글 마스킹 노출을 위해)
-        // 매칭 패턴: /api/v1/nests/{id}/comments
+        // 2. 둥지 댓글 조회 API 예외 처리
+        // 둥지는 살아있어야 하므로 nestFilter는 유지, 댓글 마스킹을 위해 commentFilter만 비활성화
         if (requestURI.matches("^/api/v1/nests/\\d+/comments.*")) {
-            session.disableFilter("deletedFilter");
+            session.enableFilter("nestFilter");
+            session.disableFilter("commentFilter");
+            session.enableFilter("postcardFilter");
             return;
         }
 
-        // 3. 그 외 모든 일반 API는 필터 활성화 (소프트 삭제 데이터 숨김)
-        session.enableFilter("deletedFilter");
+        // 3. 그 외 모든 일반 API는 모든 필터 활성화 (소프트 삭제 데이터 숨김)
+        session.enableFilter("nestFilter");
+        session.enableFilter("commentFilter");
+        session.enableFilter("postcardFilter");
     }
 }

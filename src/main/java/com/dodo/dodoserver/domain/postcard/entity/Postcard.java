@@ -22,8 +22,8 @@ import java.time.LocalDateTime;
 @Table(name = "postcards")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE postcards SET deleted_at = NOW() WHERE id = ?")
-@FilterDef(name = "deletedFilter")
-@Filter(name = "deletedFilter", condition = "deleted_at IS NULL")
+@FilterDef(name = "postcardFilter")
+@Filter(name = "postcardFilter", condition = "deleted_at IS NULL")
 public class Postcard {
 
     @Id

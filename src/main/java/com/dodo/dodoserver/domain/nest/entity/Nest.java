@@ -23,8 +23,8 @@ import java.util.List;
 @Table(name = "nests")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE nests SET deleted_at = NOW() WHERE id = ?")
-@FilterDef(name = "deletedFilter")
-@Filter(name = "deletedFilter", condition = "deleted_at IS NULL")
+@FilterDef(name = "nestFilter")
+@Filter(name = "nestFilter", condition = "deleted_at IS NULL")
 public class Nest {
 
     @Id
