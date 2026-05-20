@@ -155,7 +155,11 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
         Map<Long, List<ReportReason>> reasonMap = queryFactory
                 .select(report.targetId, report.reason)
                 .from(report)
-                .where(report.targetId.in(targetIds), report.reportType.eq(ReportType.COMMENT))
+                .where(
+                        report.targetId.in(targetIds),
+                        report.reportType.eq(ReportType.COMMENT),
+                        report.status.ne(ReportStatus.REJECTED)
+                )
                 .fetch()
                 .stream()
                 .filter(t -> t.get(report.targetId) != null && t.get(report.reason) != null)
@@ -170,7 +174,10 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .join(nestComment.user, user)
                 .join(nestComment.nest, nest)
                 .join(report).on(report.targetId.eq(nestComment.id).and(report.reportType.eq(ReportType.COMMENT)))
-                .where(nestComment.id.in(targetIds))
+                .where(
+                        nestComment.id.in(targetIds),
+                        report.status.ne(ReportStatus.REJECTED)
+                )
                 .groupBy(nestComment.id, user.nickname, nestComment.content, nest.id, nest.title, report.status)
                 .fetch()
                 .stream()
