@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,4 +45,8 @@ public interface PostcardRepository extends JpaRepository<Postcard, Long> {
 
     @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.currentOwner = :user AND p.originalAuthor != :user")
     Page<Postcard> findAcquiredByUser(@Param("user") User user, Pageable pageable);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Postcard p SET p.isShared = false, p.nest = null WHERE p.nest = :nest")
+    void recoverSharedPostcardsByNest(@Param("nest") Nest nest);
 }

@@ -288,7 +288,7 @@ class NestServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
-        given(nestCommentRepository.findAllByNestWithUser(nest)).willReturn(List.of(comment));
+        given(nestCommentRepository.findAllByNestId(nestId)).willReturn(List.of(comment));
         given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
         given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
 
@@ -296,6 +296,42 @@ class NestServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getContent()).isEqualTo("댓글");
+    }
+
+    @Test
+    @DisplayName("삭제된 댓글이 포함된 리스트 조회 시 마스킹 처리 성공")
+    void getCommentsByNestId_withDeletedComment_maskingSuccess() {
+        // given
+        Long nestId = 1L;
+        Nest nest = Nest.builder().id(nestId).build();
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        
+        // 삭제된 댓글 생성
+        NestComment deletedComment = NestComment.builder()
+                .id(10L)
+                .user(user)
+                .content("원래 내용")
+                .children(new ArrayList<>())
+                .build();
+        deletedComment.setDeletedAt(now);
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCommentRepository.findAllByNestId(nestId)).willReturn(List.of(deletedComment));
+        given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
+        given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
+
+        // when
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(user.getId(), nestId, "DEFAULT");
+
+        // then
+        assertThat(result).hasSize(1);
+        CommentResponseDto response = result.get(0);
+        assertThat(response.getContent()).isEqualTo("삭제된 댓글 입니다.");
+        assertThat(response.getNickname()).isEqualTo("익명");
+        assertThat(response.getProfileImageUrl()).isNull();
+        assertThat(response.getLikeCount()).isEqualTo(0L);
+        assertThat(response.isLiked()).isFalse();
     }
 
     @Test

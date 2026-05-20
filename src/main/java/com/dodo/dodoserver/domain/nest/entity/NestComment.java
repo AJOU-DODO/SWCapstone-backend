@@ -3,8 +3,9 @@ package com.dodo.dodoserver.domain.nest.entity;
 import com.dodo.dodoserver.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -21,7 +22,8 @@ import java.util.List;
 @Table(name = "nest_comments")
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE nest_comments SET deleted_at = NOW() WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@FilterDef(name = "commentFilter")
+@Filter(name = "commentFilter", condition = "deleted_at IS NULL")
 public class NestComment {
 
     @Id
@@ -41,7 +43,7 @@ public class NestComment {
     private NestComment parent;
 
     @Builder.Default
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "parent", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<NestComment> children = new ArrayList<>();
 
     @Column(nullable = false, columnDefinition = "TEXT")

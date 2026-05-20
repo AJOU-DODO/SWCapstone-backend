@@ -13,5 +13,9 @@ public interface NestCommentRepository extends JpaRepository<NestComment, Long> 
     @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest = :nest")
     List<NestComment> findAllByNestWithUser(@Param("nest") Nest nest);
 
+    // 특정 둥지의 모든 댓글 조회 (삭제된 댓글 포함 여부는 필터로 제어됨)
+    @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest.id = :nestId")
+    List<NestComment> findAllByNestId(@Param("nestId") Long nestId);
 
+    void deleteAllByNest(Nest nest);
 }

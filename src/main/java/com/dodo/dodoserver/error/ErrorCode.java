@@ -44,6 +44,7 @@ public enum ErrorCode {
     DRAFT_NOT_FOUND(HttpStatus.NOT_FOUND, "N005", "임시 저장된 둥지를 찾을 수 없습니다."),
     DRAFT_NOT_PUBLISHABLE(HttpStatus.BAD_REQUEST, "N006", "필수 정보(제목, 내용, 반경, 카테고리)가 누락되어 발행할 수 없습니다."),
     NEST_NOT_UNLOCKED(HttpStatus.FORBIDDEN, "N007", "해당 둥지의 상세 내용을 보려면 해금이 필요합니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "N008", "댓글을 찾을 수 없습니다."),
 
     // Postcard (PC)
     POSTCARD_NOT_FOUND(HttpStatus.NOT_FOUND, "PC001", "엽서를 찾을 수 없습니다."),
@@ -59,6 +60,9 @@ public enum ErrorCode {
     // Notice (NO)
     NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NO001", "공지사항을 찾을 수 없습니다."),
     ALREADY_PUBLISHED_NOTICE(HttpStatus.BAD_REQUEST, "NO002", "이미 발행된 공지사항입니다."),
+
+    // Report (R)
+    ALREADY_REPORTED(HttpStatus.BAD_REQUEST, "R001", "이미 신고한 콘텐츠입니다."),
 
     // Whitelist (W)
     WHITELIST_NOT_FOUND(HttpStatus.NOT_FOUND, "W001", "화이트리스트 정보를 찾을 수 없습니다."),
