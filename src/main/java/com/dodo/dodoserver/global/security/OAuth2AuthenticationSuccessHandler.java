@@ -109,6 +109,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .queryParam("refreshToken", refreshToken)
                 .queryParam("onboarded", user.isOnboarded())
                 .queryParam("role", role)
+                .encode()
                 .build().toUriString();
 
         clearRedirectCookie(request, response);
@@ -123,6 +124,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .queryParam("status", "ERROR")
                 .queryParam("code", errorCode.getCode())
                 .queryParam("reason", errorCode.getMessage())
+                .encode()
                 .build().toUriString();
 
         clearRedirectCookie(request, response);
@@ -161,6 +163,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .queryParam("code", ErrorCode.USER_SANCTIONED.getCode())
                 .queryParam("reason", reason)
                 .queryParam("sanctionedUntil", user.getSanctionedUntil().toString())
+                .encode()
                 .build().toUriString();
 
         clearRedirectCookie(request, response);
