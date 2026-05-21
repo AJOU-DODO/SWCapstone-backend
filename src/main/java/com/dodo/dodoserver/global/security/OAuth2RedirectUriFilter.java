@@ -49,6 +49,8 @@ public class OAuth2RedirectUriFilter extends OncePerRequestFilter {
                     response.addCookie(cookie);
                 } else {
                     log.warn("Unauthorized redirect_uri attempted: {}", redirectUri);
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized redirect URI");
+                    return; // 비인가 주소인 경우 여기서 즉시 중단
                 }
             }
         }
