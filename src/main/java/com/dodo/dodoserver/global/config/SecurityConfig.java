@@ -5,6 +5,7 @@ import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
 import com.dodo.dodoserver.global.security.OAuth2AuthenticationSuccessHandler;
+import com.dodo.dodoserver.global.security.OAuth2RedirectUriFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class SecurityConfig {
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final OAuth2RedirectUriFilter oauth2RedirectUriFilter;
 	private final CorsConfigurationSource corsConfigurationSource;
 	private final ObjectMapper objectMapper;
 
@@ -76,7 +78,8 @@ public class SecurityConfig {
 				.successHandler(oauth2AuthenticationSuccessHandler)
 			)
 
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(oauth2RedirectUriFilter, JwtAuthenticationFilter.class);
 
 		return http.build();
 	}
