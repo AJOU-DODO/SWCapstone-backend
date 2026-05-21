@@ -1,21 +1,20 @@
 package com.dodo.dodoserver.global.security;
 
+import com.dodo.dodoserver.global.config.AppProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import org.springframework.util.AntPathMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * OAuth2 인증 시작 시 쿼리 파라미터로 전달된 redirect_uri를 쿠키에 저장하는 필터입니다.
@@ -23,14 +22,13 @@ import java.util.List;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class OAuth2RedirectUriFilter extends OncePerRequestFilter {
 
     private static final String REDIRECT_URI_PARAM = "redirect_uri";
     private static final String AUTHORIZATION_ENDPOINT_PREFIX = "/oauth2/authorization/";
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-    @Value("${app.oauth2.authorized-redirect-uris}")
-    private List<String> authorizedRedirectUris;
+    private final AppProperties appProperties;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -62,7 +60,7 @@ public class OAuth2RedirectUriFilter extends OncePerRequestFilter {
      * AntPathMatcher를 사용하여 요청된 URI가 허용된 패턴 중 하나와 일치하는지 확인합니다.
      */
     private boolean isAuthorizedRedirectUri(String uri) {
-        return authorizedRedirectUris.stream()
+        return appProperties.getOauth2().getAuthorizedRedirectUris().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 }

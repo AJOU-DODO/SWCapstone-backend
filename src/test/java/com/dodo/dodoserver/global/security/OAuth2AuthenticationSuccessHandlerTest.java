@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.Role;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,6 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.RedirectStrategy;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -57,6 +57,9 @@ class OAuth2AuthenticationSuccessHandlerTest {
     private RedirectStrategy redirectStrategy;
 
     @Spy
+    private AppProperties appProperties = new AppProperties();
+
+    @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
@@ -83,10 +86,10 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
         principal = UserPrincipal.create(1L, "test@example.com", "ROLE_ADMIN");
 
-        // ReflectionTestUtils를 사용하여 @Value 필드 주입
-        ReflectionTestUtils.setField(successHandler, "authorizedRedirectUris", List.of(AUTHORIZED_REDIRECT_URI));
+        // AppProperties 설정
+        appProperties.getOauth2().getAuthorizedRedirectUris().add(AUTHORIZED_REDIRECT_URI);
         
-        // RedirectStrategy 설정 (getRedirectStrategy().sendRedirect() 호출 대응)
+        // RedirectStrategy 설정
         successHandler.setRedirectStrategy(redirectStrategy);
     }
 

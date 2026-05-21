@@ -5,13 +5,13 @@ import com.dodo.dodoserver.error.exception.BusinessException;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.domain.auth.dto.TokenResponseDto;
 import com.dodo.dodoserver.domain.auth.service.AuthService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 /*
@@ -41,12 +40,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
-    private final UserRepository userRepository; // 추가: 유저 조회를 위함
+    private final UserRepository userRepository;
     private final SanctionHistoryRepository sanctionHistoryRepository;
     private final ObjectMapper objectMapper;
-
-    @Value("${app.oauth2.authorized-redirect-uris}")
-    private List<String> authorizedRedirectUris;
+    private final AppProperties appProperties;
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -240,7 +237,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * 요청된 URI가 허용된 패턴 중 하나와 일치하는지 확인합니다. (Open Redirect 및 토큰 탈취 방어)
      */
     private boolean isAuthorizedRedirectUri(String uri) {
-        return authorizedRedirectUris.stream()
+        return appProperties.getOauth2().getAuthorizedRedirectUris().stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 }
