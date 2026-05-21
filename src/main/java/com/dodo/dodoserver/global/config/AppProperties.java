@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +14,7 @@ import java.util.List;
  * 애플리케이션 전용 설정 프로퍼티 클래스
  * application.yml의 'app' 프리픽스를 가진 설정들을 매핑
  */
-@Configuration
+@Component
 @ConfigurationProperties(prefix = "app")
 @Getter
 @Setter

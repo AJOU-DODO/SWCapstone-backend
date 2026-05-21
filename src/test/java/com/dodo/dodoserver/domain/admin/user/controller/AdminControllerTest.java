@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
 import com.dodo.dodoserver.domain.admin.user.service.AdminService;
 import com.dodo.dodoserver.domain.user.entity.Role;
 import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -69,6 +70,9 @@ class AdminControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

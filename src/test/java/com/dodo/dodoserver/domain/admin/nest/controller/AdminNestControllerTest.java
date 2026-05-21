@@ -4,6 +4,7 @@ import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.service.AdminNestService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -66,6 +67,9 @@ class AdminNestControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

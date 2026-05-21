@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.user.dto.ProfileUpdateRequestDto;
 import com.dodo.dodoserver.domain.user.dto.UserProfileResponseDto;
 import com.dodo.dodoserver.domain.user.service.UserService;
 import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -60,6 +61,9 @@ class UserControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

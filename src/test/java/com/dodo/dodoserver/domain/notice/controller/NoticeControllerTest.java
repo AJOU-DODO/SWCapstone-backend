@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.notice.controller;
 import com.dodo.dodoserver.domain.notice.dto.NoticeResponseDto;
 import com.dodo.dodoserver.domain.notice.entity.NoticeCategory;
 import com.dodo.dodoserver.domain.notice.service.NoticeService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -55,6 +56,9 @@ class NoticeControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {
