@@ -11,9 +11,11 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -21,6 +23,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -41,6 +44,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final UserRepository userRepository; // 추가: 유저 조회를 위함
     private final SanctionHistoryRepository sanctionHistoryRepository;
     private final ObjectMapper objectMapper;
+
+    @Value("${app.oauth2.authorized-redirect-uris}")
+    private List<String> authorizedRedirectUris;
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private static final String REDIRECT_URI_PARAM_COOKIE_NAME = "redirect_uri";
 
@@ -103,6 +111,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * 웹 관리자 페이지를 위한 성공 응답 처리: 쿼리 파라미터에 토큰을 실어 리다이렉트합니다.
      */
     private void handleWebSuccessResponse(HttpServletRequest request, HttpServletResponse response, String accessToken, String refreshToken, User user, String role, String targetUrl) throws IOException {
+        if (!isAuthorizedRedirectUri(targetUrl)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized redirect URI");
+            return;
+        }
+
         String url = UriComponentsBuilder.fromUriString(targetUrl)
                 .queryParam("status", "SUCCESS")
                 .queryParam("accessToken", accessToken)
@@ -120,6 +133,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * 웹 관리자 페이지를 위한 일반 에러 응답 처리: 쿼리 파라미터에 에러 정보를 실어 리다이렉트합니다.
      */
     private void handleWebErrorResponse(HttpServletRequest request, HttpServletResponse response, ErrorCode errorCode, String targetUrl) throws IOException {
+        if (!isAuthorizedRedirectUri(targetUrl)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized redirect URI");
+            return;
+        }
+
         String url = UriComponentsBuilder.fromUriString(targetUrl)
                 .queryParam("status", "ERROR")
                 .queryParam("code", errorCode.getCode())
@@ -157,6 +175,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * 웹 관리자 페이지를 위한 제재 에러 응답 처리: 쿼리 파라미터에 제재 정보를 실어 리다이렉트합니다.
      */
     private void handleWebSanctionResponse(HttpServletRequest request, HttpServletResponse response, User user, String targetUrl) throws IOException {
+        if (!isAuthorizedRedirectUri(targetUrl)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Unauthorized redirect URI");
+            return;
+        }
+
         String reason = getLatestSanctionReason(user);
         String url = UriComponentsBuilder.fromUriString(targetUrl)
                 .queryParam("status", "ERROR")
@@ -211,5 +234,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         cookie.setHttpOnly(true);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
+    }
+
+    /**
+     * 요청된 URI가 허용된 패턴 중 하나와 일치하는지 확인합니다. (Open Redirect 및 토큰 탈취 방어)
+     */
+    private boolean isAuthorizedRedirectUri(String uri) {
+        return authorizedRedirectUris.stream()
+                .anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 }
