@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.category.controller;
 
 import com.dodo.dodoserver.domain.category.dto.CategoryResponseDto;
 import com.dodo.dodoserver.domain.category.service.CategoryService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
 import com.dodo.dodoserver.global.security.JwtTokenProvider;
@@ -56,6 +57,9 @@ class CategoryControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     /**
      * JwtAuthenticationFilter를 MockitoBean으로 주입하면 실제 필터 로직이 실행되지 않음.

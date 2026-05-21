@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.user.controller;
 import com.dodo.dodoserver.domain.user.dto.DeviceRequestDto;
 import com.dodo.dodoserver.domain.user.entity.DeviceType;
 import com.dodo.dodoserver.domain.user.service.UserDeviceService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +58,9 @@ class DeviceControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {
