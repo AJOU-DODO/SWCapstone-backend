@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface NoticeAdminRepository {
     // 관리자는 삭제된 공지사항도 조회 가능해야 하므로 Querydsl로 직접 구현
-    Page<Notice> findAllNoticesWithDeleted(Pageable pageable);
+    Page<Notice> findAllNoticesWithDeleted(Pageable pageable, Boolean isPublished);
     Optional<Notice> findByIdWithDeleted(Long id);
 }

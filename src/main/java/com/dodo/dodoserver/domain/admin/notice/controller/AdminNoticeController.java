@@ -52,8 +52,10 @@ public class AdminNoticeController {
 
     @Operation(summary = "관리자 공지사항 목록 조회")
     @GetMapping
-    public ApiResponseDto<Page<NoticeResponseDto>> getAllNotices(Pageable pageable) {
-        return ApiResponseDto.success(adminNoticeService.getAllNotices(pageable));
+    public ApiResponseDto<Page<NoticeResponseDto>> getAllNotices(
+            Pageable pageable,
+            @RequestParam(required = false) Boolean isPublished) {
+        return ApiResponseDto.success(adminNoticeService.getAllNotices(pageable, isPublished));
     }
 
     @Operation(summary = "관리자 공지사항 상세 조회")

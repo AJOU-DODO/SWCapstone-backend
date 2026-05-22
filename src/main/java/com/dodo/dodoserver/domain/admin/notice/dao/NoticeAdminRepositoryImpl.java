@@ -1,7 +1,6 @@
 package com.dodo.dodoserver.domain.admin.notice.dao;
 
 import com.dodo.dodoserver.domain.notice.entity.Notice;
-import com.dodo.dodoserver.domain.notice.entity.QNotice;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,9 +20,10 @@ public class NoticeAdminRepositoryImpl implements NoticeAdminRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Notice> findAllNoticesWithDeleted(Pageable pageable) {
+    public Page<Notice> findAllNoticesWithDeleted(Pageable pageable, Boolean isPublished) {
         List<Notice> content = queryFactory
                 .selectFrom(notice)
+                .where(isPublishedEq(isPublished))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(notice.createdAt.desc())
@@ -32,6 +32,7 @@ public class NoticeAdminRepositoryImpl implements NoticeAdminRepository {
         long total = Optional.ofNullable(queryFactory
                 .select(notice.count())
                 .from(notice)
+                .where(isPublishedEq(isPublished))
                 .fetchOne()).orElse(0L);
 
         return new PageImpl<>(content, pageable, total);
@@ -43,5 +44,9 @@ public class NoticeAdminRepositoryImpl implements NoticeAdminRepository {
                 .selectFrom(notice)
                 .where(notice.id.eq(id))
                 .fetchOne());
+    }
+
+    private com.querydsl.core.types.dsl.BooleanExpression isPublishedEq(Boolean isPublished) {
+        return isPublished != null ? notice.isPublished.eq(isPublished) : null;
     }
 }

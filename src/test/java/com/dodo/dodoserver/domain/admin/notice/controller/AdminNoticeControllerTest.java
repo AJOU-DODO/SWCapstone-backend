@@ -1,6 +1,5 @@
 package com.dodo.dodoserver.domain.admin.notice.controller;
 
-import com.dodo.dodoserver.domain.admin.notice.dto.NoticeRequestDto;
 import com.dodo.dodoserver.domain.admin.notice.service.AdminNoticeService;
 import com.dodo.dodoserver.domain.notice.dto.NoticeResponseDto;
 import com.dodo.dodoserver.domain.notice.entity.NoticeCategory;
@@ -117,7 +116,7 @@ class AdminNoticeControllerTest {
                 .title("제목")
                 .category(NoticeCategory.UPDATE)
                 .build();
-        given(adminNoticeService.getAllNotices(any())).willReturn(new PageImpl<>(Collections.singletonList(responseDto), PageRequest.of(0, 10), 1));
+        given(adminNoticeService.getAllNotices(any(), any())).willReturn(new PageImpl<>(Collections.singletonList(responseDto), PageRequest.of(0, 10), 1));
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/notices"))

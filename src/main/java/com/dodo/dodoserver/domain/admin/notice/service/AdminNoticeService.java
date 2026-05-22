@@ -81,8 +81,8 @@ public class AdminNoticeService {
     /**
      * 관리자용 공지사항 목록 조회 (삭제된 항목 포함)
      */
-    public Page<NoticeResponseDto> getAllNotices(Pageable pageable) {
-        return noticeAdminRepository.findAllNoticesWithDeleted(pageable)
+    public Page<NoticeResponseDto> getAllNotices(Pageable pageable, Boolean isPublished) {
+        return noticeAdminRepository.findAllNoticesWithDeleted(pageable, isPublished)
                 .map(NoticeResponseDto::from);
     }
 

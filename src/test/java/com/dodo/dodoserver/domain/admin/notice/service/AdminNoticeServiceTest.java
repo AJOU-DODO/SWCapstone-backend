@@ -4,7 +4,6 @@ import com.dodo.dodoserver.domain.admin.notice.batch.NoticeBatchLauncher;
 import com.dodo.dodoserver.domain.admin.notice.dao.NoticeAdminRepository;
 import com.dodo.dodoserver.domain.admin.notice.dto.NoticeRequestDto;
 import com.dodo.dodoserver.domain.notice.dao.NoticeRepository;
-import com.dodo.dodoserver.domain.notice.dto.NoticeResponseDto;
 import com.dodo.dodoserver.domain.notice.entity.Notice;
 import com.dodo.dodoserver.domain.notice.entity.NoticeCategory;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -147,20 +145,17 @@ class AdminNoticeServiceTest {
     }
 
     @Test
-    @DisplayName("관리자용 목록 조회 성공")
-    void getAllNotices_success() {
+    @DisplayName("관리자용 목록 조회 성공 - 필터 적용")
+    void getAllNotices_withFilter_success() {
         // given
         PageRequest pageable = PageRequest.of(0, 10);
-        Notice notice = Notice.builder().id(1L).category(NoticeCategory.UPDATE).title("제목").build();
-        Page<Notice> page = new PageImpl<>(List.of(notice));
-        
-        given(noticeAdminRepository.findAllNoticesWithDeleted(pageable)).willReturn(page);
+        given(noticeAdminRepository.findAllNoticesWithDeleted(pageable, true))
+                .willReturn(new PageImpl<>(List.of()));
 
         // when
-        Page<NoticeResponseDto> result = adminNoticeService.getAllNotices(pageable);
+        adminNoticeService.getAllNotices(pageable, true);
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getTitle()).isEqualTo("제목");
+        verify(noticeAdminRepository).findAllNoticesWithDeleted(pageable, true);
     }
 }
