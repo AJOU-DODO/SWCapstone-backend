@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.admin.report.service.AdminReportService;
 import com.dodo.dodoserver.domain.report.entity.ReportReason;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -64,6 +65,9 @@ class AdminReportControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.user.controller;
 import com.dodo.dodoserver.domain.category.dto.CategoryResponseDto;
 import com.dodo.dodoserver.domain.user.dto.UserInterestRequestDto;
 import com.dodo.dodoserver.domain.user.service.UserInterestService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -60,6 +61,9 @@ class UserInterestControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {

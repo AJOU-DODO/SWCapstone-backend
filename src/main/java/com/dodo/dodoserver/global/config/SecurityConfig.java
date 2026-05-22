@@ -5,6 +5,7 @@ import com.dodo.dodoserver.global.common.ApiResponseDto;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
 import com.dodo.dodoserver.global.security.OAuth2AuthenticationSuccessHandler;
+import com.dodo.dodoserver.global.security.OAuth2RedirectUriFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -30,6 +32,7 @@ public class SecurityConfig {
 	private final CustomOAuth2UserService customOAuth2UserService;
 	private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final OAuth2RedirectUriFilter oauth2RedirectUriFilter;
 	private final CorsConfigurationSource corsConfigurationSource;
 	private final ObjectMapper objectMapper;
 
@@ -76,6 +79,7 @@ public class SecurityConfig {
 				.successHandler(oauth2AuthenticationSuccessHandler)
 			)
 
+			.addFilterBefore(oauth2RedirectUriFilter, OAuth2AuthorizationRequestRedirectFilter.class)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();

@@ -47,6 +47,13 @@ jwt:
     access: ${JWT_EXPIRATION_ACCESS}
     refresh: ${JWT_EXPIRATION_REFRESH}
 
+app:
+  oauth2:
+    authorized-redirect-uris:
+      - http://localhost:3000/admin/login/callback
+      - https://sw-capstone-frontend-*-jeonguihoons-projects.vercel.app/admin/login/callback
+      - https://sw-capstone-frontend.vercel.app/admin/login/callback
+
 logging:
   level:
     org.springframework.web: INFO

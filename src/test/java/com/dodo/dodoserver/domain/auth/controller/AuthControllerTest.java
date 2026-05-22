@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.auth.controller;
 import com.dodo.dodoserver.domain.auth.dto.TokenReissueRequestDto;
 import com.dodo.dodoserver.domain.auth.dto.TokenResponseDto;
 import com.dodo.dodoserver.domain.auth.service.AuthService;
+import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
 import com.dodo.dodoserver.global.security.JwtAuthenticationFilter;
@@ -58,6 +59,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private AppProperties appProperties;
 
     @BeforeEach
     void setUp() throws ServletException, IOException {
