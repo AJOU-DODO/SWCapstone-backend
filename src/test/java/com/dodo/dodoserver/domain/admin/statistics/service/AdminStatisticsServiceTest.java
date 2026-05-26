@@ -1,0 +1,107 @@
+package com.dodo.dodoserver.domain.admin.statistics.service;
+
+import com.dodo.dodoserver.domain.admin.statistics.dao.AdminStatisticsRepositoryCustom;
+import com.dodo.dodoserver.domain.admin.statistics.dto.AdminPostcardRatioResponseDto;
+import com.dodo.dodoserver.domain.admin.statistics.dto.AdminTrendResponseDto;
+import com.querydsl.core.Tuple;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+
+@ExtendWith(MockitoExtension.class)
+class AdminStatisticsServiceTest {
+
+    @Mock
+    private AdminStatisticsRepositoryCustom adminStatisticsRepository;
+
+    @InjectMocks
+    private AdminStatisticsService adminStatisticsService;
+
+    @Test
+    @DisplayName("엽서 교환 비율 계산 - 정상 케이스")
+    void getPostcardRatioStats_Success() {
+        // given
+        AdminPostcardRatioResponseDto mockDto = AdminPostcardRatioResponseDto.builder()
+                .totalGenerated(100L)
+                .totalDelivered(25L)
+                .build();
+        given(adminStatisticsRepository.getPostcardRatioStats()).willReturn(mockDto);
+
+        // when
+        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats();
+
+        // then
+        assertThat(result.getDeliveryRatio()).isEqualTo(25.0);
+    }
+
+    @Test
+    @DisplayName("엽서 교환 비율 계산 - 생성된 엽서가 0개일 때")
+    void getPostcardRatioStats_ZeroGenerated() {
+        // given
+        AdminPostcardRatioResponseDto mockDto = AdminPostcardRatioResponseDto.builder()
+                .totalGenerated(0L)
+                .totalDelivered(0L)
+                .build();
+        given(adminStatisticsRepository.getPostcardRatioStats()).willReturn(mockDto);
+
+        // when
+        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats();
+
+        // then
+        assertThat(result.getDeliveryRatio()).isEqualTo(0.0);
+    }
+
+    @Test
+    @DisplayName("트래픽 트렌드 조회 - 데이터가 없는 날짜는 0으로 채워짐")
+    void getTrafficTrends_FillEmptyDates() {
+        // given
+        int days = 7;
+        given(adminStatisticsRepository.getNestTrend(any(), any())).willReturn(Collections.emptyList());
+        given(adminStatisticsRepository.getCommentTrend(any(), any())).willReturn(Collections.emptyList());
+        given(adminStatisticsRepository.getPostcardTrend(any(), any())).willReturn(Collections.emptyList());
+
+        // when
+        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(days);
+
+        // then
+        assertThat(result).hasSize(days);
+        assertThat(result.get(0).getNestCount()).isEqualTo(0L);
+        assertThat(result.get(days - 1).getDate()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    @DisplayName("트래픽 트렌드 조회 - 데이터 바인딩 검증")
+    void getTrafficTrends_DataBinding() {
+        // given
+        int days = 1;
+        String todayStr = LocalDate.now().toString();
+        
+        Tuple mockTuple = mock(Tuple.class);
+        given(mockTuple.get(0, String.class)).willReturn(todayStr);
+        given(mockTuple.get(1, Long.class)).willReturn(10L);
+        
+        given(adminStatisticsRepository.getNestTrend(any(), any())).willReturn(List.of(mockTuple));
+        given(adminStatisticsRepository.getCommentTrend(any(), any())).willReturn(Collections.emptyList());
+        given(adminStatisticsRepository.getPostcardTrend(any(), any())).willReturn(Collections.emptyList());
+
+        // when
+        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(days);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getNestCount()).isEqualTo(10L);
+        assertThat(result.get(0).getDate()).isEqualTo(LocalDate.now());
+    }
+}
