@@ -4,6 +4,8 @@ import com.dodo.dodoserver.domain.admin.statistics.dao.AdminStatisticsRepository
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminPostcardRatioResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminSummaryResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminTrendResponseDto;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import com.querydsl.core.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +25,15 @@ import java.util.TreeMap;
 public class AdminStatisticsService {
 
     private final AdminStatisticsRepositoryCustom adminStatisticsRepository;
+    private static final int MAX_TREND_DAYS = 365;
 
     public AdminSummaryResponseDto getSummaryStats() {
         return adminStatisticsRepository.getSummaryStats();
     }
 
     public AdminPostcardRatioResponseDto getPostcardRatioStats(LocalDate startDate, LocalDate endDate) {
+        validateDateRange(startDate, endDate);
+
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : null;
         AdminPostcardRatioResponseDto stats = adminStatisticsRepository.getPostcardRatioStats(start, end);
@@ -50,6 +56,8 @@ public class AdminStatisticsService {
             startDate = endDate.minusDays(6); // 기본값 최근 7일
         }
 
+        validateDateRange(startDate, endDate);
+
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
@@ -67,6 +75,17 @@ public class AdminStatisticsService {
         bindPostcardTrends(trendMap, startDateTime, endDateTime);
 
         return new ArrayList<>(trendMap.values());
+    }
+
+    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null) {
+            if (startDate.isAfter(endDate)) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            if (ChronoUnit.DAYS.between(startDate, endDate) > MAX_TREND_DAYS) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
     }
 
     private void bindNestTrends(Map<LocalDate, AdminTrendResponseDto> trendMap, LocalDateTime start, LocalDateTime end) {

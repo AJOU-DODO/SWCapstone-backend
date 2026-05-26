@@ -3,6 +3,8 @@ package com.dodo.dodoserver.domain.admin.statistics.service;
 import com.dodo.dodoserver.domain.admin.statistics.dao.AdminStatisticsRepositoryCustom;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminPostcardRatioResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminTrendResponseDto;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import com.querydsl.core.Tuple;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -104,5 +107,31 @@ class AdminStatisticsServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getNestCount()).isEqualTo(10L);
         assertThat(result.get(0).getDate()).isEqualTo(today);
+    }
+
+    @Test
+    @DisplayName("날짜 유효성 검증 - 시작일이 종료일보다 이후인 경우 예외 발생")
+    void validateDateRange_InvalidOrder() {
+        // given
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.minusDays(1);
+
+        // when & then
+        assertThatThrownBy(() -> adminStatisticsService.getTrafficTrends(startDate, endDate))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
+    }
+
+    @Test
+    @DisplayName("날짜 유효성 검증 - 조회 기간이 365일을 초과하는 경우 예외 발생")
+    void validateDateRange_ExceedMaxRange() {
+        // given
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusDays(366);
+
+        // when & then
+        assertThatThrownBy(() -> adminStatisticsService.getTrafficTrends(startDate, endDate))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.INVALID_INPUT_VALUE.getMessage());
     }
 }
