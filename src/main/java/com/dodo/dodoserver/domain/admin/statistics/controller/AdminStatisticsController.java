@@ -17,7 +17,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin/statistics")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminStatisticsController {
 
     private final AdminStatisticsService adminStatisticsService;
