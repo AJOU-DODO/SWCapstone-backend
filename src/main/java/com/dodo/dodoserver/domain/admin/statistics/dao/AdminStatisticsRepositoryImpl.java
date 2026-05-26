@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.nest.entity.QNest;
 import com.dodo.dodoserver.domain.nest.entity.QNestComment;
 import com.dodo.dodoserver.domain.postcard.entity.QPostcard;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringTemplate;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -30,44 +31,51 @@ public class AdminStatisticsRepositoryImpl implements AdminStatisticsRepositoryC
 
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
 
-        Long totalNests = queryFactory
-                .select(nest.count())
+        Tuple nestStats = queryFactory
+                .select(
+                        nest.count(),
+                        new CaseBuilder()
+                                .when(nest.createdAt.goe(todayStart))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum()
+                )
                 .from(nest)
                 .where(nest.deletedAt.isNull())
                 .fetchOne();
 
-        Long todayNests = queryFactory
-                .select(nest.count())
-                .from(nest)
-                .where(nest.createdAt.goe(todayStart),
-                        nest.deletedAt.isNull())
-                .fetchOne();
-
-        Long totalComments = queryFactory
-                .select(comment.count())
+        Tuple commentStats = queryFactory
+                .select(
+                        comment.count(),
+                        new CaseBuilder()
+                                .when(comment.createdAt.goe(todayStart))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum()
+                )
                 .from(comment)
                 .where(comment.deletedAt.isNull())
                 .fetchOne();
 
-        Long todayComments = queryFactory
-                .select(comment.count())
-                .from(comment)
-                .where(comment.createdAt.goe(todayStart),
-                        comment.deletedAt.isNull())
-                .fetchOne();
-
-        Long totalPostcards = queryFactory
-                .select(postcard.count())
+        Tuple postcardStats = queryFactory
+                .select(
+                        postcard.count(),
+                        new CaseBuilder()
+                                .when(postcard.createdAt.goe(todayStart))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum()
+                )
                 .from(postcard)
                 .where(postcard.deletedAt.isNull())
                 .fetchOne();
 
-        Long todayPostcards = queryFactory
-                .select(postcard.count())
-                .from(postcard)
-                .where(postcard.createdAt.goe(todayStart),
-                        postcard.deletedAt.isNull())
-                .fetchOne();
+        Long totalNests = nestStats != null ? nestStats.get(0, Long.class) : 0L;
+        Long todayNests = nestStats != null ? nestStats.get(1, Long.class) : 0L;
+        Long totalComments = commentStats != null ? commentStats.get(0, Long.class) : 0L;
+        Long todayComments = commentStats != null ? commentStats.get(1, Long.class) : 0L;
+        Long totalPostcards = postcardStats != null ? postcardStats.get(0, Long.class) : 0L;
+        Long todayPostcards = postcardStats != null ? postcardStats.get(1, Long.class) : 0L;
 
         return AdminSummaryResponseDto.builder()
                 .totalNests(totalNests != null ? totalNests : 0L)
