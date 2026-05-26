@@ -37,10 +37,10 @@ class AdminStatisticsServiceTest {
                 .totalGenerated(100L)
                 .totalDelivered(25L)
                 .build();
-        given(adminStatisticsRepository.getPostcardRatioStats()).willReturn(mockDto);
+        given(adminStatisticsRepository.getPostcardRatioStats(any(), any())).willReturn(mockDto);
 
         // when
-        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats();
+        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats(null, null);
 
         // then
         assertThat(result.getDeliveryRatio()).isEqualTo(25.0);
@@ -54,10 +54,10 @@ class AdminStatisticsServiceTest {
                 .totalGenerated(0L)
                 .totalDelivered(0L)
                 .build();
-        given(adminStatisticsRepository.getPostcardRatioStats()).willReturn(mockDto);
+        given(adminStatisticsRepository.getPostcardRatioStats(any(), any())).willReturn(mockDto);
 
         // when
-        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats();
+        AdminPostcardRatioResponseDto result = adminStatisticsService.getPostcardRatioStats(null, null);
 
         // then
         assertThat(result.getDeliveryRatio()).isEqualTo(0.0);
@@ -67,26 +67,27 @@ class AdminStatisticsServiceTest {
     @DisplayName("트래픽 트렌드 조회 - 데이터가 없는 날짜는 0으로 채워짐")
     void getTrafficTrends_FillEmptyDates() {
         // given
-        int days = 7;
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(6);
         given(adminStatisticsRepository.getNestTrend(any(), any())).willReturn(Collections.emptyList());
         given(adminStatisticsRepository.getCommentTrend(any(), any())).willReturn(Collections.emptyList());
         given(adminStatisticsRepository.getPostcardTrend(any(), any())).willReturn(Collections.emptyList());
 
         // when
-        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(days);
+        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(startDate, endDate);
 
         // then
-        assertThat(result).hasSize(days);
+        assertThat(result).hasSize(7);
         assertThat(result.get(0).getNestCount()).isEqualTo(0L);
-        assertThat(result.get(days - 1).getDate()).isEqualTo(LocalDate.now());
+        assertThat(result.get(6).getDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
     @DisplayName("트래픽 트렌드 조회 - 데이터 바인딩 검증")
     void getTrafficTrends_DataBinding() {
         // given
-        int days = 1;
-        String todayStr = LocalDate.now().toString();
+        LocalDate today = LocalDate.now();
+        String todayStr = today.toString();
         
         Tuple mockTuple = mock(Tuple.class);
         given(mockTuple.get(0, String.class)).willReturn(todayStr);
@@ -97,11 +98,11 @@ class AdminStatisticsServiceTest {
         given(adminStatisticsRepository.getPostcardTrend(any(), any())).willReturn(Collections.emptyList());
 
         // when
-        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(days);
+        List<AdminTrendResponseDto> result = adminStatisticsService.getTrafficTrends(today, today);
 
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getNestCount()).isEqualTo(10L);
-        assertThat(result.get(0).getDate()).isEqualTo(LocalDate.now());
+        assertThat(result.get(0).getDate()).isEqualTo(today);
     }
 }

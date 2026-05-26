@@ -96,10 +96,12 @@ class AdminStatisticsControllerTest {
                 .totalDelivered(20L)
                 .deliveryRatio(20.0)
                 .build();
-        given(adminStatisticsService.getPostcardRatioStats()).willReturn(response);
+        given(adminStatisticsService.getPostcardRatioStats(any(), any())).willReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/v1/admin/statistics/postcards/ratio"))
+        mockMvc.perform(get("/api/v1/admin/statistics/postcards/ratio")
+                        .param("startDate", "2026-05-01")
+                        .param("endDate", "2026-05-31"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.deliveryRatio").value(20.0));
@@ -110,10 +112,12 @@ class AdminStatisticsControllerTest {
     @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void getTrafficTrends_Success() throws Exception {
         // given
-        given(adminStatisticsService.getTrafficTrends(7)).willReturn(Collections.emptyList());
+        given(adminStatisticsService.getTrafficTrends(any(), any())).willReturn(Collections.emptyList());
 
         // when & then
-        mockMvc.perform(get("/api/v1/admin/statistics/trends").param("days", "7"))
+        mockMvc.perform(get("/api/v1/admin/statistics/trends")
+                        .param("startDate", "2026-05-01")
+                        .param("endDate", "2026-05-07"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data").isArray());

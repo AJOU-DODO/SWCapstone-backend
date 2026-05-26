@@ -27,8 +27,10 @@ public class AdminStatisticsService {
         return adminStatisticsRepository.getSummaryStats();
     }
 
-    public AdminPostcardRatioResponseDto getPostcardRatioStats() {
-        AdminPostcardRatioResponseDto stats = adminStatisticsRepository.getPostcardRatioStats();
+    public AdminPostcardRatioResponseDto getPostcardRatioStats(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : null;
+        AdminPostcardRatioResponseDto stats = adminStatisticsRepository.getPostcardRatioStats(start, end);
 
         double ratio = 0.0;
         if (stats.getTotalGenerated() > 0) {
@@ -40,18 +42,23 @@ public class AdminStatisticsService {
         return stats;
     }
 
-    public List<AdminTrendResponseDto> getTrafficTrends(int days) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(days - 1);
+    public List<AdminTrendResponseDto> getTrafficTrends(LocalDate startDate, LocalDate endDate) {
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+        if (startDate == null) {
+            startDate = endDate.minusDays(6); // 기본값 최근 7일
+        }
 
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
         // 결과 맵 초기화 (날짜 순서 보장을 위해 TreeMap 사용)
         Map<LocalDate, AdminTrendResponseDto> trendMap = new TreeMap<>();
-        for (int i = 0; i < days; i++) {
-            LocalDate date = startDate.plusDays(i);
-            trendMap.put(date, AdminTrendResponseDto.empty(date));
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            trendMap.put(current, AdminTrendResponseDto.empty(current));
+            current = current.plusDays(1);
         }
 
         // 각 도메인별 데이터 조회 및 바인딩

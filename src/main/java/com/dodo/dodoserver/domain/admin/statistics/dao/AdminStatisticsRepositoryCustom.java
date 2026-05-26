@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface AdminStatisticsRepositoryCustom {
     AdminSummaryResponseDto getSummaryStats();
-    AdminPostcardRatioResponseDto getPostcardRatioStats();
+    AdminPostcardRatioResponseDto getPostcardRatioStats(LocalDateTime start, LocalDateTime end);
     List<Tuple> getNestTrend(LocalDateTime start, LocalDateTime end);
     List<Tuple> getCommentTrend(LocalDateTime start, LocalDateTime end);
     List<Tuple> getPostcardTrend(LocalDateTime start, LocalDateTime end);

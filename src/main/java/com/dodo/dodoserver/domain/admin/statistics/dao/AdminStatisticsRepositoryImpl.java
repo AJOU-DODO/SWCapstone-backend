@@ -81,20 +81,24 @@ public class AdminStatisticsRepositoryImpl implements AdminStatisticsRepositoryC
     }
 
     @Override
-    public AdminPostcardRatioResponseDto getPostcardRatioStats() {
+    public AdminPostcardRatioResponseDto getPostcardRatioStats(LocalDateTime start, LocalDateTime end) {
         QPostcard postcard = QPostcard.postcard;
 
         Long totalGenerated = queryFactory
                 .select(postcard.count())
                 .from(postcard)
-                .where(postcard.deletedAt.isNull())
+                .where(postcard.deletedAt.isNull(),
+                        start != null ? postcard.createdAt.goe(start) : null,
+                        end != null ? postcard.createdAt.loe(end) : null)
                 .fetchOne();
 
         Long totalDelivered = queryFactory
                 .select(postcard.count())
                 .from(postcard)
                 .where(postcard.isExchanged.isTrue(),
-                        postcard.deletedAt.isNull())
+                        postcard.deletedAt.isNull(),
+                        start != null ? postcard.createdAt.goe(start) : null,
+                        end != null ? postcard.createdAt.loe(end) : null)
                 .fetchOne();
 
         return AdminPostcardRatioResponseDto.builder()
