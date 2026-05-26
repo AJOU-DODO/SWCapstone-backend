@@ -59,8 +59,7 @@ public class AdminStatisticsRepositoryImpl implements AdminStatisticsRepositoryC
         Long totalPostcards = queryFactory
                 .select(postcard.count())
                 .from(postcard)
-                .where(postcard.isExchanged.isTrue(),
-                        postcard.deletedAt.isNull())
+                .where(postcard.deletedAt.isNull())
                 .fetchOne();
 
         Long todayPostcards = queryFactory
