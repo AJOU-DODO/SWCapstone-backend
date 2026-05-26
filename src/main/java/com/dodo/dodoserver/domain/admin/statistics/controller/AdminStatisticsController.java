@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.statistics.controller;
 
+import com.dodo.dodoserver.domain.admin.statistics.dto.AdminPostcardRatioResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminSummaryResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.service.AdminStatisticsService;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
@@ -20,5 +21,10 @@ public class AdminStatisticsController {
     @GetMapping("/summary")
     public ApiResponseDto<AdminSummaryResponseDto> getSummaryStats() {
         return ApiResponseDto.success(adminStatisticsService.getSummaryStats());
+    }
+
+    @GetMapping("/postcards/ratio")
+    public ApiResponseDto<AdminPostcardRatioResponseDto> getPostcardRatioStats() {
+        return ApiResponseDto.success(adminStatisticsService.getPostcardRatioStats());
     }
 }

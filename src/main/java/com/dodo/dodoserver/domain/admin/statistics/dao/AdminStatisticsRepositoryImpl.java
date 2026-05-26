@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.statistics.dao;
 
+import com.dodo.dodoserver.domain.admin.statistics.dto.AdminPostcardRatioResponseDto;
 import com.dodo.dodoserver.domain.admin.statistics.dto.AdminSummaryResponseDto;
 import com.dodo.dodoserver.domain.nest.entity.QNest;
 import com.dodo.dodoserver.domain.nest.entity.QNestComment;
@@ -72,6 +73,29 @@ public class AdminStatisticsRepositoryImpl implements AdminStatisticsRepositoryC
                 .todayComments(todayComments != null ? todayComments : 0L)
                 .totalPostcards(totalPostcards != null ? totalPostcards : 0L)
                 .todayPostcards(todayPostcards != null ? todayPostcards : 0L)
+                .build();
+    }
+
+    @Override
+    public AdminPostcardRatioResponseDto getPostcardRatioStats() {
+        QPostcard postcard = QPostcard.postcard;
+
+        Long totalGenerated = queryFactory
+                .select(postcard.count())
+                .from(postcard)
+                .where(postcard.deletedAt.isNull())
+                .fetchOne();
+
+        Long totalDelivered = queryFactory
+                .select(postcard.count())
+                .from(postcard)
+                .where(postcard.isExchanged.isTrue(),
+                        postcard.deletedAt.isNull())
+                .fetchOne();
+
+        return AdminPostcardRatioResponseDto.builder()
+                .totalGenerated(totalGenerated != null ? totalGenerated : 0L)
+                .totalDelivered(totalDelivered != null ? totalDelivered : 0L)
                 .build();
     }
 }
