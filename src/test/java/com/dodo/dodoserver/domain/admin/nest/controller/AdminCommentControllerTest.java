@@ -1,3 +1,5 @@
+package com.dodo.dodoserver.domain.admin.nest.controller;
+
 import com.dodo.dodoserver.domain.admin.nest.controller.AdminCommentController;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.service.AdminNestService;
