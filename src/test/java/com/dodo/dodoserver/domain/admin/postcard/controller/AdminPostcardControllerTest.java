@@ -79,7 +79,7 @@ class AdminPostcardControllerTest {
     }
 
     @Test
-    @DisplayName("신고된 엽서 목록 조회 성공 - 관리자 권한")
+    @DisplayName("신고된 엽서 목록 조회 성공 - 관리자 권한 및 상태 필터링")
     @WithMockUserPrincipal(role = "ROLE_ADMIN")
     void getReportedPostcards_success() throws Exception {
         // given
@@ -87,13 +87,14 @@ class AdminPostcardControllerTest {
                 .postcardId(1L)
                 .authorNickname("유저1")
                 .build();
-        given(adminPostcardService.getReportedPostcards(any(), any()))
+        given(adminPostcardService.getReportedPostcards(any(), any(), any()))
                 .willReturn(new PageImpl<>(Collections.singletonList(responseDto), PageRequest.of(0, 10), 1));
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/postcards/reported")
                         .param("page", "0")
                         .param("size", "10")
+                        .param("statuses", "PENDING,PROCESSED")
                         .param("sort", "RECENT_REPORT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))

@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.admin.report.dto.AdminPostcardReportResponseDt
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
+import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -36,8 +37,8 @@ public class AdminPostcardService {
     /**
      * 신고된 엽서 목록 조회
      */
-    public Page<AdminPostcardReportResponseDto> getReportedPostcards(Pageable pageable, String sort) {
-        return reportRepository.findReportedPostcards(pageable, sort);
+    public Page<AdminPostcardReportResponseDto> getReportedPostcards(Pageable pageable, List<ReportStatus> statuses, String sort) {
+        return reportRepository.findReportedPostcards(pageable, statuses, sort);
     }
 
     /**

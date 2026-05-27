@@ -207,7 +207,12 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
     }
 
     @Override
-    public Page<AdminPostcardReportResponseDto> findReportedPostcards(Pageable pageable, String sort) {
+    public Page<AdminPostcardReportResponseDto> findReportedPostcards(Pageable pageable, List<ReportStatus> statuses, String sort) {
+        BooleanExpression statusPredicate = report.status.ne(ReportStatus.REJECTED);
+        if (statuses != null && !statuses.isEmpty()) {
+            statusPredicate = statusPredicate.and(report.status.in(statuses));
+        }
+
         List<Tuple> results = queryFactory
                 .select(
                         report.targetId,
@@ -220,7 +225,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .leftJoin(postcard).on(report.targetId.eq(postcard.id).and(report.reportType.eq(ReportType.POSTCARD)))
                 .where(
                         report.reportType.eq(ReportType.POSTCARD),
-                        report.status.ne(ReportStatus.REJECTED)
+                        statusPredicate
                 )
                 .groupBy(report.targetId, postcard.createdAt)
                 .orderBy(getPostcardOrderSpecifier(sort))
@@ -233,7 +238,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 .from(report)
                 .where(
                         report.reportType.eq(ReportType.POSTCARD),
-                        report.status.ne(ReportStatus.REJECTED)
+                        statusPredicate
                 )
                 .fetchOne();
 

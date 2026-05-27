@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.admin.report.dto.AdminPostcardReportResponseDt
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
+import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
@@ -49,7 +50,7 @@ class AdminPostcardServiceTest {
     private FcmService fcmService;
 
     @Test
-    @DisplayName("신고된 엽서 목록 조회 성공")
+    @DisplayName("신고된 엽서 목록 조회 성공 - 상태 필터링 포함")
     void getReportedPostcards_success() {
         // given
         AdminPostcardReportResponseDto responseDto = AdminPostcardReportResponseDto.builder()
@@ -57,10 +58,10 @@ class AdminPostcardServiceTest {
                 .authorNickname("유저1")
                 .build();
         Page<AdminPostcardReportResponseDto> page = new PageImpl<>(Collections.singletonList(responseDto));
-        given(reportRepository.findReportedPostcards(any(), any())).willReturn(page);
+        given(reportRepository.findReportedPostcards(any(), any(), any())).willReturn(page);
 
         // when
-        Page<AdminPostcardReportResponseDto> result = adminPostcardService.getReportedPostcards(PageRequest.of(0, 10), "RECENT_REPORT");
+        Page<AdminPostcardReportResponseDto> result = adminPostcardService.getReportedPostcards(PageRequest.of(0, 10), Collections.singletonList(ReportStatus.PENDING), "RECENT_REPORT");
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
