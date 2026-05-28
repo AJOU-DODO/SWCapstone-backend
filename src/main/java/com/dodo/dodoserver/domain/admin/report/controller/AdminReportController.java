@@ -2,19 +2,18 @@ package com.dodo.dodoserver.domain.admin.report.controller;
 
 import com.dodo.dodoserver.domain.admin.report.dto.AdminCommentReportResponseDto;
 import com.dodo.dodoserver.domain.admin.report.dto.AdminNestReportResponseDto;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminReportStatusUpdateRequestDto;
 import com.dodo.dodoserver.domain.admin.report.dto.ReportDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.report.service.AdminReportService;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.global.common.ApiResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Admin Report", description = "관리자용 신고 관리 API")
 @RestController
@@ -46,5 +45,12 @@ public class AdminReportController {
             @RequestParam ReportType targetType,
             @RequestParam Long targetId) {
         return ApiResponseDto.success(adminReportService.getReportDetails(targetType, targetId));
+    }
+
+    @Operation(summary = "신고 상태 일괄 변경", description = "특정 타겟(둥지/댓글/엽서)에 대한 모든 대기 중인 신고 상태를 일괄 변경(처리 완료/반려)합니다.")
+    @PatchMapping("/status")
+    public ApiResponseDto<Void> updateReportStatus(@RequestBody @Valid AdminReportStatusUpdateRequestDto requestDto) {
+        adminReportService.updateReportStatus(requestDto);
+        return ApiResponseDto.success(null);
     }
 }
