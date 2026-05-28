@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
+import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
@@ -88,6 +89,7 @@ class AdminPostcardServiceTest {
         verify(fcmService, times(1)).sendNotification(argThat(event -> 
                 event.body().equals("삭제 사유")));
         verify(postcardRepository, times(1)).delete(postcard);
+        verify(reportRepository, times(1)).updateStatusByTarget(ReportType.POSTCARD, 100L, ReportStatus.PROCESSED);
     }
 
     @Test

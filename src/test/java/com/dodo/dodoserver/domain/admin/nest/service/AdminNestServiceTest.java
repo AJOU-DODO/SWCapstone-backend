@@ -7,6 +7,8 @@ import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.nest.entity.NestComment;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
+import com.dodo.dodoserver.domain.report.entity.ReportStatus;
+import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -100,6 +102,7 @@ class AdminNestServiceTest {
         verify(nestReactionRepository, times(1)).deleteByNest(nest);
         verify(nestCommentRepository, times(1)).deleteAllByNest(nest);
         verify(nestRepository, times(1)).delete(nest);
+        verify(reportRepository, times(1)).updateStatusByTarget(ReportType.NEST, 100L, ReportStatus.PROCESSED);
     }
 
     @Test
@@ -174,6 +177,7 @@ class AdminNestServiceTest {
                 event.body().equals("부적절한 댓글")));
         verify(commentLikeRepository, times(1)).deleteByComment(comment);
         verify(nestCommentRepository, times(1)).delete(comment);
+        verify(reportRepository, times(1)).updateStatusByTarget(ReportType.COMMENT, 10L, ReportStatus.PROCESSED);
     }
 
     @Test
