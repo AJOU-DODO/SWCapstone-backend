@@ -1,10 +1,14 @@
 package com.dodo.dodoserver.domain.admin.nest.service;
 
+import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.nest.dao.*;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
+import com.dodo.dodoserver.domain.nest.entity.NestComment;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
+import com.dodo.dodoserver.domain.report.entity.ReportStatus;
+import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
@@ -25,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.dodo.dodoserver.global.common.constants.NotificationConstants.DEFAULT_COMMENT_DELETE_REASON;
 import static com.dodo.dodoserver.global.common.constants.NotificationConstants.DEFAULT_NEST_DELETE_REASON;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,6 +102,7 @@ class AdminNestServiceTest {
         verify(nestReactionRepository, times(1)).deleteByNest(nest);
         verify(nestCommentRepository, times(1)).deleteAllByNest(nest);
         verify(nestRepository, times(1)).delete(nest);
+        verify(reportRepository, times(1)).updateStatusByTarget(ReportType.NEST, 100L, ReportStatus.PROCESSED);
     }
 
     @Test
@@ -148,5 +154,50 @@ class AdminNestServiceTest {
         assertThat(result).isEmpty();
         verify(nestRepository, times(1)).existsById(100L);
         verify(nestCommentRepository, times(1)).findAllByNestId(100L);
+    }
+
+    @Test
+    @DisplayName("관리자 전용 댓글 삭제 성공 - FCM 알림 발송 포함")
+    void deleteCommentForAdmin_success() {
+        // given
+        User author = User.builder().id(1L).build();
+        NestComment comment = NestComment.builder().id(10L).user(author).build();
+        UserDevice device = UserDevice.builder().fcmToken("token").build();
+        AdminCommentDeleteRequestDto requestDto = mock(AdminCommentDeleteRequestDto.class);
+        given(requestDto.getReason()).willReturn("부적절한 댓글");
+
+        given(nestCommentRepository.findById(10L)).willReturn(Optional.of(comment));
+        given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
+
+        // when
+        adminNestService.deleteCommentForAdmin(10L, requestDto);
+
+        // then
+        verify(fcmService, times(1)).sendNotification(argThat(event -> 
+                event.body().equals("부적절한 댓글")));
+        verify(commentLikeRepository, times(1)).deleteByComment(comment);
+        verify(nestCommentRepository, times(1)).delete(comment);
+        verify(reportRepository, times(1)).updateStatusByTarget(ReportType.COMMENT, 10L, ReportStatus.PROCESSED);
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 시 사유가 없으면 기본 사유로 알림 전송")
+    void deleteComment_useDefaultReason_whenReasonIsMissing() {
+        // given
+        User author = User.builder().id(1L).build();
+        NestComment comment = NestComment.builder().id(10L).user(author).build();
+        UserDevice device = UserDevice.builder().fcmToken("token").build();
+        AdminCommentDeleteRequestDto requestDto = new AdminCommentDeleteRequestDto();
+
+        given(nestCommentRepository.findById(10L)).willReturn(Optional.of(comment));
+        given(userDeviceRepository.findByUserId(1L)).willReturn(Collections.singletonList(device));
+
+        // when
+        adminNestService.deleteCommentForAdmin(10L, requestDto);
+
+        // then
+        verify(fcmService).sendNotification(argThat(event -> 
+            event.body().equals(DEFAULT_COMMENT_DELETE_REASON)
+        ));
     }
 }

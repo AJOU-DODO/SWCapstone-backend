@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.admin.nest.service;
 
+import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentResponseDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
 import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDetailResponseDto;
@@ -179,7 +180,7 @@ public class AdminNestService {
                 .collect(Collectors.toList());
         
         if (!tokens.isEmpty()) {
-            String reason = (requestDto.getReason() == null || requestDto.getReason().isBlank()) 
+            String reason = (requestDto == null || requestDto.getReason() == null || requestDto.getReason().isBlank()) 
                     ? DEFAULT_NEST_DELETE_REASON 
                     : requestDto.getReason();
 
@@ -206,17 +207,41 @@ public class AdminNestService {
 
         // 5. 둥지 소프트 삭제
         nestRepository.delete(nest);
+
+        // 6. 연관 신고 자동 처리 완료
+        reportRepository.updateStatusByTarget(ReportType.NEST, nestId, ReportStatus.PROCESSED);
     }
 
     @Transactional
-    public void deleteCommentForAdmin(Long commentId) {
+    public void deleteCommentForAdmin(Long commentId, AdminCommentDeleteRequestDto requestDto) {
         NestComment comment = nestCommentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+
+        // 1. FCM 알림 발송
+        List<String> tokens = userDeviceRepository.findByUserId(comment.getUser().getId()).stream()
+                .map(UserDevice::getFcmToken)
+                .collect(Collectors.toList());
+
+        if (!tokens.isEmpty()) {
+            String reason = (requestDto == null || requestDto.getReason() == null || requestDto.getReason().isBlank())
+                    ? DEFAULT_COMMENT_DELETE_REASON
+                    : requestDto.getReason();
+
+            fcmService.sendNotification(new NotificationEvent(
+                    tokens,
+                    TITLE_COMMENT_DELETED,
+                    reason,
+                    Map.of(KEY_TYPE, TYPE_COMMENT_DELETED, KEY_COMMENT_ID, commentId.toString())
+            ));
+        }
         
-        // 1. 해당 댓글의 좋아요 데이터 정리 (하드 딜리트)
+        // 2. 해당 댓글의 좋아요 데이터 정리 (하드 딜리트)
         commentLikeRepository.deleteByComment(comment);
 
-        // 2. 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
+        // 3. 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
         nestCommentRepository.delete(comment);
+
+        // 4. 연관 신고 자동 처리 완료
+        reportRepository.updateStatusByTarget(ReportType.COMMENT, commentId, ReportStatus.PROCESSED);
     }
 }

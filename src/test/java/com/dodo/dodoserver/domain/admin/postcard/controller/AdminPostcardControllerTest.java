@@ -1,8 +1,8 @@
-package com.dodo.dodoserver.domain.admin.nest.controller;
+package com.dodo.dodoserver.domain.admin.postcard.controller;
 
-import com.dodo.dodoserver.domain.admin.nest.controller.AdminCommentController;
-import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentDeleteRequestDto;
-import com.dodo.dodoserver.domain.admin.nest.service.AdminNestService;
+import com.dodo.dodoserver.domain.admin.postcard.dto.AdminPostcardDeleteRequestDto;
+import com.dodo.dodoserver.domain.admin.postcard.service.AdminPostcardService;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminPostcardReportResponseDto;
 import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
@@ -21,24 +21,27 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AdminCommentController.class)
+@WebMvcTest(AdminPostcardController.class)
 @Import(SecurityConfig.class)
-class AdminCommentControllerTest {
+class AdminPostcardControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,7 +50,7 @@ class AdminCommentControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private AdminNestService adminNestService;
+    private AdminPostcardService adminPostcardService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -76,20 +79,41 @@ class AdminCommentControllerTest {
     }
 
     @Test
-    @DisplayName("어드민 댓글 삭제 성공 - 관리자 권한 및 삭제 사유 포함")
+    @DisplayName("신고된 엽서 목록 조회 성공 - 관리자 권한 및 상태 필터링")
     @WithMockUserPrincipal(role = "ROLE_ADMIN")
-    void deleteComment_success() throws Exception {
+    void getReportedPostcards_success() throws Exception {
         // given
-        AdminCommentDeleteRequestDto requestDto = new AdminCommentDeleteRequestDto();
+        AdminPostcardReportResponseDto responseDto = AdminPostcardReportResponseDto.builder()
+                .postcardId(1L)
+                .authorNickname("유저1")
+                .build();
+        given(adminPostcardService.getReportedPostcards(any(), any(), any()))
+                .willReturn(new PageImpl<>(Collections.singletonList(responseDto), PageRequest.of(0, 10), 1));
 
         // when & then
-        mockMvc.perform(delete("/api/v1/admin/comments/1")
+        mockMvc.perform(get("/api/v1/admin/postcards/reported")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("statuses", "PENDING,PROCESSED")
+                        .param("sort", "RECENT_REPORT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.content[0].authorNickname").value("유저1"));
+    }
+
+    @Test
+    @DisplayName("관리자 전용 엽서 삭제 성공 - 관리자 권한")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void deletePostcard_success() throws Exception {
+        // given
+        AdminPostcardDeleteRequestDto requestDto = new AdminPostcardDeleteRequestDto();
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/admin/postcards/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto))
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
-
-        verify(adminNestService).deleteCommentForAdmin(eq(1L), any());
     }
 }

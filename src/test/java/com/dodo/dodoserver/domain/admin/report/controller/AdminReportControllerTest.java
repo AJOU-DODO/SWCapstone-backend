@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.admin.report.controller;
 
 import com.dodo.dodoserver.domain.admin.report.dto.AdminCommentReportResponseDto;
 import com.dodo.dodoserver.domain.admin.report.dto.AdminNestReportResponseDto;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminReportStatusUpdateRequestDto;
 import com.dodo.dodoserver.domain.admin.report.dto.ReportDetailResponseDto;
 import com.dodo.dodoserver.domain.admin.report.service.AdminReportService;
 import com.dodo.dodoserver.domain.report.entity.ReportReason;
@@ -28,11 +29,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
 
@@ -40,7 +41,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +53,9 @@ class AdminReportControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockitoBean
     private AdminReportService adminReportService;
@@ -123,5 +129,26 @@ class AdminReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.stats.pendingAbuseCount").value(5));
+    }
+
+    @Test
+    @DisplayName("신고 상태 일괄 변경 성공 - 관리자 권한")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void updateReportStatus_success() throws Exception {
+        // given
+        AdminReportStatusUpdateRequestDto requestDto = AdminReportStatusUpdateRequestDto.builder()
+                .targetType(ReportType.NEST)
+                .targetId(1L)
+                .newStatus(ReportStatus.PROCESSED)
+                .build();
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/admin/reports/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(adminReportService).updateReportStatus(any(AdminReportStatusUpdateRequestDto.class));
     }
 }

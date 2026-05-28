@@ -2,10 +2,9 @@ package com.dodo.dodoserver.domain.admin.report.service;
 
 import com.dodo.dodoserver.domain.admin.report.dto.AdminCommentReportResponseDto;
 import com.dodo.dodoserver.domain.admin.report.dto.AdminNestReportResponseDto;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminReportStatusUpdateRequestDto;
 import com.dodo.dodoserver.domain.admin.report.dto.ReportDetailResponseDto;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
-import com.dodo.dodoserver.domain.report.entity.Report;
-import com.dodo.dodoserver.domain.report.entity.ReportReason;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +24,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AdminReportServiceTest {
@@ -71,5 +71,22 @@ class AdminReportServiceTest {
         assertEquals(5L, result.getStats().get("pendingAbuseCount"));
         assertEquals(1, result.getOtherReportContents().size());
         assertEquals("기타 사유 상세", result.getOtherReportContents().get(0));
+    }
+
+    @Test
+    @DisplayName("신고 상태 일괄 업데이트 성공")
+    void updateReportStatus_success() {
+        // given
+        AdminReportStatusUpdateRequestDto requestDto = AdminReportStatusUpdateRequestDto.builder()
+                .targetType(ReportType.NEST)
+                .targetId(1L)
+                .newStatus(ReportStatus.REJECTED)
+                .build();
+
+        // when
+        adminReportService.updateReportStatus(requestDto);
+
+        // then
+        verify(reportRepository).updateStatusByTarget(ReportType.NEST, 1L, ReportStatus.REJECTED);
     }
 }

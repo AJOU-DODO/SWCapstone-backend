@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.admin.report.service;
 
 import com.dodo.dodoserver.domain.admin.report.dto.AdminCommentReportResponseDto;
 import com.dodo.dodoserver.domain.admin.report.dto.AdminNestReportResponseDto;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminReportStatusUpdateRequestDto;
 import com.dodo.dodoserver.domain.admin.report.dto.ReportDetailResponseDto;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.entity.Report;
@@ -46,5 +47,14 @@ public class AdminReportService {
                 .stats(stats)
                 .otherReportContents(otherReportContents)
                 .build();
+    }
+
+    @Transactional
+    public void updateReportStatus(AdminReportStatusUpdateRequestDto requestDto) {
+        reportRepository.updateStatusByTarget(
+                requestDto.getTargetType(),
+                requestDto.getTargetId(),
+                requestDto.getNewStatus()
+        );
     }
 }

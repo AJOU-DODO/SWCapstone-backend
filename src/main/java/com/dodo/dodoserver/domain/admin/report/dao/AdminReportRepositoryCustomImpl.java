@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.admin.report.dao;
 
 import com.dodo.dodoserver.domain.admin.report.dto.AdminCommentReportResponseDto;
 import com.dodo.dodoserver.domain.admin.report.dto.AdminNestReportResponseDto;
+import com.dodo.dodoserver.domain.admin.report.dto.AdminPostcardReportResponseDto;
 import com.dodo.dodoserver.domain.report.entity.ReportReason;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static com.dodo.dodoserver.domain.nest.entity.QNest.nest;
 import static com.dodo.dodoserver.domain.nest.entity.QNestComment.nestComment;
+import static com.dodo.dodoserver.domain.postcard.entity.QPostcard.postcard;
 import static com.dodo.dodoserver.domain.report.entity.QReport.report;
 import static com.dodo.dodoserver.domain.user.entity.QUser.user;
 
@@ -205,6 +207,97 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
     }
 
     @Override
+    public Page<AdminPostcardReportResponseDto> findReportedPostcards(Pageable pageable, List<ReportStatus> statuses, String sort) {
+        BooleanExpression statusPredicate = report.status.ne(ReportStatus.REJECTED);
+        if (statuses != null && !statuses.isEmpty()) {
+            statusPredicate = statusPredicate.and(report.status.in(statuses));
+        }
+
+        List<Tuple> results = queryFactory
+                .select(
+                        report.targetId,
+                        report.createdAt.min(),
+                        report.createdAt.max(),
+                        report.targetId.count(),
+                        report.status.min()
+                )
+                .from(report)
+                .leftJoin(postcard).on(report.targetId.eq(postcard.id).and(report.reportType.eq(ReportType.POSTCARD)))
+                .where(
+                        report.reportType.eq(ReportType.POSTCARD),
+                        statusPredicate
+                )
+                .groupBy(report.targetId, postcard.createdAt)
+                .orderBy(getPostcardOrderSpecifier(sort))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(report.targetId.countDistinct())
+                .from(report)
+                .where(
+                        report.reportType.eq(ReportType.POSTCARD),
+                        statusPredicate
+                )
+                .fetchOne();
+
+        if (results.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, total != null ? total : 0L);
+        }
+
+        List<Long> targetIds = results.stream()
+                .map(t -> t.get(report.targetId))
+                .collect(Collectors.toList());
+
+        Map<Long, List<ReportReason>> reasonMap = queryFactory
+                .select(report.targetId, report.reason)
+                .from(report)
+                .where(
+                        report.targetId.in(targetIds),
+                        report.reportType.eq(ReportType.POSTCARD),
+                        report.status.ne(ReportStatus.REJECTED)
+                )
+                .fetch()
+                .stream()
+                .filter(t -> t.get(report.targetId) != null && t.get(report.reason) != null)
+                .collect(Collectors.groupingBy(
+                        t -> t.get(report.targetId),
+                        Collectors.mapping(t -> t.get(report.reason), Collectors.toList())
+                ));
+
+        Map<Long, Tuple> postcardInfoMap = queryFactory
+                .select(postcard.id, user.nickname, postcard.content, postcard.imageUrl)
+                .from(postcard)
+                .join(postcard.originalAuthor, user)
+                .where(postcard.id.in(targetIds))
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(t -> t.get(postcard.id), t -> t, (oldV, newV) -> oldV));
+
+        List<AdminPostcardReportResponseDto> content = results.stream().map(t -> {
+            Long id = t.get(report.targetId);
+            Tuple info = postcardInfoMap.get(id);
+            Long reportCount = t.get(report.targetId.count());
+            ReportStatus status = t.get(report.status.min());
+
+            return AdminPostcardReportResponseDto.builder()
+                    .postcardId(id)
+                    .authorNickname(info != null ? info.get(user.nickname) : "알 수 없음")
+                    .content(info != null ? info.get(postcard.content) : "")
+                    .imageUrl(info != null ? info.get(postcard.imageUrl) : "")
+                    .firstReportedAt(t.get(report.createdAt.min()))
+                    .lastReportedAt(t.get(report.createdAt.max()))
+                    .reportCount(reportCount != null ? reportCount : 0L)
+                    .reasons(reasonMap.getOrDefault(id, Collections.emptyList()).stream().distinct().toList())
+                    .status(status != null ? status : ReportStatus.PENDING)
+                    .build();
+        }).collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    }
+
+    @Override
     public Map<String, Long> countPendingReportsByTarget(ReportType targetType, Long targetId) {
         List<Tuple> results = queryFactory
                 .select(report.reason, report.count())
@@ -268,6 +361,15 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
         return switch (sort) {
             case "REPORT_COUNT" -> new OrderSpecifier<>(Order.DESC, report.targetId.count());
             case "NEST_ID" -> new OrderSpecifier<>(Order.ASC, report.targetId); // 이 정렬은 조인이 필요할 수 있어 보완 필요
+            default -> new OrderSpecifier<>(Order.DESC, report.createdAt.max());
+        };
+    }
+
+    private OrderSpecifier<?> getPostcardOrderSpecifier(String sort) {
+        if (sort == null) return new OrderSpecifier<>(Order.DESC, report.createdAt.max());
+        return switch (sort) {
+            case "RECENT_REPORT" -> new OrderSpecifier<>(Order.DESC, report.createdAt.max());
+            case "RECENT_CREATED" -> new OrderSpecifier<>(Order.DESC, postcard.createdAt);
             default -> new OrderSpecifier<>(Order.DESC, report.createdAt.max());
         };
     }
