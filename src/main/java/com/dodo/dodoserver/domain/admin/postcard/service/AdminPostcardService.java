@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.entity.Postcard;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
+import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
 import com.dodo.dodoserver.error.ErrorCode;
@@ -69,5 +70,8 @@ public class AdminPostcardService {
 
         // 2. 엽서 소프트 삭제
         postcardRepository.delete(postcard);
+
+        // 3. 연관 신고 자동 처리 완료
+        reportRepository.updateStatusByTarget(ReportType.POSTCARD, postcardId, ReportStatus.PROCESSED);
     }
 }

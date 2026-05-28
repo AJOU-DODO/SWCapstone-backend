@@ -207,6 +207,9 @@ public class AdminNestService {
 
         // 5. 둥지 소프트 삭제
         nestRepository.delete(nest);
+
+        // 6. 연관 신고 자동 처리 완료
+        reportRepository.updateStatusByTarget(ReportType.NEST, nestId, ReportStatus.PROCESSED);
     }
 
     @Transactional
@@ -237,5 +240,8 @@ public class AdminNestService {
 
         // 3. 하위 대댓글은 유지하고 해당 댓글만 소프트 삭제
         nestCommentRepository.delete(comment);
+
+        // 4. 연관 신고 자동 처리 완료
+        reportRepository.updateStatusByTarget(ReportType.COMMENT, commentId, ReportStatus.PROCESSED);
     }
 }
