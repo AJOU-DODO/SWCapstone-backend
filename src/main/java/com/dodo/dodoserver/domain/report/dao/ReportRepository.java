@@ -13,6 +13,6 @@ public interface ReportRepository extends JpaRepository<Report, Long>, AdminRepo
     boolean existsByReporterIdAndReportTypeAndTargetId(Long reporterId, ReportType reportType, Long targetId);
 
     @Modifying
-    @Query("UPDATE Report r SET r.status = :newStatus WHERE r.reportType = :reportType AND r.targetId = :targetId AND r.status = 'PENDING'")
+    @Query("UPDATE Report r SET r.status = :newStatus WHERE r.reportType = :reportType AND r.targetId = :targetId AND r.status = com.dodo.dodoserver.domain.report.entity.ReportStatus.PENDING")
     int updateStatusByTarget(@Param("reportType") ReportType reportType, @Param("targetId") Long targetId, @Param("newStatus") ReportStatus newStatus);
 }
