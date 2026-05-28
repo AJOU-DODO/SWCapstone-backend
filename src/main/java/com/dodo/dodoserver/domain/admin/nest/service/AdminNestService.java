@@ -180,7 +180,7 @@ public class AdminNestService {
                 .collect(Collectors.toList());
         
         if (!tokens.isEmpty()) {
-            String reason = (requestDto.getReason() == null || requestDto.getReason().isBlank()) 
+            String reason = (requestDto == null || requestDto.getReason() == null || requestDto.getReason().isBlank()) 
                     ? DEFAULT_NEST_DELETE_REASON 
                     : requestDto.getReason();
 
@@ -223,7 +223,7 @@ public class AdminNestService {
                 .collect(Collectors.toList());
 
         if (!tokens.isEmpty()) {
-            String reason = (requestDto.getReason() == null || requestDto.getReason().isBlank())
+            String reason = (requestDto == null || requestDto.getReason() == null || requestDto.getReason().isBlank())
                     ? DEFAULT_COMMENT_DELETE_REASON
                     : requestDto.getReason();
 

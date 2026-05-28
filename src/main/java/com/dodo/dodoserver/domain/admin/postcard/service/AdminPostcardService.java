@@ -56,7 +56,7 @@ public class AdminPostcardService {
                 .collect(Collectors.toList());
 
         if (!tokens.isEmpty()) {
-            String reason = (requestDto.getReason() == null || requestDto.getReason().isBlank())
+            String reason = (requestDto == null || requestDto.getReason() == null || requestDto.getReason().isBlank())
                     ? DEFAULT_POSTCARD_DELETE_REASON
                     : requestDto.getReason();
 
