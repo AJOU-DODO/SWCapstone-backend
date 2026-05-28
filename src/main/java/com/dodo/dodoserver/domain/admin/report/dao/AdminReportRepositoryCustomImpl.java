@@ -267,15 +267,10 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 ));
 
         Map<Long, Tuple> postcardInfoMap = queryFactory
-                .select(postcard.id, user.nickname, postcard.content, postcard.imageUrl, report.status)
+                .select(postcard.id, user.nickname, postcard.content, postcard.imageUrl)
                 .from(postcard)
                 .join(postcard.originalAuthor, user)
-                .join(report).on(report.targetId.eq(postcard.id).and(report.reportType.eq(ReportType.POSTCARD)))
-                .where(
-                        postcard.id.in(targetIds),
-                        report.status.ne(ReportStatus.REJECTED)
-                )
-                .groupBy(postcard.id, user.nickname, postcard.content, postcard.imageUrl, report.status)
+                .where(postcard.id.in(targetIds))
                 .fetch()
                 .stream()
                 .collect(Collectors.toMap(t -> t.get(postcard.id), t -> t, (oldV, newV) -> oldV));
@@ -284,6 +279,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
             Long id = t.get(report.targetId);
             Tuple info = postcardInfoMap.get(id);
             Long reportCount = t.get(report.targetId.count());
+            ReportStatus status = t.get(report.status.min());
 
             return AdminPostcardReportResponseDto.builder()
                     .postcardId(id)
@@ -294,7 +290,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                     .lastReportedAt(t.get(report.createdAt.max()))
                     .reportCount(reportCount != null ? reportCount : 0L)
                     .reasons(reasonMap.getOrDefault(id, Collections.emptyList()).stream().distinct().toList())
-                    .status(info != null ? info.get(report.status) : ReportStatus.PENDING)
+                    .status(status != null ? status : ReportStatus.PENDING)
                     .build();
         }).collect(Collectors.toList());
 
