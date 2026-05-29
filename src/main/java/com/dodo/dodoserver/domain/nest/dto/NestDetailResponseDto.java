@@ -36,4 +36,5 @@ public class NestDetailResponseDto {
     // 엽서 정보
     private boolean hasPostcard;
     private Long postcardId;
+    private boolean isMine;
 }

@@ -255,6 +255,7 @@ class NestServiceTest {
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isFalse();
         assertThat(response.getMyReaction()).isNull();
+        assertThat(response.isMine()).isFalse();
         verify(redisViewCountService).incrementViewCount(nestId, user.getId());
     }
 
@@ -277,6 +278,7 @@ class NestServiceTest {
 
         assertThat(response.getId()).isEqualTo(nestId);
         assertThat(response.getMyReaction()).isEqualTo(ReactionType.LIKE);
+        assertThat(response.isMine()).isTrue();
     }
 
     @Test
@@ -296,6 +298,7 @@ class NestServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getContent()).isEqualTo("댓글");
+        assertThat(result.get(0).isMine()).isTrue();
     }
 
     @Test
@@ -332,6 +335,7 @@ class NestServiceTest {
         assertThat(response.getProfileImageUrl()).isNull();
         assertThat(response.getLikeCount()).isEqualTo(0L);
         assertThat(response.isLiked()).isFalse();
+        assertThat(response.isMine()).isFalse();
     }
 
     @Test
