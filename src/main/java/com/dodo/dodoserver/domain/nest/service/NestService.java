@@ -406,7 +406,7 @@ public class NestService {
                 .myReaction(myReaction)
                 .hasPostcard(sharedPostcard != null)
                 .postcardId(sharedPostcard != null ? sharedPostcard.getId() : null)
-                .isMine(nest.getCreator().equals(user))
+                .isMine(nest.getCreator().getId().equals(user.getId()))
                 .build();
     }
 
