@@ -19,6 +19,7 @@ public class CommentResponseDto {
     private LocalDateTime createdAt;
     private Long likeCount;
     private boolean isLiked;
+    private boolean isMine;
     private List<CommentResponseDto> children;
 
     public static CommentResponseDto from(NestComment comment) {
@@ -30,6 +31,7 @@ public class CommentResponseDto {
                 .createdAt(comment.getCreatedAt())
                 .likeCount(comment.getLikeCount())
                 .isLiked(false)
+                .isMine(false)
                 .children(comment.getChildren().stream()
                         .map(CommentResponseDto::from)
                         .collect(Collectors.toList()))
