@@ -406,6 +406,7 @@ public class NestService {
                 .myReaction(myReaction)
                 .hasPostcard(sharedPostcard != null)
                 .postcardId(sharedPostcard != null ? sharedPostcard.getId() : null)
+                .isMine(nest.getCreator().equals(user))
                 .build();
     }
 
@@ -450,7 +451,7 @@ public class NestService {
 
         Set<Long> finalLikedCommentIds = likedCommentIds; // 람다 Effectively Final
         return topComments.stream()
-                .map(c -> convertToCommentResponseDto(c, childrenMap, profileImageMap, finalLikedCommentIds))
+                .map(c -> convertToCommentResponseDto(c, childrenMap, profileImageMap, finalLikedCommentIds, currentUserId))
                 .collect(Collectors.toList());
     }
 
@@ -472,16 +473,18 @@ public class NestService {
      * DTO 변환 (Map을 활용하여 LAZY 로딩 차단)
      */
     private CommentResponseDto convertToCommentResponseDto(
-            NestComment comment, 
-            Map<Long, List<NestComment>> childrenMap, 
-            Map<Long, String> profileImageMap, 
-            Set<Long> likedCommentIds) {
-        
+            NestComment comment,
+            Map<Long, List<NestComment>> childrenMap,
+            Map<Long, String> profileImageMap,
+            Set<Long> likedCommentIds,
+            Long currentUserId) {
+
         List<NestComment> children = childrenMap.getOrDefault(comment.getId(), Collections.emptyList());
         // 대댓글은 생성순으로 정렬
         children.sort(Comparator.comparing(NestComment::getCreatedAt));
 
         boolean isDeleted = comment.getDeletedAt() != null;
+        boolean isMine = !isDeleted && currentUserId != null && comment.getUser().getId().equals(currentUserId);
 
         return CommentResponseDto.builder()
                 .id(comment.getId())
@@ -491,8 +494,9 @@ public class NestService {
                 .createdAt(comment.getCreatedAt())
                 .likeCount(isDeleted ? 0L : comment.getLikeCount())
                 .isLiked(!isDeleted && likedCommentIds.contains(comment.getId()))
+                .isMine(isMine)
                 .children(children.stream()
-                        .map(child -> convertToCommentResponseDto(child, childrenMap, profileImageMap, likedCommentIds))
+                        .map(child -> convertToCommentResponseDto(child, childrenMap, profileImageMap, likedCommentIds, currentUserId))
                         .collect(Collectors.toList()))
                 .build();
     }
