@@ -26,31 +26,6 @@ public class AdminInquiryRepositoryCustomImpl implements AdminInquiryRepositoryC
     @Override
     public Page<AdminInquiryResponseDto> findInquiriesForAdmin(InquiryStatus status, Pageable pageable) {
         List<AdminInquiryResponseDto> content = queryFactory
-                .select(Projections.constructor(AdminInquiryResponseDto.class,
-                        inquiry.id,
-                        user.id,
-                        user.nickname,
-                        inquiry.type,
-                        inquiry.type.stringValue(), // Enum의 description 대신 stringValue() 사용 후 DTO에서 처리하거나 Projections 조정 필요
-                        inquiry.title,
-                        inquiry.status,
-                        inquiry.status.stringValue(),
-                        inquiry.createdAt,
-                        inquiry.answeredAt
-                ))
-                .from(inquiry)
-                .join(inquiry.user, user)
-                .where(statusEq(status))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .orderBy(inquiry.createdAt.desc())
-                .fetch();
-
-        // Projections.constructor는 필드 순서와 타입을 맞춰야 함. 
-        // AdminInquiryResponseDto를 Projections.constructor에 맞게 수정하거나 직접 맵핑 권장.
-        // 여기서는 QBean이나 직접 fetch 후 mapping 방식을 사용하겠음.
-
-        List<AdminInquiryResponseDto> mappedContent = queryFactory
                 .selectFrom(inquiry)
                 .join(inquiry.user, user).fetchJoin()
                 .where(statusEq(status))
@@ -67,7 +42,7 @@ public class AdminInquiryRepositoryCustomImpl implements AdminInquiryRepositoryC
                 .from(inquiry)
                 .where(statusEq(status));
 
-        return PageableExecutionUtils.getPage(mappedContent, pageable, countQuery::fetchOne);
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
     private BooleanExpression statusEq(InquiryStatus status) {
