@@ -28,7 +28,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
+import com.dodo.dodoserver.domain.user.entity.UserProfile;
+import com.dodo.dodoserver.domain.nest.entity.ReactionType;
+import com.querydsl.core.Tuple;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -36,6 +41,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dodo.dodoserver.domain.report.entity.QReport.report;
+import static com.dodo.dodoserver.domain.nest.entity.QCommentLike.commentLike;
 import static com.dodo.dodoserver.global.common.constants.NotificationConstants.*;
 
 @Service
@@ -51,6 +57,7 @@ public class AdminNestService {
     private final PostcardRepository postcardRepository;
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final UserDeviceRepository userDeviceRepository;
     private final FcmService fcmService;
     private final JPAQueryFactory queryFactory;
@@ -79,17 +86,46 @@ public class AdminNestService {
                 .map(nc -> nc.getCategory().getName())
                 .collect(Collectors.toList());
 
+        // 신고 일시 조회 (Rejected 제외)
+        Tuple reportStats = queryFactory
+                .select(report.createdAt.min(), report.createdAt.max())
+                .from(report)
+                .where(
+                        report.reportType.eq(ReportType.NEST),
+                        report.targetId.eq(nestId),
+                        report.status.ne(ReportStatus.REJECTED)
+                )
+                .fetchOne();
+
+        LocalDateTime firstReportedAt = reportStats != null ? reportStats.get(report.createdAt.min()) : null;
+        LocalDateTime lastReportedAt = reportStats != null ? reportStats.get(report.createdAt.max()) : null;
+
+        // 좋아요/싫어요 수 조회
+        long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
+        long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
+
+        // 프로필 이미지 조회
+        String profileImageUrl = userProfileRepository.findByUser(nest.getCreator())
+                .map(UserProfile::getProfileImageUrl)
+                .orElse(null);
+
         return AdminNestDetailResponseDto.builder()
                 .nestId(nest.getId())
                 .title(nest.getTitle())
                 .content(nest.getContent())
+                .authorId(nest.getCreator().getId())
                 .authorNickname(nest.getCreator().getNickname())
+                .profileImageUrl(profileImageUrl)
                 .latitude(nest.getLocation() != null ? nest.getLocation().getLatitude() : 0.0)
                 .longitude(nest.getLocation() != null ? nest.getLocation().getLongitude() : 0.0)
                 .imageUrls(nest.getImages().stream().map(NestImage::getImageUrl).collect(Collectors.toList()))
                 .categoryIds(categoryIds)
                 .categoryNames(categoryNames)
                 .createdAt(nest.getCreatedAt())
+                .firstReportedAt(firstReportedAt)
+                .lastReportedAt(lastReportedAt)
+                .likeCount(likeCount)
+                .dislikeCount(dislikeCount)
                 .isDeleted(nest.getDeletedAt() != null)
                 .build();
     }
@@ -105,10 +141,13 @@ public class AdminNestService {
 
         if (allComments.isEmpty()) return List.of();
 
-        // 2. 유저 정보 일괄 조회 (Native Query 결과이므로 LAZY 로딩 방지)
+        // 2. 유저 및 프로필 정보 일괄 조회 (Native Query 결과이므로 LAZY 로딩 방지)
         List<Long> userIds = allComments.stream().map(c -> c.getUser().getId()).distinct().toList();
-        Map<Long, String> nicknameMap = userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getNickname));
+        List<User> users = userRepository.findAllById(userIds);
+        Map<Long, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+        Map<Long, String> profileImageUrlMap = userProfileRepository.findAllByUserIn(users).stream()
+                .collect(Collectors.toMap(up -> up.getUser().getId(), UserProfile::getProfileImageUrl));
 
         // 3. 각 댓글별 대기(PENDING) 신고 수 일괄 조회
         List<Long> commentIds = allComments.stream().map(NestComment::getId).toList();
@@ -125,6 +164,16 @@ public class AdminNestService {
                 .stream()
                 .collect(Collectors.toMap(t -> t.get(report.targetId), t -> t.get(report.count())));
 
+        // 3.5 댓글 좋아요 수 일괄 조회
+        Map<Long, Long> likeCounts = queryFactory
+                .select(commentLike.comment.id, commentLike.count())
+                .from(commentLike)
+                .where(commentLike.comment.id.in(commentIds))
+                .groupBy(commentLike.comment.id)
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(t -> t.get(commentLike.comment.id), t -> t.get(commentLike.count())));
+
         // 4. 부모 ID를 기준으로 그룹화 (트리 구조 생성용)
         Map<Long, List<NestComment>> childrenMap = allComments.stream()
                 .filter(c -> c.getParent() != null)
@@ -138,7 +187,7 @@ public class AdminNestService {
 
         // 6. 트리 구조 변환
         return topComments.stream()
-                .map(c -> convertToAdminCommentResponseDto(c, childrenMap, nicknameMap, pendingReportCounts))
+                .map(c -> convertToAdminCommentResponseDto(c, childrenMap, userMap, profileImageUrlMap, pendingReportCounts, likeCounts))
                 .collect(Collectors.toList());
     }
 
@@ -148,23 +197,30 @@ public class AdminNestService {
     private AdminCommentResponseDto convertToAdminCommentResponseDto(
             NestComment comment,
             Map<Long, List<NestComment>> childrenMap,
-            Map<Long, String> nicknameMap,
-            Map<Long, Long> pendingReportCounts) {
+            Map<Long, User> userMap,
+            Map<Long, String> profileImageUrlMap,
+            Map<Long, Long> pendingReportCounts,
+            Map<Long, Long> likeCounts) {
 
         List<NestComment> children = childrenMap.getOrDefault(comment.getId(), Collections.emptyList());
         // 대댓글은 생성순으로 정렬
         children.sort(Comparator.comparing(NestComment::getCreatedAt));
 
+        User author = userMap.get(comment.getUser().getId());
+
         return AdminCommentResponseDto.builder()
                 .commentId(comment.getId())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
-                .authorNickname(nicknameMap.getOrDefault(comment.getUser().getId(), "알 수 없음"))
+                .authorId(author != null ? author.getId() : null)
+                .authorNickname(author != null ? author.getNickname() : "알 수 없음")
+                .profileImageUrl(profileImageUrlMap.getOrDefault(comment.getUser().getId(), null))
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .isDeleted(comment.getDeletedAt() != null)
                 .pendingReportCount(pendingReportCounts.getOrDefault(comment.getId(), 0L))
+                .likeCount(likeCounts.getOrDefault(comment.getId(), 0L))
                 .children(children.stream()
-                        .map(child -> convertToAdminCommentResponseDto(child, childrenMap, nicknameMap, pendingReportCounts))
+                        .map(child -> convertToAdminCommentResponseDto(child, childrenMap, userMap, profileImageUrlMap, pendingReportCounts, likeCounts))
                         .collect(Collectors.toList()))
                 .build();
     }
