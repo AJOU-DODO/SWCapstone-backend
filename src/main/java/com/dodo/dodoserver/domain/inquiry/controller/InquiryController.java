@@ -27,7 +27,7 @@ public class InquiryController {
     public ApiResponseDto<InquiryResponseDto> createInquiry(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody InquiryRequestDto requestDto) {
-        return ApiResponseDto.success(inquiryService.createInquiry(userPrincipal.getUser(), requestDto));
+        return ApiResponseDto.success(inquiryService.createInquiry(userPrincipal.getId(), requestDto));
     }
 
     @Operation(summary = "내 문의 리스트 조회")
@@ -35,7 +35,7 @@ public class InquiryController {
     public ApiResponseDto<Page<InquiryResponseDto>> getMyInquiries(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             Pageable pageable) {
-        return ApiResponseDto.success(inquiryService.getMyInquiries(userPrincipal.getUser(), pageable));
+        return ApiResponseDto.success(inquiryService.getMyInquiries(userPrincipal.getId(), pageable));
     }
 
     @Operation(summary = "문의 수정")
@@ -44,7 +44,7 @@ public class InquiryController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long inquiryId,
             @Valid @RequestBody InquiryRequestDto requestDto) {
-        return ApiResponseDto.success(inquiryService.updateInquiry(userPrincipal.getUser(), inquiryId, requestDto));
+        return ApiResponseDto.success(inquiryService.updateInquiry(userPrincipal.getId(), inquiryId, requestDto));
     }
 
     @Operation(summary = "문의 삭제")
@@ -52,7 +52,7 @@ public class InquiryController {
     public ApiResponseDto<Void> deleteInquiry(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Long inquiryId) {
-        inquiryService.deleteInquiry(userPrincipal.getUser(), inquiryId);
+        inquiryService.deleteInquiry(userPrincipal.getId(), inquiryId);
         return ApiResponseDto.success(null);
     }
 }

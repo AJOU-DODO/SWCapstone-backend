@@ -4,6 +4,7 @@ import com.dodo.dodoserver.domain.inquiry.dao.InquiryRepository;
 import com.dodo.dodoserver.domain.inquiry.dto.InquiryRequestDto;
 import com.dodo.dodoserver.domain.inquiry.dto.InquiryResponseDto;
 import com.dodo.dodoserver.domain.inquiry.entity.Inquiry;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -19,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class InquiryService {
 
     private final InquiryRepository inquiryRepository;
+    private final UserRepository userRepository;
 
     @Transactional
-    public InquiryResponseDto createInquiry(User user, InquiryRequestDto requestDto) {
+    public InquiryResponseDto createInquiry(Long userId, InquiryRequestDto requestDto) {
+        User user = findUserById(userId);
         Inquiry inquiry = Inquiry.builder()
                 .user(user)
                 .type(requestDto.getType())
@@ -32,13 +35,15 @@ public class InquiryService {
         return InquiryResponseDto.from(inquiryRepository.save(inquiry));
     }
 
-    public Page<InquiryResponseDto> getMyInquiries(User user, Pageable pageable) {
+    public Page<InquiryResponseDto> getMyInquiries(Long userId, Pageable pageable) {
+        User user = findUserById(userId);
         return inquiryRepository.findAllByUser(user, pageable)
                 .map(InquiryResponseDto::from);
     }
 
     @Transactional
-    public InquiryResponseDto updateInquiry(User user, Long inquiryId, InquiryRequestDto requestDto) {
+    public InquiryResponseDto updateInquiry(Long userId, Long inquiryId, InquiryRequestDto requestDto) {
+        User user = findUserById(userId);
         Inquiry inquiry = findById(inquiryId);
         inquiry.validateOwner(user);
         inquiry.update(requestDto.getType(), requestDto.getTitle(), requestDto.getContent());
@@ -47,7 +52,8 @@ public class InquiryService {
     }
 
     @Transactional
-    public void deleteInquiry(User user, Long inquiryId) {
+    public void deleteInquiry(Long userId, Long inquiryId) {
+        User user = findUserById(userId);
         Inquiry inquiry = findById(inquiryId);
         inquiry.validateOwner(user);
         inquiry.validateForDelete();
@@ -58,5 +64,10 @@ public class InquiryService {
     private Inquiry findById(Long id) {
         return inquiryRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INQUIRY_NOT_FOUND));
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }
