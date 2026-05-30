@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.admin.inquiry.dto.InquiryAnswerRequestDto;
 import com.dodo.dodoserver.domain.inquiry.dao.InquiryRepository;
 import com.dodo.dodoserver.domain.inquiry.entity.Inquiry;
 import com.dodo.dodoserver.domain.inquiry.entity.InquiryStatus;
+import com.dodo.dodoserver.domain.inquiry.service.InquiryNotificationService;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminInquiryService {
 
     private final InquiryRepository inquiryRepository;
+    private final InquiryNotificationService inquiryNotificationService;
 
     public Page<AdminInquiryResponseDto> getInquiries(InquiryStatus status, Pageable pageable) {
         return inquiryRepository.findInquiriesForAdmin(status, pageable);
@@ -38,6 +40,7 @@ public class AdminInquiryService {
         
         inquiry.addAnswer(requestDto.getAnswer());
         
-        // TODO: FCM 발송 로직 (Phase 4에서 구현 예정)
+        // FCM 발송 (이벤트 발행 방식)
+        inquiryNotificationService.sendInquiryAnswerNotification(inquiry);
     }
 }
