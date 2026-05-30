@@ -112,9 +112,13 @@ class AdminNestControllerTest {
                 .nestId(1L)
                 .title("제목")
                 .content("원본 본문")
+                .authorId(10L)
                 .authorNickname("산책왕")
+                .profileImageUrl("https://profile.url")
                 .latitude(37.2844)
                 .longitude(127.0442)
+                .likeCount(5)
+                .dislikeCount(1)
                 .build();
         given(adminNestService.getNestDetailForAdmin(1L)).willReturn(responseDto);
 
@@ -122,7 +126,11 @@ class AdminNestControllerTest {
         mockMvc.perform(get("/api/v1/admin/nests/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.content").value("원본 본문"));
+                .andExpect(jsonPath("$.data.content").value("원본 본문"))
+                .andExpect(jsonPath("$.data.authorId").value(10))
+                .andExpect(jsonPath("$.data.profileImageUrl").value("https://profile.url"))
+                .andExpect(jsonPath("$.data.likeCount").value(5))
+                .andExpect(jsonPath("$.data.dislikeCount").value(1));
     }
 
     @Test
@@ -146,11 +154,19 @@ class AdminNestControllerTest {
         AdminCommentResponseDto child = AdminCommentResponseDto.builder()
                 .commentId(2L)
                 .parentId(1L)
+                .authorId(11L)
+                .authorNickname("댓글러2")
+                .profileImageUrl("https://profile2.url")
                 .content("대댓글")
+                .likeCount(2)
                 .build();
         AdminCommentResponseDto parent = AdminCommentResponseDto.builder()
                 .commentId(1L)
+                .authorId(10L)
+                .authorNickname("댓글러1")
+                .profileImageUrl("https://profile1.url")
                 .content("댓글")
+                .likeCount(10)
                 .children(Collections.singletonList(child))
                 .build();
         given(adminNestService.getNestCommentsForAdmin(1L)).willReturn(Collections.singletonList(parent));
@@ -160,6 +176,11 @@ class AdminNestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data[0].commentId").value(1))
-                .andExpect(jsonPath("$.data[0].children[0].commentId").value(2));
+                .andExpect(jsonPath("$.data[0].authorId").value(10))
+                .andExpect(jsonPath("$.data[0].profileImageUrl").value("https://profile1.url"))
+                .andExpect(jsonPath("$.data[0].likeCount").value(10))
+                .andExpect(jsonPath("$.data[0].children[0].commentId").value(2))
+                .andExpect(jsonPath("$.data[0].children[0].authorId").value(11))
+                .andExpect(jsonPath("$.data[0].children[0].likeCount").value(2));
     }
 }
