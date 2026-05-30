@@ -147,6 +147,7 @@ public class AdminNestService {
         Map<Long, User> userMap = users.stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
         Map<Long, String> profileImageUrlMap = userProfileRepository.findAllByUserIn(users).stream()
+                .filter(up -> up.getProfileImageUrl() != null)
                 .collect(Collectors.toMap(up -> up.getUser().getId(), UserProfile::getProfileImageUrl));
 
         // 3. 각 댓글별 대기(PENDING) 신고 수 일괄 조회
