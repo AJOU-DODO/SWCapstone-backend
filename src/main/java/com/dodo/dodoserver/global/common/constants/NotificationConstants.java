@@ -8,6 +8,7 @@ public final class NotificationConstants {
     public static final String KEY_NEST_ID = "nestId";
     public static final String KEY_COMMENT_ID = "commentId";
     public static final String KEY_POSTCARD_ID = "postcardId";
+    public static final String KEY_INQUIRY_ID = "inquiryId";
 
     // Type Values
     public static final String TYPE_COMMENT = "COMMENT";
@@ -19,6 +20,7 @@ public final class NotificationConstants {
     public static final String TYPE_NEST_DELETED = "NEST_DELETED";
     public static final String TYPE_POSTCARD_DELETED = "POSTCARD_DELETED";
     public static final String TYPE_COMMENT_DELETED = "COMMENT_DELETED";
+    public static final String TYPE_INQUIRY_ANSWERED = "INQUIRY_ANSWERED";
 
     // Message Templates
     public static final String TITLE_NEST_DELETED = "둥지 삭제 알림";
@@ -39,6 +41,8 @@ public final class NotificationConstants {
     public static final String BODY_POSTCARD_EXCHANGED = "누군가 %s둥지에서 당신의 엽서를 가져갔어요!";
     public static final String TITLE_POSTCARD_LIKE = "내 엽서에 리액션이 달렸어요!";
     public static final String BODY_POSTCARD_LIKE = "%s님이 회원님의 엽서에 '%s'라고 반응했습니다.";
+    public static final String TITLE_INQUIRY_ANSWERED = "문의 답변 등록 알림";
+    public static final String BODY_INQUIRY_ANSWERED = "문의하신 내용에 답변이 등록되었습니다.";
 
     private NotificationConstants() {
     }

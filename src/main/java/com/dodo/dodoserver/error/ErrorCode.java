@@ -66,7 +66,12 @@ public enum ErrorCode {
 
     // Whitelist (W)
     WHITELIST_NOT_FOUND(HttpStatus.NOT_FOUND, "W001", "화이트리스트 정보를 찾을 수 없습니다."),
-    DUPLICATE_WHITELIST_EMAIL(HttpStatus.BAD_REQUEST, "W002", "이미 화이트리스트에 등록된 이메일입니다.");
+    DUPLICATE_WHITELIST_EMAIL(HttpStatus.BAD_REQUEST, "W002", "이미 화이트리스트에 등록된 이메일입니다."),
+
+    // Inquiry (IQ)
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "IQ001", "문의사항을 찾을 수 없습니다."),
+    NOT_INQUIRY_OWNER(HttpStatus.FORBIDDEN, "IQ002", "해당 문의사항에 대한 권한이 없습니다."),
+    CANNOT_MODIFY_COMPLETED_INQUIRY(HttpStatus.BAD_REQUEST, "IQ003", "처리 완료된 문의는 수정하거나 삭제할 수 없습니다.");
 
 
 

@@ -33,6 +33,7 @@ public class SoftDeleteFilterAspect {
             session.disableFilter("nestFilter");
             session.disableFilter("commentFilter");
             session.disableFilter("postcardFilter");
+            session.enableFilter("inquiryFilter");
             return;
         }
 
@@ -42,6 +43,7 @@ public class SoftDeleteFilterAspect {
             session.enableFilter("nestFilter");
             session.disableFilter("commentFilter");
             session.enableFilter("postcardFilter");
+            session.enableFilter("inquiryFilter");
             return;
         }
 
@@ -49,5 +51,6 @@ public class SoftDeleteFilterAspect {
         session.enableFilter("nestFilter");
         session.enableFilter("commentFilter");
         session.enableFilter("postcardFilter");
+        session.enableFilter("inquiryFilter");
     }
 }
