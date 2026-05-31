@@ -33,7 +33,7 @@ public class SoftDeleteFilterAspect {
             session.disableFilter("nestFilter");
             session.disableFilter("commentFilter");
             session.disableFilter("postcardFilter");
-            session.disableFilter("inquiryFilter");
+            session.enableFilter("inquiryFilter");
             return;
         }
 
