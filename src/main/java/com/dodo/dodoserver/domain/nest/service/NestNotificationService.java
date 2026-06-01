@@ -66,7 +66,6 @@ public class NestNotificationService {
         Map<String, String> data = new HashMap<>();
         data.put(KEY_TYPE, type);
         data.put(KEY_NEST_ID, nest.getId().toString());
-        data.put(KEY_COMMENT_ID, savedComment.getId().toString());
 
         // 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(fcmTokens, title, body, data));
@@ -116,7 +115,6 @@ public class NestNotificationService {
         Map<String, String> data = new HashMap<>();
         data.put(KEY_TYPE, TYPE_COMMENT_LIKE);
         data.put(KEY_NEST_ID, nest.getId().toString());
-        data.put(KEY_COMMENT_ID, comment.getId().toString());
 
         eventPublisher.publishEvent(new NotificationEvent(fcmTokens, TITLE_COMMENT_LIKE,
                 String.format(BODY_COMMENT_LIKE, reactor.getNickname()), data));

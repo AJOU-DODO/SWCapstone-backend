@@ -288,7 +288,7 @@ public class AdminNestService {
                     tokens,
                     TITLE_COMMENT_DELETED,
                     reason,
-                    Map.of(KEY_TYPE, TYPE_COMMENT_DELETED, KEY_COMMENT_ID, commentId.toString())
+                    Map.of(KEY_TYPE, TYPE_COMMENT_DELETED, KEY_NEST_ID, comment.getNest().getId().toString())
             ));
         }
         

@@ -6,17 +6,16 @@ public final class NotificationConstants {
     // Data Keys
     public static final String KEY_TYPE = "type";
     public static final String KEY_NEST_ID = "nestId";
-    public static final String KEY_COMMENT_ID = "commentId";
     public static final String KEY_POSTCARD_ID = "postcardId";
     public static final String KEY_INQUIRY_ID = "inquiryId";
 
     // Type Values
-    public static final String TYPE_COMMENT = "COMMENT";
-    public static final String TYPE_REPLY = "REPLY";
-    public static final String TYPE_NEST_LIKE = "NEST_LIKE";
-    public static final String TYPE_COMMENT_LIKE = "COMMENT_LIKE";
-    public static final String TYPE_POSTCARD_EXCHANGED = "POSTCARD_EXCHANGED";
-    public static final String TYPE_POSTCARD_LIKE = "POSTCARD_LIKE";
+    public static final String TYPE_COMMENT = "NEST";
+    public static final String TYPE_REPLY = "NEST";
+    public static final String TYPE_NEST_LIKE = "NEST";
+    public static final String TYPE_COMMENT_LIKE = "NEST";
+    public static final String TYPE_POSTCARD_EXCHANGED = "POSTCARD";
+    public static final String TYPE_POSTCARD_LIKE = "POSTCARD";
     public static final String TYPE_NEST_DELETED = "NEST_DELETED";
     public static final String TYPE_POSTCARD_DELETED = "POSTCARD_DELETED";
     public static final String TYPE_COMMENT_DELETED = "COMMENT_DELETED";
