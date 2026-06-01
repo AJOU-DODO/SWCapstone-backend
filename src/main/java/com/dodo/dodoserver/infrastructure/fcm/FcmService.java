@@ -32,10 +32,17 @@ public class FcmService {
 			return;
 		}
 
-		// event.data()가 불변 객체일 수 있으므로 수정 가능한 HashMap으로 복사
-		java.util.Map<String, String> dynamicData = new java.util.HashMap<>(event.data());
-		dynamicData.put("title", event.title());
-		dynamicData.put("body", event.body());
+		// event.data()가 불변 객체일 수 있으므로 수정 가능한 HashMap으로 복사 (null 체크 포함)
+		java.util.Map<String, String> dynamicData = event.data() != null 
+			? new java.util.HashMap<>(event.data()) 
+			: new java.util.HashMap<>();
+
+		if (event.title() != null) {
+			dynamicData.put("title", event.title());
+		}
+		if (event.body() != null) {
+			dynamicData.put("body", event.body());
+		}
 
 		MulticastMessage message = MulticastMessage.builder()
 			.addAllTokens(event.tokens())
