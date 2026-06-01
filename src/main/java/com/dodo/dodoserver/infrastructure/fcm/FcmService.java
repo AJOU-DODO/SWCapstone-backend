@@ -4,7 +4,6 @@ import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
-import com.google.firebase.messaging.Notification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import com.google.firebase.messaging.MulticastMessage;
 import com.google.firebase.messaging.BatchResponse;
+import com.google.firebase.messaging.SendResponse;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -54,14 +56,22 @@ public class FcmService {
 
 		try {
 			BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
-			log.info("FCM Sent Successfully (Pure Data Message). Success count: {}, Failure count: {}", 
+			log.info("[NOTIFICATION] FCM Sent Successfully (Pure Data Message). Success count: {}, Failure count: {}",
 				response.getSuccessCount(), response.getFailureCount());
 			
 			if (response.getFailureCount() > 0) {
-				log.warn("FCM Partial Failures detected. Check logs for details.");
+				log.warn("[NOTIFICATION] FCM Partial Failures detected. Details:");
+				List<SendResponse> responses = response.getResponses();
+				for (int i = 0; i < responses.size(); i++) {
+					SendResponse sr = responses.get(i);
+					if (!sr.isSuccessful()) {
+						log.warn("[NOTIFICATION] Failure at index {}: Token={}, Error={}",
+							i, event.tokens().get(i), sr.getException().getMessage());
+					}
+				}
 			}
 		} catch (FirebaseMessagingException e) {
-			log.error("FCM Multicast Send Failed: {}", e.getMessage());
+			log.error("[NOTIFICATION] FCM Multicast Send Failed: {}", e.getMessage());
 			throw new RuntimeException("FCM 전송 중 오류 발생", e);
 		}
 	}
