@@ -32,13 +32,14 @@ public class FcmService {
 			return;
 		}
 
+		// event.data()가 불변 객체일 수 있으므로 수정 가능한 HashMap으로 복사
+		java.util.Map<String, String> dynamicData = new java.util.HashMap<>(event.data());
+		dynamicData.put("title", event.title());
+		dynamicData.put("body", event.body());
+
 		MulticastMessage message = MulticastMessage.builder()
 			.addAllTokens(event.tokens())
-			.setNotification(Notification.builder()
-				.setTitle(event.title())
-				.setBody(event.body())
-				.build())
-			.putAllData(event.data())
+			.putAllData(dynamicData) // title, body가 포함된 통합 데이터 맵 전송
 			.setAndroidConfig(AndroidConfig.builder()
 				.setPriority(AndroidConfig.Priority.HIGH)
 				.build())
@@ -46,7 +47,7 @@ public class FcmService {
 
 		try {
 			BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
-			log.info("FCM Sent Successfully. Success count: {}, Failure count: {}", 
+			log.info("FCM Sent Successfully (Pure Data Message). Success count: {}, Failure count: {}", 
 				response.getSuccessCount(), response.getFailureCount());
 			
 			if (response.getFailureCount() > 0) {
