@@ -114,6 +114,24 @@ class MyPageServiceTest {
     }
 
     @Test
+    @DisplayName("엽서 인벤토리 조회 - CREATED_EXCHANGED 필터")
+    void getMyPostcards_createdExchanged() {
+        // given
+        User user = User.builder().id(1L).nickname("test").build();
+        Pageable pageable = PageRequest.of(0, 10);
+        Postcard postcard = Postcard.builder().id(1L).originalAuthor(user).build();
+        given(postcardService.getPostcardEntitiesByFilter(anyLong(), any(), any())).willReturn(new PageImpl<>(List.of(postcard)));
+        given(postcardReactionRepository.findAllByPostcardIn(any())).willReturn(Collections.emptyList());
+
+        // when
+        myPageService.getMyPostcards(1L, "CREATED_EXCHANGED", pageable);
+
+        // then
+        verify(postcardService).getPostcardEntitiesByFilter(1L, "CREATED_EXCHANGED", pageable);
+        verify(postcardReactionRepository).findAllByPostcardIn(any());
+    }
+
+    @Test
     @DisplayName("엽서 인벤토리 조회 - ACQUIRED 필터")
     void getMyPostcards_acquired() {
         // given
