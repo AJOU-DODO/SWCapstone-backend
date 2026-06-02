@@ -281,12 +281,24 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
             Long reportCount = t.get(report.targetId.count());
             ReportStatus status = t.get(report.status.min());
 
+            Long authorId = null;
+            String authorNickname = "알 수 없음";
+            String postcardContent = "";
+            String imageUrl = "";
+
+            if (info != null) {
+                authorId = info.get(user.id);
+                authorNickname = info.get(user.nickname);
+                postcardContent = info.get(postcard.content);
+                imageUrl = info.get(postcard.imageUrl);
+            }
+
             return AdminPostcardReportResponseDto.builder()
                     .postcardId(id)
-                    .authorId(info != null ? info.get(user.id) : null)
-                    .authorNickname(info != null ? info.get(user.nickname) : "알 수 없음")
-                    .content(info != null ? info.get(postcard.content) : "")
-                    .imageUrl(info != null ? info.get(postcard.imageUrl) : "")
+                    .authorId(authorId)
+                    .authorNickname(authorNickname)
+                    .content(postcardContent)
+                    .imageUrl(imageUrl)
                     .firstReportedAt(t.get(report.createdAt.min()))
                     .lastReportedAt(t.get(report.createdAt.max()))
                     .reportCount(reportCount != null ? reportCount : 0L)
