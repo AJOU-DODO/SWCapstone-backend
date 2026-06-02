@@ -21,9 +21,6 @@ public enum SanctionType {
             // 영구 정지: 타임존 변환 시 MySQL DATETIME 범위를 넘지 않도록 안전하게 설정
             return LocalDateTime.of(9999, 1, 1, 0, 0, 0);
         }
-        if (this == LIFTED) {
-            return LocalDateTime.now();
-        }
         return LocalDateTime.now().plusDays(this.days);
     }
 }
