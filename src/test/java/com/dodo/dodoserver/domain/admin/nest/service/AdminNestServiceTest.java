@@ -29,8 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.dodo.dodoserver.global.common.constants.NotificationConstants.DEFAULT_COMMENT_DELETE_REASON;
-import static com.dodo.dodoserver.global.common.constants.NotificationConstants.DEFAULT_NEST_DELETE_REASON;
+import static com.dodo.dodoserver.global.common.constants.NotificationConstants.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -161,7 +160,8 @@ class AdminNestServiceTest {
     void deleteCommentForAdmin_success() {
         // given
         User author = User.builder().id(1L).build();
-        NestComment comment = NestComment.builder().id(10L).user(author).build();
+        Nest nest = Nest.builder().id(100L).build();
+        NestComment comment = NestComment.builder().id(10L).user(author).nest(nest).build();
         UserDevice device = UserDevice.builder().fcmToken("token").build();
         AdminCommentDeleteRequestDto requestDto = mock(AdminCommentDeleteRequestDto.class);
         given(requestDto.getReason()).willReturn("부적절한 댓글");
@@ -174,7 +174,9 @@ class AdminNestServiceTest {
 
         // then
         verify(fcmService, times(1)).sendNotification(argThat(event -> 
-                event.body().equals("부적절한 댓글")));
+                event.body().equals("부적절한 댓글") &&
+                event.data().get(KEY_NEST_ID).equals("100") &&
+                !event.data().containsKey("commentId")));
         verify(commentLikeRepository, times(1)).deleteByComment(comment);
         verify(nestCommentRepository, times(1)).delete(comment);
         verify(reportRepository, times(1)).updateStatusByTarget(ReportType.COMMENT, 10L, ReportStatus.PROCESSED);
@@ -185,7 +187,8 @@ class AdminNestServiceTest {
     void deleteComment_useDefaultReason_whenReasonIsMissing() {
         // given
         User author = User.builder().id(1L).build();
-        NestComment comment = NestComment.builder().id(10L).user(author).build();
+        Nest nest = Nest.builder().id(100L).build();
+        NestComment comment = NestComment.builder().id(10L).user(author).nest(nest).build();
         UserDevice device = UserDevice.builder().fcmToken("token").build();
         AdminCommentDeleteRequestDto requestDto = new AdminCommentDeleteRequestDto();
 
@@ -197,7 +200,8 @@ class AdminNestServiceTest {
 
         // then
         verify(fcmService).sendNotification(argThat(event -> 
-            event.body().equals(DEFAULT_COMMENT_DELETE_REASON)
+            event.body().equals(DEFAULT_COMMENT_DELETE_REASON) &&
+            event.data().get(KEY_NEST_ID).equals("100")
         ));
     }
 }

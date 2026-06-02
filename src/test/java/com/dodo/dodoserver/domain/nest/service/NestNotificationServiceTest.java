@@ -161,7 +161,6 @@ class NestNotificationServiceTest {
         NotificationEvent event = captor.getValue();
         assertThat(event.title()).isEqualTo(NotificationConstants.TITLE_COMMENT_LIKE);
         assertThat(event.data().get(NotificationConstants.KEY_TYPE)).isEqualTo(NotificationConstants.TYPE_COMMENT_LIKE);
-        assertThat(event.data().get(NotificationConstants.KEY_COMMENT_ID)).isEqualTo(comment.getId().toString());
     }
 
     @Test
