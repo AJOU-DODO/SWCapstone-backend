@@ -249,6 +249,27 @@ class PostcardServiceTest {
     }
 
     @Test
+    @DisplayName("엽서 인벤토리 조회 성공 - 내가 생성하고 교환된 엽서만")
+    void getPostcardInventory_createdExchanged_success() {
+        // given
+        myPostcard.setExchanged(true);
+        myPostcard.setShared(false);
+        myPostcard.setCurrentOwner(null);
+        List<Postcard> exchangedList = List.of(myPostcard);
+        Page<Postcard> inventoryPage = new PageImpl<>(exchangedList);
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(postcardRepository.findCreatedExchangedByUser(eq(user), any(Pageable.class))).willReturn(inventoryPage);
+
+        // when
+        Page<PostcardResponseDto> result = postcardService.getPostcardInventory(user.getId(), "CREATED_EXCHANGED", Pageable.unpaged());
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getId()).isEqualTo(myPostcard.getId());
+        assertThat(result.getContent().get(0).isExchanged()).isTrue();
+    }
+
+    @Test
     @DisplayName("엽서 인벤토리 조회 성공 - 내가 가져온 엽서만")
     void getPostcardInventory_acquired_success() {
         // given
