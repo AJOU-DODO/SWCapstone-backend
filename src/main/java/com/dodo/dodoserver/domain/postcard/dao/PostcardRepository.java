@@ -43,6 +43,9 @@ public interface PostcardRepository extends JpaRepository<Postcard, Long> {
     @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.originalAuthor = :user AND p.isShared = true")
     Page<Postcard> findCreatedSharedByUser(@Param("user") User user, Pageable pageable);
 
+    @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.originalAuthor = :user AND p.isExchanged = true")
+    Page<Postcard> findCreatedExchangedByUser(@Param("user") User user, Pageable pageable);
+
     @Query("SELECT p FROM Postcard p JOIN FETCH p.originalAuthor WHERE p.currentOwner = :user AND p.originalAuthor != :user")
     Page<Postcard> findAcquiredByUser(@Param("user") User user, Pageable pageable);
 

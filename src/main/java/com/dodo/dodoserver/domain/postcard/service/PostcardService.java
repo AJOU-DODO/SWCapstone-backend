@@ -152,6 +152,8 @@ public class PostcardService {
             return postcardRepository.findCreatedNotSharedByUser(user, pageable);
         } else if ("CREATED_SHARED".equalsIgnoreCase(filter)) {
             return postcardRepository.findCreatedSharedByUser(user, pageable);
+        } else if ("CREATED_EXCHANGED".equalsIgnoreCase(filter)) {
+            return postcardRepository.findCreatedExchangedByUser(user, pageable);
         } else if ("ACQUIRED".equalsIgnoreCase(filter)) {
             return postcardRepository.findAcquiredByUser(user, pageable);
         } else {
