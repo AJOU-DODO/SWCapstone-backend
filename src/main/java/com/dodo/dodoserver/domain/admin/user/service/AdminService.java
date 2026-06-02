@@ -72,7 +72,7 @@ public class AdminService {
                 .user(user)
                 .sanctionType(SanctionType.LIFTED)
                 .reason("관리자에 의한 제재 즉시 해제")
-                .endedAt(LocalDateTime.now())
+                .endedAt(SanctionType.LIFTED.calculateEndedAt())
                 .build();
 
         sanctionHistoryRepository.save(history);
