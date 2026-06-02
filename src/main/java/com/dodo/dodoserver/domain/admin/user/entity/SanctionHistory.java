@@ -27,7 +27,7 @@ public class SanctionHistory {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "sanction_type", nullable = false)
+    @Column(name = "sanction_type", nullable = false, length = 20)
     private SanctionType sanctionType;
 
     @Column(nullable = false, columnDefinition = "TEXT")
