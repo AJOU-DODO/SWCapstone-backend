@@ -65,4 +65,11 @@ public class User {
     public void applySanction(LocalDateTime endedAt) {
         this.sanctionedUntil = endedAt;
     }
+
+    /**
+     * 유저의 제재를 해제합니다.
+     */
+    public void liftSanction() {
+        this.sanctionedUntil = null;
+    }
 }
