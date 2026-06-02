@@ -267,7 +267,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
                 ));
 
         Map<Long, Tuple> postcardInfoMap = queryFactory
-                .select(postcard.id, user.nickname, postcard.content, postcard.imageUrl)
+                .select(postcard.id, user.id, user.nickname, postcard.content, postcard.imageUrl)
                 .from(postcard)
                 .join(postcard.originalAuthor, user)
                 .where(postcard.id.in(targetIds))
@@ -283,6 +283,7 @@ public class AdminReportRepositoryCustomImpl implements AdminReportRepositoryCus
 
             return AdminPostcardReportResponseDto.builder()
                     .postcardId(id)
+                    .authorId(info != null ? info.get(user.id) : null)
                     .authorNickname(info != null ? info.get(user.nickname) : "알 수 없음")
                     .content(info != null ? info.get(postcard.content) : "")
                     .imageUrl(info != null ? info.get(postcard.imageUrl) : "")
