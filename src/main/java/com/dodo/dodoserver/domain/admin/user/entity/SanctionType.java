@@ -18,8 +18,8 @@ public enum SanctionType {
 
     public LocalDateTime calculateEndedAt() {
         if (this == PERMANENT) {
-            // 영구 정지: 9999년 12월 31일
-            return LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+            // 영구 정지: 타임존 변환 시 MySQL DATETIME 범위를 넘지 않도록 안전하게 설정
+            return LocalDateTime.of(9999, 1, 1, 0, 0, 0);
         }
         if (this == LIFTED) {
             return LocalDateTime.now();
