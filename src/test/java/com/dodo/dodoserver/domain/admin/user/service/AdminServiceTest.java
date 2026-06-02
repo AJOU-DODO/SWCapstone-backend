@@ -78,4 +78,25 @@ class AdminServiceTest {
         assertThat(user.getSanctionedUntil().getYear()).isEqualTo(9999);
         verify(sanctionHistoryRepository).save(any(SanctionHistory.class));
     }
+
+    @Test
+    @DisplayName("유저 제재 즉시 해제 성공")
+    void liftSanction_success() {
+        // given
+        Long userId = 1L;
+        User user = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .build();
+        user.applySanction(java.time.LocalDateTime.now().plusDays(7));
+
+        given(userAdminRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when
+        adminService.liftSanction(userId);
+
+        // then
+        assertThat(user.getSanctionedUntil()).isNull();
+        verify(sanctionHistoryRepository).save(any(SanctionHistory.class));
+    }
 }

@@ -154,4 +154,15 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andExpect(jsonPath("$.code").value(ErrorCode.INPUT_VALIDATION_ERROR.getCode()));
     }
+
+    @Test
+    @DisplayName("유저 제재 해제 성공 - 관리자 권한")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void deleteSanctionUser_success() throws Exception {
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/admin/users/1/sanction")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
 }
