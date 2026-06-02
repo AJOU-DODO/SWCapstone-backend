@@ -85,6 +85,7 @@ class AdminPostcardControllerTest {
         // given
         AdminPostcardReportResponseDto responseDto = AdminPostcardReportResponseDto.builder()
                 .postcardId(1L)
+                .authorId(10L)
                 .authorNickname("유저1")
                 .build();
         given(adminPostcardService.getReportedPostcards(any(), any(), any()))
@@ -98,6 +99,7 @@ class AdminPostcardControllerTest {
                         .param("sort", "RECENT_REPORT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.content[0].authorId").value(10))
                 .andExpect(jsonPath("$.data.content[0].authorNickname").value("유저1"));
     }
 

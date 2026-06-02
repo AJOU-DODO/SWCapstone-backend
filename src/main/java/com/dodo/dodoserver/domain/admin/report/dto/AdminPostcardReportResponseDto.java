@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class AdminPostcardReportResponseDto {
     private Long postcardId;
+    private Long authorId;
     private String authorNickname;
     private String content;
     private String imageUrl;
