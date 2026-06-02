@@ -56,6 +56,7 @@ class AdminPostcardServiceTest {
         // given
         AdminPostcardReportResponseDto responseDto = AdminPostcardReportResponseDto.builder()
                 .postcardId(1L)
+                .authorId(10L)
                 .authorNickname("유저1")
                 .build();
         Page<AdminPostcardReportResponseDto> page = new PageImpl<>(Collections.singletonList(responseDto));
@@ -66,6 +67,7 @@ class AdminPostcardServiceTest {
 
         // then
         assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getAuthorId()).isEqualTo(10L);
         assertThat(result.getContent().get(0).getAuthorNickname()).isEqualTo("유저1");
     }
 
