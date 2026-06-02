@@ -55,7 +55,7 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                 .select(nest.id)
                 .from(nest)
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
-                .leftJoin(nestComment).on(nestComment.nest.eq(nest))
+                .leftJoin(nestComment).on(nestComment.nest.eq(nest).and(nestComment.deletedAt.isNull()))
                 .leftJoin(report).on(report.targetId.eq(nest.id).and(report.reportType.eq(ReportType.NEST)))
                 .where(dateCondition, deletedCondition)
                 .groupBy(nest.id)
@@ -101,7 +101,7 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
         Map<Long, Long> commentCountMap = queryFactory
                 .select(nestComment.nest.id, nestComment.count())
                 .from(nestComment)
-                .where(nestComment.nest.id.in(nestIds))
+                .where(nestComment.nest.id.in(nestIds), nestComment.deletedAt.isNull())
                 .groupBy(nestComment.nest.id)
                 .fetch().stream()
                 .collect(Collectors.toMap(t -> t.get(nestComment.nest.id), t -> t.get(nestComment.count())));
