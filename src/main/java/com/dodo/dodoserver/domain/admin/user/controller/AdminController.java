@@ -40,7 +40,7 @@ public class AdminController {
      * 유저 제재 해제
      */
     @DeleteMapping("/users/{userId}/sanction")
-    public ApiResponseDto<Void> deleteSanctionUser(@PathVariable Long userId) {
+    public ApiResponseDto<Void> deleteSanction(@PathVariable Long userId) {
         adminService.liftSanction(userId);
         return ApiResponseDto.success(null);
     }
