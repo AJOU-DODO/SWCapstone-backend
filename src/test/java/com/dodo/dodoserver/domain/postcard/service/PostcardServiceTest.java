@@ -253,6 +253,7 @@ class PostcardServiceTest {
     void getPostcardInventory_createdExchanged_success() {
         // given
         myPostcard.setExchanged(true);
+        myPostcard.setShared(false);
         myPostcard.setCurrentOwner(null);
         List<Postcard> exchangedList = List.of(myPostcard);
         Page<Postcard> inventoryPage = new PageImpl<>(exchangedList);
