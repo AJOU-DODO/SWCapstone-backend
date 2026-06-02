@@ -56,18 +56,17 @@ public class FcmService {
 
 		try {
 			BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
-			log.info("[NOTIFICATION] FCM Sent Successfully (Pure Data Message). Success count: {}, Failure count: {}",
+			log.info("FCM Sent Successfully (Pure Data Message). Success count: {}, Failure count: {}", 
 				response.getSuccessCount(), response.getFailureCount());
-			
-			if (response.getFailureCount() > 0) {
-				log.warn("[NOTIFICATION] FCM Partial Failures detected. Details:");
-				List<SendResponse> responses = response.getResponses();
-				for (int i = 0; i < responses.size(); i++) {
-					SendResponse sr = responses.get(i);
-					if (!sr.isSuccessful()) {
-						log.warn("[NOTIFICATION] Failure at index {}: Token={}, Error={}",
-							i, event.tokens().get(i), sr.getException().getMessage());
-					}
+
+			List<SendResponse> responses = response.getResponses();
+			for (int i = 0; i < responses.size(); i++) {
+				SendResponse sr = responses.get(i);
+				if (sr.isSuccessful()) {
+					log.info("[NOTIFICATION] Success at index {}: Token={}", i, event.tokens().get(i));
+				} else {
+					log.warn("[NOTIFICATION] Failure at index {}: Token={}, Error={}", 
+						i, event.tokens().get(i), sr.getException().getMessage());
 				}
 			}
 		} catch (FirebaseMessagingException e) {
