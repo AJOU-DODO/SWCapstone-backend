@@ -368,20 +368,20 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // Redis 기반 조회수 증가 (중복 방지 포함)
-        redisViewCountService.incrementViewCount(nestId, userId);
-
-        // 광고인 경우 클릭수 증가 (Redis 기반)
-        if (nest.isAd()) {
-            redisViewCountService.incrementAdClickCount(nestId);
-        }
-
         boolean isUnlocked = nest.isAd() 
                 || unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user); // 자기 자신일 경우 해금
 
         if (!isUnlocked) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
+        }
+
+        // Redis 기반 조회수 증가 (중복 방지 포함)
+        redisViewCountService.incrementViewCount(nestId, userId);
+
+        // 광고인 경우 클릭수 증가 (Redis 기반)
+        if (nest.isAd()) {
+            redisViewCountService.incrementAdClickCount(nestId);
         }
 
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
