@@ -2,11 +2,10 @@ package com.dodo.dodoserver.domain.admin.ad.service;
 
 import com.dodo.dodoserver.domain.ad.dao.AdProposalRepository;
 import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
+import com.dodo.dodoserver.domain.admin.ad.dao.AdAdminRepository;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
-import com.dodo.dodoserver.domain.admin.ad.dto.AdApproveRequestDto;
-import com.dodo.dodoserver.domain.admin.ad.dto.AdProposalAdminResponseDto;
-import com.dodo.dodoserver.domain.admin.ad.dto.AdvertiserAuthorityRequestDto;
+import com.dodo.dodoserver.domain.admin.ad.dto.*;
 import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
@@ -57,6 +56,8 @@ class AdminAdServiceTest {
     private NestRepository nestRepository;
     @Mock
     private NestAdInfoRepository nestAdInfoRepository;
+    @Mock
+    private AdAdminRepository adAdminRepository;
     @Mock
     private CategoryRepository categoryRepository;
     @Mock
@@ -223,5 +224,29 @@ class AdminAdServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getCategoryNames()).isEmpty();
         assertThat(result.get(1).getCategoryNames()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("게시된 광고 목록 조회 성공")
+    void getAdNests_success() {
+        // given
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        Nest nest = Nest.builder().id(1L).creator(user).title("광고").build();
+        com.dodo.dodoserver.domain.ad.entity.NestAdInfo adInfo = com.dodo.dodoserver.domain.ad.entity.NestAdInfo.builder()
+                .nest(nest)
+                .expiredAt(LocalDateTime.now().plusDays(7))
+                .priorityScore(5)
+                .build();
+        
+        given(adAdminRepository.findAllWithFilter(AdStatusFilter.ALL, pageable))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(adInfo)));
+
+        // when
+        org.springframework.data.domain.Page<AdNestAdminResponseDto> result = adminAdService.getAdNests(AdStatusFilter.ALL, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("광고");
+        verify(adAdminRepository).findAllWithFilter(AdStatusFilter.ALL, pageable);
     }
 }

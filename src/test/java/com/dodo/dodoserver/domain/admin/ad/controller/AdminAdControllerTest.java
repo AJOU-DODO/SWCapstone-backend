@@ -1,8 +1,6 @@
 package com.dodo.dodoserver.domain.admin.ad.controller;
 
-import com.dodo.dodoserver.domain.admin.ad.dto.AdApproveRequestDto;
-import com.dodo.dodoserver.domain.admin.ad.dto.AdProposalAdminResponseDto;
-import com.dodo.dodoserver.domain.admin.ad.dto.AdvertiserAuthorityRequestDto;
+import com.dodo.dodoserver.domain.admin.ad.dto.*;
 import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.ad.service.AdminAdService;
 import com.dodo.dodoserver.global.config.AppProperties;
@@ -19,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -146,5 +146,24 @@ class AdminAdControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
+
+    @Test
+    @DisplayName("게시된 광고 목록 조회 성공")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void getAdNests_success() throws Exception {
+        AdNestAdminResponseDto responseDto = AdNestAdminResponseDto.builder()
+                .id(1L)
+                .title("게시된 광고")
+                .advertiserNickname("광고주")
+                .build();
+
+        given(adminAdService.getAdNests(eq(AdStatusFilter.ALL), any())).willReturn(new PageImpl<>(List.of(responseDto)));
+
+        mockMvc.perform(get("/api/v1/admin/ads/nests")
+                        .param("status", "ALL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.content[0].title").value("게시된 광고"));
     }
 }
