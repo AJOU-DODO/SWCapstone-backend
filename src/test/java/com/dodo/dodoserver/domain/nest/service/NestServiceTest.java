@@ -236,27 +236,44 @@ class NestServiceTest {
     }
 
     @Test
-    @DisplayName("둥지 상세 조회 - 미해금 시 ")
+    @DisplayName("둥지 상세 조회 실패 - 미해금 시")
     void getNestDetail_locked() {
         Long nestId = 1L;
         User creator = User.builder().id(2L).nickname("작성자").build();
-        Nest nest = Nest.builder().id(nestId).title("비밀").content("내용").creator(creator).images(new ArrayList<>()).build();
+        Nest nest = Nest.builder().id(nestId).title("비밀").content("내용").creator(creator).images(new ArrayList<>()).isAd(false).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
+
+        assertThatThrownBy(() -> nestService.getNestDetail(user.getId(), nestId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.NEST_NOT_UNLOCKED.getMessage());
+
+        verify(redisViewCountService, never()).incrementViewCount(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("둥지 상세 조회 - 광고 둥지는 미해금 시에도 조회 성공")
+    void getNestDetail_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).nickname("광고주").build();
+        Nest nest = Nest.builder().id(nestId).title("광고").content("내용").creator(creator).images(new ArrayList<>()).isAd(true).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        // 광고이므로 unlockHistoryRepository.existsByUserAndNest() 호출은 short-circuit 되어 호출되지 않음
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
-        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(5L);
+        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(0L);
 
         NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
 
         assertThat(response.getContent()).isEqualTo("내용");
-        assertThat(response.isUnlocked()).isFalse();
-        assertThat(response.getMyReaction()).isNull();
-        assertThat(response.isMine()).isFalse();
+        assertThat(response.isUnlocked()).isTrue();
         verify(redisViewCountService).incrementViewCount(nestId, user.getId());
+        verify(redisViewCountService).incrementAdClickCount(nestId);
     }
 
     @Test
