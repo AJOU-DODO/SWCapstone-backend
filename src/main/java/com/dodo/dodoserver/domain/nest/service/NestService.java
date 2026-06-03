@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.nest.service;
 
 import static com.dodo.dodoserver.global.common.constants.NestConstants.*;
 
+import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
@@ -49,6 +50,7 @@ public class NestService {
     private final NestNotificationService nestNotificationService;
     private final RedisViewCountService redisViewCountService;
     private final PostcardRepository postcardRepository;
+    private final NestAdInfoRepository nestAdInfoRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -369,6 +371,11 @@ public class NestService {
         // Redis 기반 조회수 증가 (중복 방지 포함)
         redisViewCountService.incrementViewCount(nestId, userId);
 
+        // 광고인 경우 클릭수 증가
+        if (nest.isAd()) {
+            nestAdInfoRepository.incrementClicks(nestId);
+        }
+
         boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user); // 자기 자신일 경우 해금
 
@@ -532,13 +539,31 @@ public class NestService {
 
 
     /**
-     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
+     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회 (광고 제외)
      */
     @Transactional(readOnly = true)
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
         double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
         return nestRepository.findNearbyPins(point, radius, categoryIds);
+    }
+
+    /**
+     * 현재 위치 기반 반경 내 광고 둥지 핀 정보 조회 및 노출수 증가
+     */
+    @Transactional
+    public List<NestPinResponseDto> getNearbyAdPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
+        double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
+        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+
+        List<NestPinResponseDto> adPins = nestRepository.findNearbyAdPins(point, radius, categoryIds, 5); // 최대 5개 제한
+
+        if (!adPins.isEmpty()) {
+            List<Long> adNestIds = adPins.stream().map(NestPinResponseDto::getId).toList();
+            nestAdInfoRepository.incrementImpressions(adNestIds);
+        }
+
+        return adPins;
     }
 
     /**
