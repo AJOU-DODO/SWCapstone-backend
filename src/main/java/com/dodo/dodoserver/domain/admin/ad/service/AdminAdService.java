@@ -105,7 +105,9 @@ public class AdminAdService {
 
         // Extract all unique category IDs
         List<Long> allCategoryIds = proposals.stream()
-                .flatMap(p -> p.getCategoryIds().stream())
+                .map(AdProposal::getCategoryIds)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
                 .distinct()
                 .toList();
 
@@ -115,10 +117,11 @@ public class AdminAdService {
 
         return proposals.stream()
                 .map(proposal -> {
-                    List<String> categoryNames = proposal.getCategoryIds().stream()
+                    List<Long> categoryIds = proposal.getCategoryIds();
+                    List<String> categoryNames = categoryIds != null ? categoryIds.stream()
                             .map(categoryMap::get)
                             .filter(Objects::nonNull)
-                            .toList();
+                            .toList() : List.of();
                     return AdProposalAdminResponseDto.from(proposal, categoryNames);
                 })
                 .toList();
