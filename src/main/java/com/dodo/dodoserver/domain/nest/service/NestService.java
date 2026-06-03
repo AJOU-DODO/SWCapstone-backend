@@ -258,7 +258,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!nest.isAd() && !nest.getCreator().getId().equals(userId) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        if (!isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -368,9 +368,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        boolean isUnlocked = nest.isAd() 
-                || unlockHistoryRepository.existsByUserAndNest(user, nest) 
-                || nest.getCreator().getId().equals(userId); // 자기 자신일 경우 해금
+        boolean isUnlocked = isNestUnlockedForUser(nest, user);
 
         if (!isUnlocked) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
@@ -432,10 +430,7 @@ public class NestService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
         // 권한 체크 (해금 여부)
-        boolean isUnlocked = nest.isAd() 
-                || (currentUser != null && (nest.getCreator().getId().equals(currentUser.getId()) || unlockHistoryRepository.existsByUserAndNest(currentUser, nest)));
-
-        if (!isUnlocked) {
+        if (!isNestUnlockedForUser(nest, currentUser)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -534,11 +529,7 @@ public class NestService {
 
         Nest nest = comment.getNest();
         // 권한 체크 (해금 여부)
-        boolean isUnlocked = nest.isAd() 
-                || nest.getCreator().getId().equals(userId) 
-                || unlockHistoryRepository.existsByUserAndNest(user, nest);
-
-        if (!isUnlocked) {
+        if (!isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -637,7 +628,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (nest.isAd() || nest.getCreator().getId().equals(userId) || unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        if (isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.ALREADY_UNLOCKED);
         }
 
@@ -670,7 +661,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!nest.isAd() && !unlockHistoryRepository.existsByUserAndNest(user, nest) && !nest.getCreator().getId().equals(userId)) {
+        if (!isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -705,5 +696,16 @@ public class NestService {
         if (type == ReactionType.LIKE) {
             nestNotificationService.sendNestLikeNotification(user, nest);
         }
+    }
+
+    /**
+     * 사용자가 둥지를 해금했거나 접근 가능한 상태인지 확인합니다.
+     * (광고 둥지, 작성자 본인, 해금 이력 보유 여부 검사)
+     */
+    public boolean isNestUnlockedForUser(Nest nest, User user) {
+        if (nest.isAd()) return true;
+        if (user == null) return false;
+        if (nest.getCreator().getId().equals(user.getId())) return true;
+        return unlockHistoryRepository.existsByUserAndNest(user, nest);
     }
 }

@@ -1,8 +1,8 @@
 package com.dodo.dodoserver.domain.postcard.service;
 
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
-import com.dodo.dodoserver.domain.nest.dao.UnlockHistoryRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
+import com.dodo.dodoserver.domain.nest.service.NestService;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardReactionRepository;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.PostcardExchangeRequestDto;
@@ -48,7 +48,7 @@ class PostcardServiceTest {
     @Mock
     private NestRepository nestRepository;
     @Mock
-    private UnlockHistoryRepository unlockHistoryRepository;
+    private NestService nestService;
     @Mock
     private PostcardNotificationService postcardNotificationService;
     @Mock
@@ -92,7 +92,7 @@ class PostcardServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
-        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        given(nestService.isNestUnlockedForUser(nest, user)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
@@ -119,7 +119,7 @@ class PostcardServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
-        // unlockHistoryRepository.existsByUserAndNest 호출하지 않아도 성공해야 함
+        given(nestService.isNestUnlockedForUser(nest, user)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
@@ -140,7 +140,7 @@ class PostcardServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
-        // unlockHistoryRepository.existsByUserAndNest 호출하지 않아도 성공해야 함
+        given(nestService.isNestUnlockedForUser(nest, user)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
@@ -161,7 +161,7 @@ class PostcardServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
-        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        given(nestService.isNestUnlockedForUser(nest, user)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
         given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
 
@@ -180,7 +180,7 @@ class PostcardServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
-        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        given(nestService.isNestUnlockedForUser(nest, user)).willReturn(true);
         given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
 
         // when & then

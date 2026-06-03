@@ -285,7 +285,7 @@ class NestServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
-        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        // 작성자 본인이므로 unlockHistoryRepository.existsByUserAndNest() 호출은 short-circuit 되어 호출되지 않음
         given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.of(reaction));
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
