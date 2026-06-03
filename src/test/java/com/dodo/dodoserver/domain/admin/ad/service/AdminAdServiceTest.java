@@ -91,6 +91,7 @@ class AdminAdServiceTest {
     @Test
     @DisplayName("광고 신청 승인 성공")
     void approveProposal_success() {
+        // given
         user.setRole(Role.ADVERTISER);
         AdProposal proposal = AdProposal.builder()
                 .id(10L)
@@ -116,8 +117,10 @@ class AdminAdServiceTest {
         given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(1L);
         given(nestRepository.save(any(Nest.class))).willAnswer(inv -> inv.getArgument(0));
 
+        // when
         adminAdService.approveProposal(10L, requestDto);
 
+        // then
         verify(nestRepository).save(any(Nest.class));
         verify(nestAdInfoRepository).save(any());
         verify(adProposalRepository).delete(proposal);
@@ -126,6 +129,7 @@ class AdminAdServiceTest {
     @Test
     @DisplayName("광고 신청 승인 실패 - 광고주 권한 만료")
     void approveProposal_fail_authorityExpired() {
+        // given
         user.setRole(Role.ADVERTISER);
         AdProposal proposal = AdProposal.builder()
                 .id(10L)
@@ -141,6 +145,7 @@ class AdminAdServiceTest {
         given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
         given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
 
+        // when & then
         assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -150,6 +155,7 @@ class AdminAdServiceTest {
     @Test
     @DisplayName("광고 신청 승인 실패 - 허용 개수 초과")
     void approveProposal_fail_limitExceeded() {
+        // given
         user.setRole(Role.ADVERTISER);
         AdProposal proposal = AdProposal.builder()
                 .id(10L)
@@ -167,6 +173,7 @@ class AdminAdServiceTest {
         given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
         given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(3L); // 이미 3개
 
+        // when & then
         assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -176,14 +183,17 @@ class AdminAdServiceTest {
     @Test
     @DisplayName("대기 중인 광고 신청 목록 조회 성공 - 카테고리 ID가 null인 경우 포함")
     void getPendingProposals_success_withNullCategoryIds() {
+        // given
         AdProposal p1 = AdProposal.builder().id(1L).advertiser(user).categoryIds(List.of(1L)).status(AdProposalStatus.PENDING).build();
         AdProposal p2 = AdProposal.builder().id(2L).advertiser(user).categoryIds(null).status(AdProposalStatus.PENDING).build(); // null 카테고리
         
         given(adProposalRepository.findAllByStatus(AdProposalStatus.PENDING)).willReturn(List.of(p1, p2));
         given(categoryRepository.findAllById(any())).willReturn(List.of());
 
+        // when
         List<AdProposalAdminResponseDto> result = adminAdService.getPendingProposals();
 
+        // then
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getCategoryNames()).isEmpty();
         assertThat(result.get(1).getCategoryNames()).isEmpty();

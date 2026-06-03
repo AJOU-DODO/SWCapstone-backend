@@ -189,6 +189,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 해금 성공")
     void unlockNest_success() {
+        // given
         Long nestId = 1L;
         User creator = User.builder().id(2L).build();
         Nest nest = Nest.builder().id(nestId).creator(creator).unlockRadius(100).build();
@@ -199,14 +200,17 @@ class NestServiceTest {
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(nestRepository.calculateDistance(eq(nestId), any(Point.class))).willReturn(50.0);
 
+        // when
         nestService.unlockNest(user.getId(), nestId, requestDto);
 
+        // then
         verify(unlockHistoryRepository).save(any(UnlockHistory.class));
     }
 
     @Test
     @DisplayName("둥지 해금 실패 - 이미 해금됨")
     void unlockNest_fail_alreadyUnlocked() {
+        // given
         Long nestId = 1L;
         User creator = User.builder().id(2L).build();
         Nest nest = Nest.builder().id(nestId).creator(creator).build();
@@ -216,6 +220,7 @@ class NestServiceTest {
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
 
+        // when & then
         assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
@@ -224,6 +229,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 해금 실패 - 작성자 본인")
     void unlockNest_fail_isCreator() {
+        // given
         Long nestId = 1L;
         Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
@@ -231,6 +237,7 @@ class NestServiceTest {
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
+        // when & then
         assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
@@ -257,6 +264,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 상세 조회 - 광고 둥지는 미해금 시에도 조회 성공")
     void getNestDetail_ad_success() {
+        // given
         Long nestId = 1L;
         User creator = User.builder().id(2L).nickname("광고주").build();
         Nest nest = Nest.builder().id(nestId).title("광고").content("내용").creator(creator).images(new ArrayList<>()).isAd(true).build();
@@ -269,8 +277,10 @@ class NestServiceTest {
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
         given(redisViewCountService.getCachedViewCount(nestId)).willReturn(0L);
 
+        // when
         NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
 
+        // then
         assertThat(response.getContent()).isEqualTo("내용");
         assertThat(response.isUnlocked()).isTrue();
         verify(redisViewCountService).incrementViewCount(nestId, user.getId());
@@ -619,6 +629,7 @@ class NestServiceTest {
     @Test
     @DisplayName("근처 둥지 핀 조회 성공")
     void getNearbyPins_success() {
+        // given
         Double lat = 37.5;
         Double lng = 127.0;
         Double radius = 500.0;
@@ -629,8 +640,10 @@ class NestServiceTest {
         given(nestRepository.findNearbyPins(any(Point.class), eq(radius), eq(categoryIds)))
                 .willReturn(List.of(pin));
 
+        // when
         List<NestPinResponseDto> result = nestService.getNearbyPins(lat, lng, radius, categoryIds);
 
+        // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(100L);
     }
@@ -638,6 +651,7 @@ class NestServiceTest {
     @Test
     @DisplayName("근처 광고 핀 조회 - 노출수 증가 확인")
     void getNearbyAdPins_success() {
+        // given
         Double lat = 37.5;
         Double lng = 127.0;
         Double radius = 500.0;
@@ -649,8 +663,10 @@ class NestServiceTest {
         given(nestRepository.findNearbyAdPins(any(Point.class), eq(radius), eq(categoryIds), eq(5)))
                 .willReturn(adPins);
 
+        // when
         List<NestPinResponseDto> result = nestService.getNearbyAdPins(lat, lng, radius, categoryIds);
 
+        // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(100L);
         

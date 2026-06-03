@@ -46,10 +46,13 @@ class RedisViewCountServiceTest {
     @Test
     @DisplayName("광고 노출수 증가 - Redis 저장 확인")
     void incrementAdImpressionCount_success() {
+        // given
         List<Long> nestIds = List.of(100L, 200L);
 
+        // when
         redisViewCountService.incrementAdImpressionCount(nestIds);
 
+        // then
         verify(valueOperations).increment("nest:ad:impressionCount:100");
         verify(setOperations).add("nest:ad:updatedImpressions", "100");
         verify(valueOperations).increment("nest:ad:impressionCount:200");
@@ -59,14 +62,17 @@ class RedisViewCountServiceTest {
     @Test
     @DisplayName("광고 노출수 DB 동기화 성공")
     void syncAdImpressionCountToDb_success() {
+        // given
         String updatedImpressionsKey = "nest:ad:updatedImpressions";
         given(setOperations.members("nest:updatedViews")).willReturn(Set.of());
         given(setOperations.members("nest:ad:updatedClicks")).willReturn(Set.of());
         given(setOperations.members(updatedImpressionsKey)).willReturn(Set.of("100"));
         given(valueOperations.getAndDelete("nest:ad:impressionCount:100")).willReturn("5");
 
+        // when
         redisViewCountService.syncToDb();
 
+        // then
         verify(nestAdInfoRepository).incrementImpressionsBatch(100L, 5L);
         verify(setOperations).remove(updatedImpressionsKey, "100");
     }

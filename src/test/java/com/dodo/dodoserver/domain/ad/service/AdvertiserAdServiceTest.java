@@ -103,6 +103,7 @@ class AdvertiserAdServiceTest {
     @Test
     @DisplayName("광고 신청 수정 실패 - 반려된 신청서 재제출 시 허용 개수 초과")
     void updateProposal_fail_limitExceeded_whenResubmittingRejected() {
+        // given
         Long proposalId = 100L;
         AdProposal proposal = AdProposal.builder()
                 .id(proposalId)
@@ -119,6 +120,7 @@ class AdvertiserAdServiceTest {
         given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(3L); // 이미 한도 도달
         given(adProposalRepository.countByAdvertiserAndStatus(user, AdProposalStatus.PENDING)).willReturn(0L);
 
+        // when & then
         assertThatThrownBy(() -> advertiserAdService.updateProposal(user.getId(), proposalId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -128,6 +130,7 @@ class AdvertiserAdServiceTest {
     @Test
     @DisplayName("광고 신청 수정 실패 - 권한 만료")
     void updateProposal_fail_authorityExpired() {
+        // given
         Long proposalId = 100L;
         AdProposal proposal = AdProposal.builder()
                 .id(proposalId)
@@ -149,6 +152,7 @@ class AdvertiserAdServiceTest {
         given(adProposalRepository.findById(proposalId)).willReturn(Optional.of(proposal));
         given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(expiredAuthority));
 
+        // when & then
         assertThatThrownBy(() -> advertiserAdService.updateProposal(user.getId(), proposalId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -158,6 +162,7 @@ class AdvertiserAdServiceTest {
     @Test
     @DisplayName("내 광고 신청 내역 조회 성공 - 카테고리 ID가 null인 경우 포함")
     void getMyProposals_success_withNullCategoryIds() {
+        // given
         AdProposal p1 = AdProposal.builder().id(1L).advertiser(user).categoryIds(List.of(1L)).build();
         AdProposal p2 = AdProposal.builder().id(2L).advertiser(user).categoryIds(null).build(); // null 카테고리
         
@@ -165,8 +170,10 @@ class AdvertiserAdServiceTest {
         given(adProposalRepository.findAllByAdvertiser(user)).willReturn(List.of(p1, p2));
         given(categoryRepository.findAllById(any())).willReturn(List.of());
 
+        // when
         List<AdProposalResponseDto> result = advertiserAdService.getMyProposals(user.getId());
 
+        // then
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getCategoryNames()).isEmpty();
         assertThat(result.get(1).getCategoryNames()).isEmpty();
