@@ -3,8 +3,10 @@ package com.dodo.dodoserver.domain.ad.service;
 import com.dodo.dodoserver.domain.ad.dao.AdProposalRepository;
 import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
 import com.dodo.dodoserver.domain.ad.dto.AdProposalRequestDto;
+import com.dodo.dodoserver.domain.ad.dto.AdProposalResponseDto;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
+import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.user.dao.AdvertiserAuthorityRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
@@ -21,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +48,8 @@ class AdvertiserAdServiceTest {
     private NestRepository nestRepository;
     @Mock
     private NestAdInfoRepository nestAdInfoRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
 
     private User user;
     private AdvertiserAuthority authority;
@@ -148,5 +153,22 @@ class AdvertiserAdServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+    }
+
+    @Test
+    @DisplayName("내 광고 신청 내역 조회 성공 - 카테고리 ID가 null인 경우 포함")
+    void getMyProposals_success_withNullCategoryIds() {
+        AdProposal p1 = AdProposal.builder().id(1L).advertiser(user).categoryIds(List.of(1L)).build();
+        AdProposal p2 = AdProposal.builder().id(2L).advertiser(user).categoryIds(null).build(); // null 카테고리
+        
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(adProposalRepository.findAllByAdvertiser(user)).willReturn(List.of(p1, p2));
+        given(categoryRepository.findAllById(any())).willReturn(List.of());
+
+        List<AdProposalResponseDto> result = advertiserAdService.getMyProposals(user.getId());
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getCategoryNames()).isEmpty();
+        assertThat(result.get(1).getCategoryNames()).isEmpty();
     }
 }

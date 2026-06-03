@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdApproveRequestDto;
+import com.dodo.dodoserver.domain.admin.ad.dto.AdProposalAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdvertiserAuthorityRequestDto;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
@@ -29,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -169,5 +171,21 @@ class AdminAdServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("대기 중인 광고 신청 목록 조회 성공 - 카테고리 ID가 null인 경우 포함")
+    void getPendingProposals_success_withNullCategoryIds() {
+        AdProposal p1 = AdProposal.builder().id(1L).advertiser(user).categoryIds(List.of(1L)).status(AdProposalStatus.PENDING).build();
+        AdProposal p2 = AdProposal.builder().id(2L).advertiser(user).categoryIds(null).status(AdProposalStatus.PENDING).build(); // null 카테고리
+        
+        given(adProposalRepository.findAllByStatus(AdProposalStatus.PENDING)).willReturn(List.of(p1, p2));
+        given(categoryRepository.findAllById(any())).willReturn(List.of());
+
+        List<AdProposalAdminResponseDto> result = adminAdService.getPendingProposals();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getCategoryNames()).isEmpty();
+        assertThat(result.get(1).getCategoryNames()).isEmpty();
     }
 }
