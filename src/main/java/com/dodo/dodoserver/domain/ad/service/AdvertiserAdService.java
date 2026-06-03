@@ -9,6 +9,8 @@ import com.dodo.dodoserver.domain.ad.dto.AdvertiserMyAccountResponseDto;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
 import com.dodo.dodoserver.domain.ad.entity.NestAdInfo;
+import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
+import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.nest.dto.NestSimpleResponseDto;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
@@ -29,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +45,7 @@ public class AdvertiserAdService {
     private final AdProposalRepository adProposalRepository;
     private final NestAdInfoRepository nestAdInfoRepository;
     private final NestRepository nestRepository;
+    private final CategoryRepository categoryRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -141,8 +147,26 @@ public class AdvertiserAdService {
         User advertiser = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return adProposalRepository.findAllByAdvertiser(advertiser).stream()
-                .map(AdProposalResponseDto::from)
+        List<AdProposal> proposals = adProposalRepository.findAllByAdvertiser(advertiser);
+
+        // Extract all unique category IDs from all proposals
+        List<Long> allCategoryIds = proposals.stream()
+                .flatMap(p -> p.getCategoryIds().stream())
+                .distinct()
+                .toList();
+
+        // Fetch category names and create a map (ID -> Name)
+        Map<Long, String> categoryMap = categoryRepository.findAllById(allCategoryIds).stream()
+                .collect(Collectors.toMap(Category::getId, Category::getName));
+
+        return proposals.stream()
+                .map(proposal -> {
+                    List<String> categoryNames = proposal.getCategoryIds().stream()
+                            .map(categoryMap::get)
+                            .filter(Objects::nonNull)
+                            .toList();
+                    return AdProposalResponseDto.from(proposal, categoryNames);
+                })
                 .toList();
     }
 

@@ -31,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -98,8 +101,26 @@ public class AdminAdService {
      */
     @Transactional(readOnly = true)
     public List<AdProposalAdminResponseDto> getPendingProposals() {
-        return adProposalRepository.findAllByStatus(AdProposalStatus.PENDING).stream()
-                .map(AdProposalAdminResponseDto::from)
+        List<AdProposal> proposals = adProposalRepository.findAllByStatus(AdProposalStatus.PENDING);
+
+        // Extract all unique category IDs
+        List<Long> allCategoryIds = proposals.stream()
+                .flatMap(p -> p.getCategoryIds().stream())
+                .distinct()
+                .toList();
+
+        // Fetch category names and create a map
+        Map<Long, String> categoryMap = categoryRepository.findAllById(allCategoryIds).stream()
+                .collect(Collectors.toMap(Category::getId, Category::getName));
+
+        return proposals.stream()
+                .map(proposal -> {
+                    List<String> categoryNames = proposal.getCategoryIds().stream()
+                            .map(categoryMap::get)
+                            .filter(Objects::nonNull)
+                            .toList();
+                    return AdProposalAdminResponseDto.from(proposal, categoryNames);
+                })
                 .toList();
     }
 

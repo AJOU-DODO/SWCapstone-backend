@@ -21,11 +21,12 @@ public class AdProposalAdminResponseDto {
     private Integer unlockRadius;
     private List<String> imageUrls;
     private List<Long> categoryIds;
+    private List<String> categoryNames;
     private AdProposalStatus status;
     private String rejectReason;
     private LocalDateTime createdAt;
 
-    public static AdProposalAdminResponseDto from(AdProposal proposal) {
+    public static AdProposalAdminResponseDto from(AdProposal proposal, List<String> categoryNames) {
         return AdProposalAdminResponseDto.builder()
                 .id(proposal.getId())
                 .advertiserId(proposal.getAdvertiser().getId())
@@ -37,9 +38,14 @@ public class AdProposalAdminResponseDto {
                 .unlockRadius(proposal.getUnlockRadius())
                 .imageUrls(proposal.getImageUrls())
                 .categoryIds(proposal.getCategoryIds())
+                .categoryNames(categoryNames)
                 .status(proposal.getStatus())
                 .rejectReason(proposal.getRejectReason())
                 .createdAt(proposal.getCreatedAt())
                 .build();
+    }
+
+    public static AdProposalAdminResponseDto from(AdProposal proposal) {
+        return from(proposal, null);
     }
 }
