@@ -63,6 +63,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(WHITE_LIST).permitAll()
 				.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+				.requestMatchers("/api/v1/advertiser/**").hasRole("ADVERTISER")
 				.anyRequest().authenticated()
 			)
 
