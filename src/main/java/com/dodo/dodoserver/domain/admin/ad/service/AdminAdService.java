@@ -10,6 +10,7 @@ import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
+import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.nest.entity.NestCategory;
@@ -48,6 +49,7 @@ public class AdminAdService {
     private final NestAdInfoRepository nestAdInfoRepository;
     private final CategoryRepository categoryRepository;
     private final NestCategoryRepository nestCategoryRepository;
+    private final NestCommentRepository nestCommentRepository;
 
     /**
      * 이메일로 유저 검색
@@ -61,6 +63,8 @@ public class AdminAdService {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .createdAt(user.getCreatedAt())
+                        .nestCount(nestRepository.countByCreator(user))
+                        .commentCount(nestCommentRepository.countByUser(user))
                         .sanctionedUntil(user.getSanctionedUntil())
                         .isSanctioned(user.getSanctionedUntil() != null && user.getSanctionedUntil().isAfter(LocalDateTime.now()))
                         .build())

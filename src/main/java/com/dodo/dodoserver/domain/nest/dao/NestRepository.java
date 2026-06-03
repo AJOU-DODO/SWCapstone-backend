@@ -19,6 +19,8 @@ public interface NestRepository extends JpaRepository<Nest, Long>, NestRepositor
 
     long countByCreatorAndIsAdTrueAndDeletedAtIsNull(User creator);
 
+    long countByCreator(User creator);
+
     List<Nest> findAllByCreatorAndIsAdTrueAndDeletedAtIsNull(User creator);
 
     List<Nest> findAllByCreatorAndIsAdTrue(User creator);

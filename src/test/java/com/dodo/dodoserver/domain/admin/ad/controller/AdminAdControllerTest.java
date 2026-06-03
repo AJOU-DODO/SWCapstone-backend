@@ -3,6 +3,7 @@ package com.dodo.dodoserver.domain.admin.ad.controller;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdApproveRequestDto;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdProposalAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdvertiserAuthorityRequestDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.ad.service.AdminAdService;
 import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
@@ -72,6 +73,30 @@ class AdminAdControllerTest {
             filterChain.doFilter(request, response);
             return null;
         }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("광고주 권한 부여를 위한 유저 검색 성공")
+    @WithMockUserPrincipal(role = "ROLE_ADMIN")
+    void searchUsers_success() throws Exception {
+        UserAdminResponseDto responseDto = UserAdminResponseDto.builder()
+                .id(1L)
+                .nickname("도도대장")
+                .email("test@dodo.com")
+                .nestCount(5L)
+                .commentCount(10L)
+                .isSanctioned(false)
+                .build();
+
+        given(adminAdService.searchUsersByEmail("test@dodo.com")).willReturn(List.of(responseDto));
+
+        mockMvc.perform(get("/api/v1/admin/ads/users/search")
+                        .param("email", "test@dodo.com"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data[0].nickname").value("도도대장"))
+                .andExpect(jsonPath("$.data[0].nestCount").value(5))
+                .andExpect(jsonPath("$.data[0].commentCount").value(10));
     }
 
     @Test

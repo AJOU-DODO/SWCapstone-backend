@@ -7,8 +7,10 @@ import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdApproveRequestDto;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdProposalAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.ad.dto.AdvertiserAuthorityRequestDto;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
+import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.user.dao.AdvertiserAuthorityRepository;
@@ -59,6 +61,8 @@ class AdminAdServiceTest {
     private CategoryRepository categoryRepository;
     @Mock
     private NestCategoryRepository nestCategoryRepository;
+    @Mock
+    private NestCommentRepository nestCommentRepository;
 
     private User user;
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
@@ -70,6 +74,28 @@ class AdminAdServiceTest {
                 .email("advertiser@test.com")
                 .role(Role.USER)
                 .build();
+    }
+
+    @Test
+    @DisplayName("이메일로 유저 검색 성공 - 활동량 데이터 포함")
+    void searchUsersByEmail_success_withActivityCounts() {
+        // given
+        String email = "test@dodo.com";
+        user.setEmail(email);
+        
+        given(userRepository.findAllByEmailContaining(email)).willReturn(List.of(user));
+        given(nestRepository.countByCreator(user)).willReturn(5L);
+        given(nestCommentRepository.countByUser(user)).willReturn(10L);
+
+        // when
+        List<UserAdminResponseDto> result = adminAdService.searchUsersByEmail(email);
+
+        // then
+        assertThat(result).hasSize(1);
+        UserAdminResponseDto dto = result.get(0);
+        assertThat(dto.getEmail()).isEqualTo(email);
+        assertThat(dto.getNestCount()).isEqualTo(5L);
+        assertThat(dto.getCommentCount()).isEqualTo(10L);
     }
 
     @Test
