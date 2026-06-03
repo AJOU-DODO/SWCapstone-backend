@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -57,8 +59,17 @@ public class AdminService {
         
         sanctionHistoryRepository.save(history);
 
-        // 3. 기존 리프레쉬 토큰 무효화 (Redis에서 삭제)
-        refreshTokenRepository.deleteById(userId);
+        // 3. 기존 리프레쉬 토큰 무효화 (Redis에서 삭제 - DB 트랜잭션 커밋 후 실행하여 일관성 보장)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    refreshTokenRepository.deleteById(userId);
+                }
+            });
+        } else {
+            refreshTokenRepository.deleteById(userId);
+        }
     }
 
     /**
