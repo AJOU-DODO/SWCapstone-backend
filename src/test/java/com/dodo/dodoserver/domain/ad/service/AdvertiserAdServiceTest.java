@@ -7,6 +7,7 @@ import com.dodo.dodoserver.domain.ad.dto.AdProposalResponseDto;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
+import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import com.dodo.dodoserver.domain.user.dao.AdvertiserAuthorityRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
@@ -84,6 +85,48 @@ class AdvertiserAdServiceTest {
     }
 
     @Test
+    @DisplayName("광고 신청 실패 - 존재하지 않는 카테고리")
+    void createProposal_fail_invalidCategory() {
+        // given
+        AdProposalRequestDto requestDto = new AdProposalRequestDto();
+        requestDto.setCategoryIds(List.of(999L));
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(1L);
+        given(adProposalRepository.countByAdvertiserAndStatus(user, AdProposalStatus.PENDING)).willReturn(0L);
+        // 999L에 해당하는 카테고리가 없음
+        given(categoryRepository.findAllById(List.of(999L))).willReturn(List.of());
+
+        // when & then
+        assertThatThrownBy(() -> advertiserAdService.createProposal(user.getId(), requestDto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.CATEGORY_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("광고 신청 실패 - 삭제된 카테고리")
+    void createProposal_fail_deletedCategory() {
+        // given
+        AdProposalRequestDto requestDto = new AdProposalRequestDto();
+        requestDto.setCategoryIds(List.of(1L));
+        Category deletedCategory = Category.builder().id(1L).name("삭제된카테고리").deletedAt(LocalDateTime.now()).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(1L);
+        given(adProposalRepository.countByAdvertiserAndStatus(user, AdProposalStatus.PENDING)).willReturn(0L);
+        given(categoryRepository.findAllById(List.of(1L))).willReturn(List.of(deletedCategory));
+
+        // when & then
+        assertThatThrownBy(() -> advertiserAdService.createProposal(user.getId(), requestDto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ALREADY_DELETED_CATEGORY);
+    }
+
+    @Test
     @DisplayName("광고 신청 실패 - 허용 개수 초과")
     void createProposal_fail_limitExceeded() {
         AdProposalRequestDto requestDto = new AdProposalRequestDto();
@@ -157,6 +200,33 @@ class AdvertiserAdServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+    }
+
+    @Test
+    @DisplayName("광고 신청 수정 실패 - 존재하지 않는 카테고리")
+    void updateProposal_fail_invalidCategory() {
+        // given
+        Long proposalId = 100L;
+        AdProposal proposal = AdProposal.builder()
+                .id(proposalId)
+                .advertiser(user)
+                .status(AdProposalStatus.REJECTED)
+                .build();
+        
+        AdProposalRequestDto requestDto = new AdProposalRequestDto();
+        requestDto.setCategoryIds(List.of(999L));
+        requestDto.setLatitude(37.5);
+        requestDto.setLongitude(127.0);
+
+        given(adProposalRepository.findById(proposalId)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(categoryRepository.findAllById(List.of(999L))).willReturn(List.of());
+
+        // when & then
+        assertThatThrownBy(() -> advertiserAdService.updateProposal(user.getId(), proposalId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.CATEGORY_NOT_FOUND);
     }
 
     @Test

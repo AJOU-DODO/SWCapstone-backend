@@ -76,6 +76,7 @@ public class AdvertiserAdService {
 
         AdvertiserAuthority authority = getValidAuthority(advertiser);
         checkAdCountLimit(advertiser, authority);
+        validateCategoryIds(requestDto.getCategoryIds());
 
         Point point = geometryFactory.createPoint(new Coordinate(requestDto.getLongitude(), requestDto.getLatitude()));
 
@@ -119,6 +120,8 @@ public class AdvertiserAdService {
             checkAdCountLimit(advertiser, authority);
         }
 
+        validateCategoryIds(requestDto.getCategoryIds());
+
         Point point = geometryFactory.createPoint(new Coordinate(requestDto.getLongitude(), requestDto.getLatitude()));
         proposal.setPoint(point);
         proposal.setTitle(requestDto.getTitle());
@@ -132,6 +135,22 @@ public class AdvertiserAdService {
         proposal.setRejectReason(null);
 
         log.info("광고 신청 수정 및 재심사 요청 완료: ProposalId={}", proposalId);
+    }
+
+    private void validateCategoryIds(List<Long> categoryIds) {
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            List<Category> categories = categoryRepository.findAllById(categoryIds);
+
+            if (categories.size() != categoryIds.size()) {
+                throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+            }
+
+            for (Category category : categories) {
+                if (category.getDeletedAt() != null) {
+                    throw new BusinessException(ErrorCode.ALREADY_DELETED_CATEGORY);
+                }
+            }
+        }
     }
 
     private AdvertiserAuthority getValidAuthority(User advertiser) {
