@@ -15,7 +15,8 @@ public interface NestAdInfoRepository extends JpaRepository<NestAdInfo, Long> {
     Optional<NestAdInfo> findByNest(Nest nest);
     Optional<NestAdInfo> findByNestId(Long nestId);
 
-    List<NestAdInfo> findAllByExpiredAtBefore(LocalDateTime now);
+    @Query("SELECT n FROM NestAdInfo n JOIN n.nest nest WHERE n.expiredAt < :now AND nest.deletedAt IS NULL")
+    List<NestAdInfo> findAllByExpiredAtBefore(@Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE NestAdInfo n SET n.impressions = n.impressions + 1 WHERE n.nest.id IN :nestIds")

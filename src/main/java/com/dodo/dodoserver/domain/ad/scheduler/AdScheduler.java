@@ -33,12 +33,13 @@ public class AdScheduler {
     @Transactional
     public void processExpiredAds() {
         LocalDateTime now = LocalDateTime.now();
-        List<NestAdInfo> expiredAds = nestAdInfoRepository.findAllByExpiredAtBefore(now);
+            List<NestAdInfo> expiredAds = nestAdInfoRepository.findAllByExpiredAtBefore(now);
 
         if (!expiredAds.isEmpty()) {
             expiredAds.forEach(adInfo -> {
-                adInfo.getNest().setDeletedAt(now);
-                nestAdInfoRepository.delete(adInfo);
+                if (adInfo.getNest().getDeletedAt() == null) {
+                    adInfo.getNest().setDeletedAt(now);
+                }
             });
             log.info("만료 광고 처리 완료: {}건", expiredAds.size());
         }

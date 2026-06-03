@@ -147,23 +147,25 @@ public class AdvertiserAdService {
     }
 
     /**
-     * 발행된 내 광고 둥지 목록 조회
+     * 발행된 내 광고 둥지 목록 조회 (만료/삭제된 광고 포함)
      */
     @Transactional(readOnly = true)
     public List<NestSimpleResponseDto> getMyAdNests(Long userId) {
         User advertiser = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return nestRepository.findAllByCreatorAndIsAdTrueAndDeletedAtIsNull(advertiser).stream()
+        // SoftDeleteFilterAspect에 의해 nestFilter가 비활성화된 상태이므로 모든 광고가 조회됨
+        return nestRepository.findAllByCreatorAndIsAdTrue(advertiser).stream()
                 .map(NestSimpleResponseDto::from)
                 .toList();
     }
 
     /**
-     * 광고 성과 통계 조회
+     * 광고 성과 통계 조회 (만료/삭제된 광고 포함)
      */
     @Transactional(readOnly = true)
     public AdStatisticsResponseDto getAdStatistics(Long userId, Long nestId) {
+        // SoftDeleteFilterAspect에 의해 nestFilter가 비활성화된 상태이므로 삭제된 둥지도 조회됨
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
@@ -171,7 +173,7 @@ public class AdvertiserAdService {
             throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
         }
 
-        NestAdInfo adInfo = nestAdInfoRepository.findByNest(nest)
+        NestAdInfo adInfo = nestAdInfoRepository.findByNestId(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
 
         return AdStatisticsResponseDto.of(

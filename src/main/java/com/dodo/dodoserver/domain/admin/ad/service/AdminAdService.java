@@ -219,10 +219,7 @@ public class AdminAdService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // NestAdInfo 삭제 (연관 정보)
-        nestAdInfoRepository.findByNest(nest).ifPresent(nestAdInfoRepository::delete);
-
-        // Nest 본체 Soft Delete
+        // Nest 본체 Soft Delete (NestAdInfo는 통계 보존을 위해 유지)
         nest.setDeletedAt(LocalDateTime.now());
         log.info("광고 강제 삭제 완료: NestId={}", nestId);
     }
