@@ -17,6 +17,7 @@ public class AdNestAdminResponseDto {
     private Long impressions;
     private Long clicks;
     private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
 
     public static AdNestAdminResponseDto of(Nest nest, LocalDateTime expiredAt, Integer priorityScore, Long impressions, Long clicks) {
         return AdNestAdminResponseDto.builder()
@@ -28,6 +29,7 @@ public class AdNestAdminResponseDto {
                 .impressions(impressions)
                 .clicks(clicks)
                 .createdAt(nest.getCreatedAt())
+                .deletedAt(nest.getDeletedAt())
                 .build();
     }
 }
