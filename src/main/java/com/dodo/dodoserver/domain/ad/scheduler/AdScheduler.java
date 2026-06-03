@@ -52,22 +52,16 @@ public class AdScheduler {
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void processExpiredAdvertiserAuthorities() {
-        // 이 부분은 효율을 위해 Querydsl이나 벌크 연산으로 대체 가능하지만, 
-        // 권한 강등 시 추가 로직(알림 등)이 생길 수 있으므로 리스트 조회 후 처리
-        List<AdvertiserAuthority> allAuthorities = advertiserAuthorityRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
+        List<AdvertiserAuthority> expiredAuthorities = advertiserAuthorityRepository.findAllByExpiredAtBefore(now);
 
-        long downgradedCount = allAuthorities.stream()
-                .filter(auth -> auth.getExpiredAt().isBefore(now))
-                .peek(auth -> {
-                    User user = auth.getUser();
-                    user.setRole(Role.USER);
-                    advertiserAuthorityRepository.delete(auth);
-                })
-                .count();
-
-        if (downgradedCount > 0) {
-            log.info("만료 광고주 권한 강등 처리 완료: {}명", downgradedCount);
+        if (!expiredAuthorities.isEmpty()) {
+            expiredAuthorities.forEach(auth -> {
+                User user = auth.getUser();
+                user.setRole(Role.USER);
+                advertiserAuthorityRepository.delete(auth);
+            });
+            log.info("만료 광고주 권한 강등 처리 완료: {}명", expiredAuthorities.size());
         }
     }
 }
