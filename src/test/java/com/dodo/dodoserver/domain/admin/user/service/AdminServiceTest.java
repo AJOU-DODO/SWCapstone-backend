@@ -5,6 +5,7 @@ import com.dodo.dodoserver.domain.admin.user.dao.UserAdminRepository;
 import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
+import com.dodo.dodoserver.domain.auth.dao.RefreshTokenRepository;
 import com.dodo.dodoserver.domain.admin.user.service.AdminService;
 import com.dodo.dodoserver.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +34,9 @@ class AdminServiceTest {
     @Mock
     private SanctionHistoryRepository sanctionHistoryRepository;
 
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
     @Test
     @DisplayName("유저 제재 처리 성공 - 7일 정지")
     void sanctionUser_success_sevenDays() {
@@ -54,6 +58,7 @@ class AdminServiceTest {
         // then
         assertThat(user.getSanctionedUntil()).isNotNull();
         verify(sanctionHistoryRepository).save(any(SanctionHistory.class));
+        verify(refreshTokenRepository).deleteById(userId);
     }
 
     @Test
@@ -77,6 +82,7 @@ class AdminServiceTest {
         // then
         assertThat(user.getSanctionedUntil().getYear()).isEqualTo(9999);
         verify(sanctionHistoryRepository).save(any(SanctionHistory.class));
+        verify(refreshTokenRepository).deleteById(userId);
     }
 
     @Test
