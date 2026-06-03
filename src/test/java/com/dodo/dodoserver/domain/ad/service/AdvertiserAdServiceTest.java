@@ -10,6 +10,7 @@ import com.dodo.dodoserver.domain.user.dao.AdvertiserAuthorityRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.AdvertiserAuthority;
 import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -88,6 +90,63 @@ class AdvertiserAdServiceTest {
         given(adProposalRepository.countByAdvertiserAndStatus(user, AdProposalStatus.PENDING)).willReturn(1L);
 
         assertThatThrownBy(() -> advertiserAdService.createProposal(user.getId(), requestDto))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("광고 신청 수정 실패 - 반려된 신청서 재제출 시 허용 개수 초과")
+    void updateProposal_fail_limitExceeded_whenResubmittingRejected() {
+        Long proposalId = 100L;
+        AdProposal proposal = AdProposal.builder()
+                .id(proposalId)
+                .advertiser(user)
+                .status(AdProposalStatus.REJECTED)
+                .build();
+        AdProposalRequestDto requestDto = new AdProposalRequestDto();
+        requestDto.setTitle("수정 제목");
+        requestDto.setLatitude(37.5);
+        requestDto.setLongitude(127.0);
+
+        given(adProposalRepository.findById(proposalId)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(3L); // 이미 한도 도달
+        given(adProposalRepository.countByAdvertiserAndStatus(user, AdProposalStatus.PENDING)).willReturn(0L);
+
+        assertThatThrownBy(() -> advertiserAdService.updateProposal(user.getId(), proposalId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("광고 신청 수정 실패 - 권한 만료")
+    void updateProposal_fail_authorityExpired() {
+        Long proposalId = 100L;
+        AdProposal proposal = AdProposal.builder()
+                .id(proposalId)
+                .advertiser(user)
+                .status(AdProposalStatus.REJECTED)
+                .build();
+        
+        // 만료된 권한 생성
+        AdvertiserAuthority expiredAuthority = AdvertiserAuthority.builder()
+                .user(user)
+                .allowedAdCount(3)
+                .expiredAt(LocalDateTime.now().minusDays(1))
+                .build();
+        
+        AdProposalRequestDto requestDto = new AdProposalRequestDto();
+        requestDto.setLatitude(37.5);
+        requestDto.setLongitude(127.0);
+
+        given(adProposalRepository.findById(proposalId)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(expiredAuthority));
+
+        assertThatThrownBy(() -> advertiserAdService.updateProposal(user.getId(), proposalId, requestDto))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
     }
 }

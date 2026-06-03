@@ -15,6 +15,8 @@ import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.AdvertiserAuthority;
 import com.dodo.dodoserver.domain.user.entity.Role;
 import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -86,6 +89,7 @@ class AdminAdServiceTest {
     @Test
     @DisplayName("광고 신청 승인 성공")
     void approveProposal_success() {
+        user.setRole(Role.ADVERTISER);
         AdProposal proposal = AdProposal.builder()
                 .id(10L)
                 .advertiser(user)
@@ -95,11 +99,19 @@ class AdminAdServiceTest {
                 .status(AdProposalStatus.PENDING)
                 .build();
 
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .allowedAdCount(3)
+                .expiredAt(LocalDateTime.now().plusDays(10))
+                .build();
+
         AdApproveRequestDto requestDto = new AdApproveRequestDto();
         requestDto.setExpiredAt(LocalDateTime.now().plusMonths(1));
         requestDto.setPriorityScore(10);
 
         given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(1L);
         given(nestRepository.save(any(Nest.class))).willAnswer(inv -> inv.getArgument(0));
 
         adminAdService.approveProposal(10L, requestDto);
@@ -107,5 +119,55 @@ class AdminAdServiceTest {
         verify(nestRepository).save(any(Nest.class));
         verify(nestAdInfoRepository).save(any());
         verify(adProposalRepository).delete(proposal);
+    }
+
+    @Test
+    @DisplayName("광고 신청 승인 실패 - 광고주 권한 만료")
+    void approveProposal_fail_authorityExpired() {
+        user.setRole(Role.ADVERTISER);
+        AdProposal proposal = AdProposal.builder()
+                .id(10L)
+                .advertiser(user)
+                .status(AdProposalStatus.PENDING)
+                .build();
+
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .expiredAt(LocalDateTime.now().minusDays(1)) // 만료됨
+                .build();
+
+        given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+
+        assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+    }
+
+    @Test
+    @DisplayName("광고 신청 승인 실패 - 허용 개수 초과")
+    void approveProposal_fail_limitExceeded() {
+        user.setRole(Role.ADVERTISER);
+        AdProposal proposal = AdProposal.builder()
+                .id(10L)
+                .advertiser(user)
+                .status(AdProposalStatus.PENDING)
+                .build();
+
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .allowedAdCount(3)
+                .expiredAt(LocalDateTime.now().plusDays(10))
+                .build();
+
+        given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(3L); // 이미 3개
+
+        assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
     }
 }
