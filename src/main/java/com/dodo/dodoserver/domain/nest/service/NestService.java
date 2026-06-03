@@ -380,6 +380,10 @@ public class NestService {
                 || unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user); // 자기 자신일 경우 해금
 
+        if (!isUnlocked) {
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
+        }
+
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
         long dislikeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE);
