@@ -2,7 +2,6 @@ package com.dodo.dodoserver.domain.nest.service;
 
 import static com.dodo.dodoserver.global.common.constants.NestConstants.*;
 
-import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
 import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
 import com.dodo.dodoserver.domain.category.entity.Category;
 import com.dodo.dodoserver.domain.nest.dao.*;
@@ -50,7 +49,6 @@ public class NestService {
     private final NestNotificationService nestNotificationService;
     private final RedisViewCountService redisViewCountService;
     private final PostcardRepository postcardRepository;
-    private final NestAdInfoRepository nestAdInfoRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -574,7 +572,7 @@ public class NestService {
 
         if (!adPins.isEmpty()) {
             List<Long> adNestIds = adPins.stream().map(NestPinResponseDto::getId).toList();
-            nestAdInfoRepository.incrementImpressions(adNestIds);
+            redisViewCountService.incrementAdImpressionCount(adNestIds);
         }
 
         return adPins;

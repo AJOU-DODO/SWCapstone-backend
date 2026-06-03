@@ -28,6 +28,9 @@ public class RedisViewCountService {
     private static final String AD_CLICK_COUNT_KEY = "nest:ad:clickCount:%d";
     private static final String UPDATED_AD_NESTS_KEY = "nest:ad:updatedClicks";
 
+    private static final String AD_IMPRESSION_COUNT_KEY = "nest:ad:impressionCount:%d";
+    private static final String UPDATED_AD_IMPRESSIONS_KEY = "nest:ad:updatedImpressions";
+
     /**
      * 조회수 증가 로직 (중복 방지 포함)
      */
@@ -54,6 +57,19 @@ public class RedisViewCountService {
     }
 
     /**
+     * 광고 노출수 증가 로직 (지도 조회 시)
+     */
+    public void incrementAdImpressionCount(java.util.List<Long> nestIds) {
+        if (nestIds == null || nestIds.isEmpty()) return;
+
+        for (Long nestId : nestIds) {
+            String countKey = String.format(AD_IMPRESSION_COUNT_KEY, nestId);
+            redisTemplate.opsForValue().increment(countKey);
+            redisTemplate.opsForSet().add(UPDATED_AD_IMPRESSIONS_KEY, String.valueOf(nestId));
+        }
+    }
+
+    /**
      * Redis의 현재 증가분 조회
      */
     public Long getCachedViewCount(Long nestId) {
@@ -70,6 +86,7 @@ public class RedisViewCountService {
     public void syncToDb() {
         syncViewCountToDb();
         syncAdClickCountToDb();
+        syncAdImpressionCountToDb();
     }
 
     private void syncViewCountToDb() {
@@ -115,6 +132,29 @@ public class RedisViewCountService {
             }
             
             redisTemplate.opsForSet().remove(UPDATED_AD_NESTS_KEY, nestIdStr);
+        }
+    }
+
+    private void syncAdImpressionCountToDb() {
+        Set<String> updatedNestIds = redisTemplate.opsForSet().members(UPDATED_AD_IMPRESSIONS_KEY);
+        if (updatedNestIds == null || updatedNestIds.isEmpty()) {
+            return;
+        }
+
+        log.info("Redis 광고 노출수 DB 동기화 시작: {} 건", updatedNestIds.size());
+
+        for (String nestIdStr : updatedNestIds) {
+            Long nestId = Long.parseLong(nestIdStr);
+            String countKey = String.format(AD_IMPRESSION_COUNT_KEY, nestId);
+
+            String countStr = redisTemplate.opsForValue().getAndDelete(countKey);
+
+            if (countStr != null) {
+                Long increment = Long.parseLong(countStr);
+                nestAdInfoRepository.incrementImpressionsBatch(nestId, increment);
+            }
+
+            redisTemplate.opsForSet().remove(UPDATED_AD_IMPRESSIONS_KEY, nestIdStr);
         }
     }
 }

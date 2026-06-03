@@ -29,4 +29,8 @@ public interface NestAdInfoRepository extends JpaRepository<NestAdInfo, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE NestAdInfo n SET n.clicks = n.clicks + :increment WHERE n.nest.id = :nestId")
     void incrementClicksBatch(@Param("nestId") Long nestId, @Param("increment") Long increment);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE NestAdInfo n SET n.impressions = n.impressions + :increment WHERE n.nest.id = :nestId")
+    void incrementImpressionsBatch(@Param("nestId") Long nestId, @Param("increment") Long increment);
 }
