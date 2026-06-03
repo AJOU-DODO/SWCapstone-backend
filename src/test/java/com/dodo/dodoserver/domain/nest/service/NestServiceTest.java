@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -188,6 +189,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 해금 성공")
     void unlockNest_success() {
+        // given
         Long nestId = 1L;
         User creator = User.builder().id(2L).build();
         Nest nest = Nest.builder().id(nestId).creator(creator).unlockRadius(100).build();
@@ -198,14 +200,17 @@ class NestServiceTest {
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
         given(nestRepository.calculateDistance(eq(nestId), any(Point.class))).willReturn(50.0);
 
+        // when
         nestService.unlockNest(user.getId(), nestId, requestDto);
 
+        // then
         verify(unlockHistoryRepository).save(any(UnlockHistory.class));
     }
 
     @Test
     @DisplayName("둥지 해금 실패 - 이미 해금됨")
     void unlockNest_fail_alreadyUnlocked() {
+        // given
         Long nestId = 1L;
         User creator = User.builder().id(2L).build();
         Nest nest = Nest.builder().id(nestId).creator(creator).build();
@@ -215,6 +220,7 @@ class NestServiceTest {
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
 
+        // when & then
         assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
@@ -223,6 +229,7 @@ class NestServiceTest {
     @Test
     @DisplayName("둥지 해금 실패 - 작성자 본인")
     void unlockNest_fail_isCreator() {
+        // given
         Long nestId = 1L;
         Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestUnlockRequestDto requestDto = new NestUnlockRequestDto(37.5, 127.0);
@@ -230,33 +237,54 @@ class NestServiceTest {
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
 
+        // when & then
         assertThatThrownBy(() -> nestService.unlockNest(user.getId(), nestId, requestDto))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.ALREADY_UNLOCKED.getMessage());
     }
 
     @Test
-    @DisplayName("둥지 상세 조회 - 미해금 시 ")
+    @DisplayName("둥지 상세 조회 실패 - 미해금 시")
     void getNestDetail_locked() {
         Long nestId = 1L;
         User creator = User.builder().id(2L).nickname("작성자").build();
-        Nest nest = Nest.builder().id(nestId).title("비밀").content("내용").creator(creator).images(new ArrayList<>()).build();
+        Nest nest = Nest.builder().id(nestId).title("비밀").content("내용").creator(creator).images(new ArrayList<>()).isAd(false).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
         given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(false);
+
+        assertThatThrownBy(() -> nestService.getNestDetail(user.getId(), nestId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.NEST_NOT_UNLOCKED.getMessage());
+
+        verify(redisViewCountService, never()).incrementViewCount(anyLong(), anyLong());
+    }
+
+    @Test
+    @DisplayName("둥지 상세 조회 - 광고 둥지는 미해금 시에도 조회 성공")
+    void getNestDetail_ad_success() {
+        // given
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).nickname("광고주").build();
+        Nest nest = Nest.builder().id(nestId).title("광고").content("내용").creator(creator).images(new ArrayList<>()).isAd(true).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        // 광고이므로 unlockHistoryRepository.existsByUserAndNest() 호출은 short-circuit 되어 호출되지 않음
         given(userProfileRepository.findByUser(creator)).willReturn(Optional.empty());
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
-        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(5L);
+        given(redisViewCountService.getCachedViewCount(nestId)).willReturn(0L);
 
+        // when
         NestDetailResponseDto response = nestService.getNestDetail(user.getId(), nestId);
 
+        // then
         assertThat(response.getContent()).isEqualTo("내용");
-        assertThat(response.isUnlocked()).isFalse();
-        assertThat(response.getMyReaction()).isNull();
-        assertThat(response.isMine()).isFalse();
+        assertThat(response.isUnlocked()).isTrue();
         verify(redisViewCountService).incrementViewCount(nestId, user.getId());
+        verify(redisViewCountService).incrementAdClickCount(nestId);
     }
 
     @Test
@@ -268,7 +296,7 @@ class NestServiceTest {
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
-        given(unlockHistoryRepository.existsByUserAndNest(user, nest)).willReturn(true);
+        // 작성자 본인이므로 unlockHistoryRepository.existsByUserAndNest() 호출은 short-circuit 되어 호출되지 않음
         given(userProfileRepository.findByUser(user)).willReturn(Optional.empty());
         given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.of(reaction));
         given(nestCategoryRepository.findAllByNest(nest)).willReturn(new ArrayList<>());
@@ -285,7 +313,7 @@ class NestServiceTest {
     @DisplayName("둥지 댓글 리스트 조회 성공")
     void getCommentsByNestId_success() {
         Long nestId = 1L;
-        Nest nest = Nest.builder().id(nestId).build();
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestComment comment = NestComment.builder().id(10L).user(user).content("댓글").children(new ArrayList<>()).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
@@ -306,7 +334,7 @@ class NestServiceTest {
     void getCommentsByNestId_withDeletedComment_maskingSuccess() {
         // given
         Long nestId = 1L;
-        Nest nest = Nest.builder().id(nestId).build();
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         
         // 삭제된 댓글 생성
@@ -342,7 +370,8 @@ class NestServiceTest {
     @DisplayName("댓글 좋아요 등록 성공")
     void handleCommentLike_create() {
         Long commentId = 10L;
-        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(0L).build();
+        Nest nest = Nest.builder().id(1L).creator(user).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(user).likeCount(0L).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
@@ -359,7 +388,8 @@ class NestServiceTest {
     @DisplayName("댓글 좋아요 취소 성공")
     void handleCommentLike_cancel() {
         Long commentId = 10L;
-        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(1L).build();
+        Nest nest = Nest.builder().id(1L).creator(user).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(user).likeCount(1L).build();
         CommentLike like = CommentLike.builder().user(user).comment(comment).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
@@ -506,6 +536,76 @@ class NestServiceTest {
         verify(nestNotificationService).sendNestLikeNotification(eq(user), eq(nest));
     }
 
+    @Test
+    @DisplayName("둥지 댓글 리스트 조회 성공 - 광고 둥지는 미해금 시에도 조회 성공")
+    void getCommentsByNestId_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+        NestComment comment = NestComment.builder().id(10L).user(creator).content("광고댓글").children(new ArrayList<>()).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCommentRepository.findAllByNestId(nestId)).willReturn(List.of(comment));
+        given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
+        given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
+
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(user.getId(), nestId, "DEFAULT");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getContent()).isEqualTo("광고댓글");
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 등록 성공 - 광고 둥지는 미해금 시에도 가능")
+    void handleCommentLike_ad_success() {
+        Long commentId = 10L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(1L).creator(creator).isAd(true).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(creator).likeCount(0L).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
+
+        nestService.handleCommentLike(user.getId(), commentId);
+
+        assertThat(comment.getLikeCount()).isEqualTo(1L);
+        verify(commentLikeRepository).save(any(CommentLike.class));
+    }
+
+    @Test
+    @DisplayName("댓글 작성 성공 - 광고 둥지는 미해금 시에도 가능")
+    void createComment_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+        CommentCreateRequestDto requestDto = new CommentCreateRequestDto("광고댓글", null);
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+
+        nestService.createComment(user.getId(), nestId, requestDto);
+
+        verify(nestCommentRepository).save(any(NestComment.class));
+    }
+
+    @Test
+    @DisplayName("리액션 등록 성공 - 광고 둥지는 미해금 시에도 가능")
+    void handleReaction_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
+
+        nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
+
+        verify(nestReactionRepository).save(any(NestReaction.class));
+    }
+
     // --- 조회 (Search) 테스트 ---
 
     @Test
@@ -524,5 +624,53 @@ class NestServiceTest {
         List<NestSummaryResponseDto> result = nestService.getNestsByIds(user.getId(), ids, org.springframework.data.domain.Sort.unsorted());
 
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("근처 둥지 핀 조회 성공")
+    void getNearbyPins_success() {
+        // given
+        Double lat = 37.5;
+        Double lng = 127.0;
+        Double radius = 500.0;
+        List<Long> categoryIds = List.of(1L);
+        Point point = geometryFactory.createPoint(new Coordinate(lng, lat));
+        
+        NestPinResponseDto pin = new NestPinResponseDto(100L, lng, lat);
+        given(nestRepository.findNearbyPins(any(Point.class), eq(radius), eq(categoryIds)))
+                .willReturn(List.of(pin));
+
+        // when
+        List<NestPinResponseDto> result = nestService.getNearbyPins(lat, lng, radius, categoryIds);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("근처 광고 핀 조회 - 노출수 증가 확인")
+    void getNearbyAdPins_success() {
+        // given
+        Double lat = 37.5;
+        Double lng = 127.0;
+        Double radius = 500.0;
+        List<Long> categoryIds = List.of(1L);
+        
+        NestPinResponseDto pin = new NestPinResponseDto(100L, lng, lat);
+        List<NestPinResponseDto> adPins = List.of(pin);
+        
+        given(nestRepository.findNearbyAdPins(any(Point.class), eq(radius), eq(categoryIds), eq(5)))
+                .willReturn(adPins);
+
+        // when
+        List<NestPinResponseDto> result = nestService.getNearbyAdPins(lat, lng, radius, categoryIds);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+        
+        // Redis 노출수 증가 메서드가 호출되었는지 확인
+        verify(redisViewCountService).incrementAdImpressionCount(List.of(100L));
     }
 }

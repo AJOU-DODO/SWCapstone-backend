@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.nest.dao;
 
 import com.dodo.dodoserver.domain.nest.entity.Nest;
 import com.dodo.dodoserver.domain.nest.entity.NestComment;
+import com.dodo.dodoserver.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,8 @@ public interface NestCommentRepository extends JpaRepository<NestComment, Long> 
     // 특정 둥지의 모든 댓글 조회 (삭제된 댓글 포함 여부는 필터로 제어됨)
     @Query("SELECT nc FROM NestComment nc JOIN FETCH nc.user WHERE nc.nest.id = :nestId")
     List<NestComment> findAllByNestId(@Param("nestId") Long nestId);
+
+    long countByUser(User user);
 
     void deleteAllByNest(Nest nest);
 }

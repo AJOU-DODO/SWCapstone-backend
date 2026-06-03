@@ -1,0 +1,252 @@
+package com.dodo.dodoserver.domain.admin.ad.service;
+
+import com.dodo.dodoserver.domain.ad.dao.AdProposalRepository;
+import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
+import com.dodo.dodoserver.domain.admin.ad.dao.AdAdminRepository;
+import com.dodo.dodoserver.domain.ad.entity.AdProposal;
+import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
+import com.dodo.dodoserver.domain.admin.ad.dto.*;
+import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
+import com.dodo.dodoserver.domain.category.dao.CategoryRepository;
+import com.dodo.dodoserver.domain.nest.dao.NestCategoryRepository;
+import com.dodo.dodoserver.domain.nest.dao.NestCommentRepository;
+import com.dodo.dodoserver.domain.nest.dao.NestRepository;
+import com.dodo.dodoserver.domain.nest.entity.Nest;
+import com.dodo.dodoserver.domain.user.dao.AdvertiserAuthorityRepository;
+import com.dodo.dodoserver.domain.user.dao.UserRepository;
+import com.dodo.dodoserver.domain.user.entity.AdvertiserAuthority;
+import com.dodo.dodoserver.domain.user.entity.Role;
+import com.dodo.dodoserver.domain.user.entity.User;
+import com.dodo.dodoserver.error.ErrorCode;
+import com.dodo.dodoserver.error.exception.BusinessException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class AdminAdServiceTest {
+
+    @InjectMocks
+    private AdminAdService adminAdService;
+
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private AdvertiserAuthorityRepository advertiserAuthorityRepository;
+    @Mock
+    private AdProposalRepository adProposalRepository;
+    @Mock
+    private NestRepository nestRepository;
+    @Mock
+    private NestAdInfoRepository nestAdInfoRepository;
+    @Mock
+    private AdAdminRepository adAdminRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
+    private NestCategoryRepository nestCategoryRepository;
+    @Mock
+    private NestCommentRepository nestCommentRepository;
+
+    private User user;
+    private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .id(1L)
+                .email("advertiser@test.com")
+                .role(Role.USER)
+                .build();
+    }
+
+    @Test
+    @DisplayName("이메일로 유저 검색 성공 - 활동량 데이터 포함")
+    void searchUsersByEmail_success_withActivityCounts() {
+        // given
+        String email = "test@dodo.com";
+        user.setEmail(email);
+        
+        given(userRepository.findAllByEmailContaining(email)).willReturn(List.of(user));
+        given(nestRepository.countByCreator(user)).willReturn(5L);
+        given(nestCommentRepository.countByUser(user)).willReturn(10L);
+
+        // when
+        List<UserAdminResponseDto> result = adminAdService.searchUsersByEmail(email);
+
+        // then
+        assertThat(result).hasSize(1);
+        UserAdminResponseDto dto = result.get(0);
+        assertThat(dto.getEmail()).isEqualTo(email);
+        assertThat(dto.getNestCount()).isEqualTo(5L);
+        assertThat(dto.getCommentCount()).isEqualTo(10L);
+    }
+
+    @Test
+    @DisplayName("광고주 권한 부여 성공")
+    void grantAdvertiserRole_success() {
+        AdvertiserAuthorityRequestDto requestDto = new AdvertiserAuthorityRequestDto();
+        requestDto.setAllowedAdCount(5);
+        requestDto.setExpiredAt(LocalDateTime.now().plusMonths(1));
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.empty());
+
+        adminAdService.grantAdvertiserRole(user.getId(), requestDto);
+
+        assertThat(user.getRole()).isEqualTo(Role.ADVERTISER);
+        verify(advertiserAuthorityRepository).save(any(AdvertiserAuthority.class));
+    }
+
+    @Test
+    @DisplayName("광고 신청 승인 성공")
+    void approveProposal_success() {
+        // given
+        user.setRole(Role.ADVERTISER);
+        AdProposal proposal = AdProposal.builder()
+                .id(10L)
+                .advertiser(user)
+                .title("광고 제목")
+                .content("광고 내용")
+                .point(geometryFactory.createPoint(new Coordinate(127.0, 37.5)))
+                .status(AdProposalStatus.PENDING)
+                .build();
+
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .allowedAdCount(3)
+                .expiredAt(LocalDateTime.now().plusDays(10))
+                .build();
+
+        AdApproveRequestDto requestDto = new AdApproveRequestDto();
+        requestDto.setExpiredAt(LocalDateTime.now().plusMonths(1));
+        requestDto.setPriorityScore(10);
+
+        given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(1L);
+        given(nestRepository.save(any(Nest.class))).willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        adminAdService.approveProposal(10L, requestDto);
+
+        // then
+        verify(nestRepository).save(any(Nest.class));
+        verify(nestAdInfoRepository).save(any());
+        verify(adProposalRepository).delete(proposal);
+    }
+
+    @Test
+    @DisplayName("광고 신청 승인 실패 - 광고주 권한 만료")
+    void approveProposal_fail_authorityExpired() {
+        // given
+        user.setRole(Role.ADVERTISER);
+        AdProposal proposal = AdProposal.builder()
+                .id(10L)
+                .advertiser(user)
+                .status(AdProposalStatus.PENDING)
+                .build();
+
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .expiredAt(LocalDateTime.now().minusDays(1)) // 만료됨
+                .build();
+
+        given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+
+        // when & then
+        assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+    }
+
+    @Test
+    @DisplayName("광고 신청 승인 실패 - 허용 개수 초과")
+    void approveProposal_fail_limitExceeded() {
+        // given
+        user.setRole(Role.ADVERTISER);
+        AdProposal proposal = AdProposal.builder()
+                .id(10L)
+                .advertiser(user)
+                .status(AdProposalStatus.PENDING)
+                .build();
+
+        AdvertiserAuthority authority = AdvertiserAuthority.builder()
+                .user(user)
+                .allowedAdCount(3)
+                .expiredAt(LocalDateTime.now().plusDays(10))
+                .build();
+
+        given(adProposalRepository.findById(10L)).willReturn(Optional.of(proposal));
+        given(advertiserAuthorityRepository.findByUser(user)).willReturn(Optional.of(authority));
+        given(nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(user)).willReturn(3L); // 이미 3개
+
+        // when & then
+        assertThatThrownBy(() -> adminAdService.approveProposal(10L, new AdApproveRequestDto()))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+    }
+
+    @Test
+    @DisplayName("대기 중인 광고 신청 목록 조회 성공 - 카테고리 ID가 null인 경우 포함")
+    void getPendingProposals_success_withNullCategoryIds() {
+        // given
+        AdProposal p1 = AdProposal.builder().id(1L).advertiser(user).categoryIds(List.of(1L)).status(AdProposalStatus.PENDING).build();
+        AdProposal p2 = AdProposal.builder().id(2L).advertiser(user).categoryIds(null).status(AdProposalStatus.PENDING).build(); // null 카테고리
+        
+        given(adProposalRepository.findAllByStatus(AdProposalStatus.PENDING)).willReturn(List.of(p1, p2));
+        given(categoryRepository.findAllById(any())).willReturn(List.of());
+
+        // when
+        List<AdProposalAdminResponseDto> result = adminAdService.getPendingProposals();
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getCategoryNames()).isEmpty();
+        assertThat(result.get(1).getCategoryNames()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("게시된 광고 목록 조회 성공")
+    void getAdNests_success() {
+        // given
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        Nest nest = Nest.builder().id(1L).creator(user).title("광고").build();
+        com.dodo.dodoserver.domain.ad.entity.NestAdInfo adInfo = com.dodo.dodoserver.domain.ad.entity.NestAdInfo.builder()
+                .nest(nest)
+                .expiredAt(LocalDateTime.now().plusDays(7))
+                .priorityScore(5)
+                .build();
+        
+        given(adAdminRepository.findAllWithFilter(AdStatusFilter.ALL, pageable))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(adInfo)));
+
+        // when
+        org.springframework.data.domain.Page<AdNestAdminResponseDto> result = adminAdService.getAdNests(AdStatusFilter.ALL, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("광고");
+        verify(adAdminRepository).findAllWithFilter(AdStatusFilter.ALL, pageable);
+    }
+}

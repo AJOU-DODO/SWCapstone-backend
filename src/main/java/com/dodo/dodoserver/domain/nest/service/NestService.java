@@ -139,7 +139,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!nest.getCreator().equals(user)) {
+        if (!nest.getCreator().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
         }
 
@@ -222,7 +222,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!nest.getCreator().equals(user)) {
+        if (!nest.getCreator().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.NOT_NEST_CREATOR);
         }
 
@@ -256,7 +256,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!nest.getCreator().equals(user) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        if (!isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -350,7 +350,7 @@ public class NestService {
 
         return nestDtos.stream().map(dto -> {
             Nest nest = dto.getNest();
-            boolean isUnlocked = nest.getCreator().equals(user) || unlockedNestIds.contains(nest.getId());
+            boolean isUnlocked = nest.isAd() || nest.getCreator().getId().equals(userId) || unlockedNestIds.contains(nest.getId());
             return NestSummaryResponseDto.from(nest, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nest.getId()));
         }).collect(Collectors.toList());
     }
@@ -366,11 +366,19 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
+        boolean isUnlocked = isNestUnlockedForUser(nest, user);
+
+        if (!isUnlocked) {
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
+        }
+
         // Redis 기반 조회수 증가 (중복 방지 포함)
         redisViewCountService.incrementViewCount(nestId, userId);
 
-        boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
-                || nest.getCreator().equals(user); // 자기 자신일 경우 해금
+        // 광고인 경우 클릭수 증가 (Redis 기반)
+        if (nest.isAd()) {
+            redisViewCountService.incrementAdClickCount(nestId);
+        }
 
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
         long likeCount = nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE);
@@ -418,6 +426,11 @@ public class NestService {
         User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
+
+        // 권한 체크 (해금 여부)
+        if (!isNestUnlockedForUser(nest, currentUser)) {
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
+        }
 
         // 삭제된 댓글도 포함하여 조회 (AOP 필터가 이 경로에서는 비활성화됨)
         List<NestComment> allComments = nestCommentRepository.findAllByNestId(nestId);
@@ -512,6 +525,12 @@ public class NestService {
         NestComment comment = nestCommentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT_VALUE));
 
+        Nest nest = comment.getNest();
+        // 권한 체크 (해금 여부)
+        if (!isNestUnlockedForUser(nest, user)) {
+            throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
+        }
+
         Optional<CommentLike> existingLike = commentLikeRepository.findByUserAndComment(user, comment);
 
         if (existingLike.isPresent()) {
@@ -532,13 +551,31 @@ public class NestService {
 
 
     /**
-     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회
+     * 현재 위치 기반 반경 내 모든 둥지 핀 정보 조회 (광고 제외)
      */
     @Transactional(readOnly = true)
     public List<NestPinResponseDto> getNearbyPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
         double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
         Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude)); // (x,y)
         return nestRepository.findNearbyPins(point, radius, categoryIds);
+    }
+
+    /**
+     * 현재 위치 기반 반경 내 광고 둥지 핀 정보 조회 및 노출수 증가
+     */
+    @Transactional
+    public List<NestPinResponseDto> getNearbyAdPins(Double latitude, Double longitude, Double radiusMeter, List<Long> categoryIds) {
+        double radius = (radiusMeter != null) ? radiusMeter : DEFAULT_FIND_RADIUS_METER;
+        Point point = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+
+        List<NestPinResponseDto> adPins = nestRepository.findNearbyAdPins(point, radius, categoryIds, 5); // 최대 5개 제한
+
+        if (!adPins.isEmpty()) {
+            List<Long> adNestIds = adPins.stream().map(NestPinResponseDto::getId).toList();
+            redisViewCountService.incrementAdImpressionCount(adNestIds);
+        }
+
+        return adPins;
     }
 
     /**
@@ -573,7 +610,7 @@ public class NestService {
 
         return nests.map(dto -> {
             Nest nestEntity = dto.getNest();
-            boolean isUnlocked = nestEntity.getCreator().equals(user) || unlockedNestIds.contains(nestEntity.getId());
+            boolean isUnlocked = nestEntity.isAd() || nestEntity.getCreator().getId().equals(userId) || unlockedNestIds.contains(nestEntity.getId());
             return NestSummaryResponseDto.from(nestEntity, isUnlocked, dto.getLikeCount(), dto.getDistance(), dto.getCategoryNames(), nestPostcardMap.get(nestEntity.getId()));
         });
     }
@@ -589,7 +626,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (nest.getCreator().equals(user) || unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        if (isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.ALREADY_UNLOCKED);
         }
 
@@ -622,7 +659,7 @@ public class NestService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        if (!unlockHistoryRepository.existsByUserAndNest(user, nest) && !nest.getCreator().equals(user)) {
+        if (!isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
@@ -657,5 +694,16 @@ public class NestService {
         if (type == ReactionType.LIKE) {
             nestNotificationService.sendNestLikeNotification(user, nest);
         }
+    }
+
+    /**
+     * 사용자가 둥지를 해금했거나 접근 가능한 상태인지 확인합니다.
+     * (광고 둥지, 작성자 본인, 해금 이력 보유 여부 검사)
+     */
+    public boolean isNestUnlockedForUser(Nest nest, User user) {
+        if (nest.isAd()) return true;
+        if (user == null) return false;
+        if (nest.getCreator().getId().equals(user.getId())) return true;
+        return unlockHistoryRepository.existsByUserAndNest(user, nest);
     }
 }

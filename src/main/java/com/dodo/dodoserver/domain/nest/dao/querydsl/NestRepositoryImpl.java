@@ -31,6 +31,7 @@ import static com.dodo.dodoserver.domain.nest.entity.QNestLocation.nestLocation;
 import static com.dodo.dodoserver.domain.nest.entity.QNestCategory.nestCategory;
 import static com.dodo.dodoserver.domain.nest.entity.QNestReaction.nestReaction;
 import static com.dodo.dodoserver.domain.category.entity.QCategory.category;
+import static com.dodo.dodoserver.domain.ad.entity.QNestAdInfo.nestAdInfo;
 
 @RequiredArgsConstructor
 public class NestRepositoryImpl implements NestRepositoryCustom {
@@ -53,8 +54,34 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
-                        nest.deletedAt.isNull()
+                        nest.deletedAt.isNull(),
+                        nest.isAd.isFalse()
                 )
+                .fetch();
+    }
+
+    @Override
+    public List<NestPinResponseDto> findNearbyAdPins(Point point, Double radiusMeter, List<Long> categoryIds, int limit) {
+        NumberTemplate<Double> distance = Expressions.numberTemplate(Double.class,
+                "ST_Distance_Sphere({0}, {1})", nestLocation.point, point);
+
+        return queryFactory
+                .select(Projections.constructor(NestPinResponseDto.class,
+                        nest.id,
+                        Expressions.numberTemplate(Double.class, "ST_Latitude({0})", nestLocation.point),
+                        Expressions.numberTemplate(Double.class, "ST_Longitude({0})", nestLocation.point)
+                ))
+                .from(nest)
+                .join(nest.location, nestLocation)
+                .join(nestAdInfo).on(nestAdInfo.nest.id.eq(nest.id))
+                .where(
+                        distance.loe(radiusMeter),
+                        categoryIn(categoryIds),
+                        nest.deletedAt.isNull(),
+                        nest.isAd.isTrue()
+                )
+                .orderBy(nestAdInfo.priorityScore.desc(), nest.createdAt.desc())
+                .limit(limit)
                 .fetch();
     }
 
@@ -126,7 +153,8 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
-                        nest.deletedAt.isNull()
+                        nest.deletedAt.isNull(),
+                        nest.isAd.isFalse()
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize());
@@ -166,7 +194,8 @@ public class NestRepositoryImpl implements NestRepositoryCustom {
                 .where(
                         distance.loe(radiusMeter),
                         categoryIn(categoryIds),
-                        nest.deletedAt.isNull()
+                        nest.deletedAt.isNull(),
+                        nest.isAd.isFalse()
                 )
                 .fetchOne();
 

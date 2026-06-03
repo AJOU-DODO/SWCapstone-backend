@@ -47,7 +47,16 @@ public class SoftDeleteFilterAspect {
             return;
         }
 
-        // 3. 그 외 모든 일반 API는 모든 필터 활성화 (소프트 삭제 데이터 숨김)
+        // 3. 광고주 전용 API 중 과거 이력 조회가 필요한 경우 필터 비활성화
+        if (requestURI.startsWith("/api/v1/advertiser/ads/nests")) {
+            session.disableFilter("nestFilter");
+            session.enableFilter("commentFilter");
+            session.enableFilter("postcardFilter");
+            session.enableFilter("inquiryFilter");
+            return;
+        }
+
+        // 4. 그 외 모든 일반 API는 모든 필터 활성화 (소프트 삭제 데이터 숨김)
         session.enableFilter("nestFilter");
         session.enableFilter("commentFilter");
         session.enableFilter("postcardFilter");

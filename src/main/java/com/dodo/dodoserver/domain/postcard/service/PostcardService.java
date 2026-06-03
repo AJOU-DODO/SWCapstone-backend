@@ -1,8 +1,8 @@
 package com.dodo.dodoserver.domain.postcard.service;
 
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
-import com.dodo.dodoserver.domain.nest.dao.UnlockHistoryRepository;
 import com.dodo.dodoserver.domain.nest.entity.Nest;
+import com.dodo.dodoserver.domain.nest.service.NestService;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardReactionRepository;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.postcard.dto.*;
@@ -30,7 +30,7 @@ public class PostcardService {
     private final PostcardRepository postcardRepository;
     private final PostcardRedisService postcardRedisService;
     private final NestRepository nestRepository;
-    private final UnlockHistoryRepository unlockHistoryRepository;
+    private final NestService nestService;
     private final PostcardNotificationService postcardNotificationService;
     private final PostcardReactionRepository postcardReactionRepository;
     private final UserRepository userRepository;
@@ -75,8 +75,8 @@ public class PostcardService {
         Nest nest = nestRepository.findById(nestId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NEST_NOT_FOUND));
 
-        // 둥지 작성자가 아니고, 해금 이력도 없는 경우에만 에러 발생
-        if (!nest.getCreator().equals(user) && !unlockHistoryRepository.existsByUserAndNest(user, nest)) {
+        // 둥지 해금 여부 확인 (작성자 본인, 광고, 해금 이력 포함)
+        if (!nestService.isNestUnlockedForUser(nest, user)) {
             throw new BusinessException(ErrorCode.NEST_NOT_UNLOCKED);
         }
 
