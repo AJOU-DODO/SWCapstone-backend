@@ -376,7 +376,8 @@ public class NestService {
             redisViewCountService.incrementAdClickCount(nestId);
         }
 
-        boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 
+        boolean isUnlocked = nest.isAd() 
+                || unlockHistoryRepository.existsByUserAndNest(user, nest) 
                 || nest.getCreator().equals(user); // 자기 자신일 경우 해금
 
         UserProfile creatorProfile = userProfileRepository.findByUser(nest.getCreator()).orElse(null);
