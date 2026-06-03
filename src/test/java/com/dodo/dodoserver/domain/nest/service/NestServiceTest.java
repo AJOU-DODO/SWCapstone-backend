@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
@@ -613,5 +614,47 @@ class NestServiceTest {
         List<NestSummaryResponseDto> result = nestService.getNestsByIds(user.getId(), ids, org.springframework.data.domain.Sort.unsorted());
 
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("근처 둥지 핀 조회 성공")
+    void getNearbyPins_success() {
+        Double lat = 37.5;
+        Double lng = 127.0;
+        Double radius = 500.0;
+        List<Long> categoryIds = List.of(1L);
+        Point point = geometryFactory.createPoint(new Coordinate(lng, lat));
+        
+        NestPinResponseDto pin = new NestPinResponseDto(100L, lng, lat);
+        given(nestRepository.findNearbyPins(any(Point.class), eq(radius), eq(categoryIds)))
+                .willReturn(List.of(pin));
+
+        List<NestPinResponseDto> result = nestService.getNearbyPins(lat, lng, radius, categoryIds);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("근처 광고 핀 조회 - 노출수 증가 확인")
+    void getNearbyAdPins_success() {
+        Double lat = 37.5;
+        Double lng = 127.0;
+        Double radius = 500.0;
+        List<Long> categoryIds = List.of(1L);
+        
+        NestPinResponseDto pin = new NestPinResponseDto(100L, lng, lat);
+        List<NestPinResponseDto> adPins = List.of(pin);
+        
+        given(nestRepository.findNearbyAdPins(any(Point.class), eq(radius), eq(categoryIds), eq(5)))
+                .willReturn(adPins);
+
+        List<NestPinResponseDto> result = nestService.getNearbyAdPins(lat, lng, radius, categoryIds);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(100L);
+        
+        // Redis 노출수 증가 메서드가 호출되었는지 확인
+        verify(redisViewCountService).incrementAdImpressionCount(List.of(100L));
     }
 }
