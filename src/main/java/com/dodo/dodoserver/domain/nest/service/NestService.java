@@ -371,9 +371,9 @@ public class NestService {
         // Redis 기반 조회수 증가 (중복 방지 포함)
         redisViewCountService.incrementViewCount(nestId, userId);
 
-        // 광고인 경우 클릭수 증가
+        // 광고인 경우 클릭수 증가 (Redis 기반)
         if (nest.isAd()) {
-            nestAdInfoRepository.incrementClicks(nestId);
+            redisViewCountService.incrementAdClickCount(nestId);
         }
 
         boolean isUnlocked = unlockHistoryRepository.existsByUserAndNest(user, nest) 

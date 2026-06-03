@@ -1,5 +1,6 @@
 package com.dodo.dodoserver.domain.nest.service;
 
+import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
 import com.dodo.dodoserver.domain.nest.dao.NestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +19,14 @@ public class RedisViewCountService {
 
     private final StringRedisTemplate redisTemplate;
     private final NestRepository nestRepository;
+    private final NestAdInfoRepository nestAdInfoRepository;
 
     private static final String VIEW_USER_KEY = "nest:view:%d:user:%d";
     private static final String VIEW_COUNT_KEY = "nest:viewCount:%d";
     private static final String UPDATED_NESTS_KEY = "nest:updatedViews";
+
+    private static final String AD_CLICK_COUNT_KEY = "nest:ad:clickCount:%d";
+    private static final String UPDATED_AD_NESTS_KEY = "nest:ad:updatedClicks";
 
     /**
      * 조회수 증가 로직 (중복 방지 포함)
@@ -40,6 +45,15 @@ public class RedisViewCountService {
     }
 
     /**
+     * 광고 클릭수 증가 로직
+     */
+    public void incrementAdClickCount(Long nestId) {
+        String countKey = String.format(AD_CLICK_COUNT_KEY, nestId);
+        redisTemplate.opsForValue().increment(countKey);
+        redisTemplate.opsForSet().add(UPDATED_AD_NESTS_KEY, String.valueOf(nestId));
+    }
+
+    /**
      * Redis의 현재 증가분 조회
      */
     public Long getCachedViewCount(Long nestId) {
@@ -49,11 +63,16 @@ public class RedisViewCountService {
     }
 
     /**
-     * 10분마다 Redis의 조회수 증가분을 DB에 반영
+     * 10분마다 Redis의 조회수 및 광고 클릭수 증가분을 DB에 반영
      */
     @Scheduled(cron = "0 0/10 * * * *")
     @Transactional
-    public void syncViewCountToDb() {
+    public void syncToDb() {
+        syncViewCountToDb();
+        syncAdClickCountToDb();
+    }
+
+    private void syncViewCountToDb() {
         Set<String> updatedNestIds = redisTemplate.opsForSet().members(UPDATED_NESTS_KEY);
         if (updatedNestIds == null || updatedNestIds.isEmpty()) {
             return;
@@ -74,7 +93,28 @@ public class RedisViewCountService {
             
             redisTemplate.opsForSet().remove(UPDATED_NESTS_KEY, nestIdStr);
         }
-        
-        log.info("Redis 조회수 DB 동기화 완료");
+    }
+
+    private void syncAdClickCountToDb() {
+        Set<String> updatedNestIds = redisTemplate.opsForSet().members(UPDATED_AD_NESTS_KEY);
+        if (updatedNestIds == null || updatedNestIds.isEmpty()) {
+            return;
+        }
+
+        log.info("Redis 광고 클릭수 DB 동기화 시작: {} 건", updatedNestIds.size());
+
+        for (String nestIdStr : updatedNestIds) {
+            Long nestId = Long.parseLong(nestIdStr);
+            String countKey = String.format(AD_CLICK_COUNT_KEY, nestId);
+            
+            String countStr = redisTemplate.opsForValue().getAndDelete(countKey);
+            
+            if (countStr != null) {
+                Long increment = Long.parseLong(countStr);
+                nestAdInfoRepository.incrementClicksBatch(nestId, increment);
+            }
+            
+            redisTemplate.opsForSet().remove(UPDATED_AD_NESTS_KEY, nestIdStr);
+        }
     }
 }
