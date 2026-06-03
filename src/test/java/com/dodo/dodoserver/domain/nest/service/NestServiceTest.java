@@ -302,7 +302,7 @@ class NestServiceTest {
     @DisplayName("둥지 댓글 리스트 조회 성공")
     void getCommentsByNestId_success() {
         Long nestId = 1L;
-        Nest nest = Nest.builder().id(nestId).build();
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
         NestComment comment = NestComment.builder().id(10L).user(user).content("댓글").children(new ArrayList<>()).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
@@ -323,7 +323,7 @@ class NestServiceTest {
     void getCommentsByNestId_withDeletedComment_maskingSuccess() {
         // given
         Long nestId = 1L;
-        Nest nest = Nest.builder().id(nestId).build();
+        Nest nest = Nest.builder().id(nestId).creator(user).build();
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         
         // 삭제된 댓글 생성
@@ -359,7 +359,8 @@ class NestServiceTest {
     @DisplayName("댓글 좋아요 등록 성공")
     void handleCommentLike_create() {
         Long commentId = 10L;
-        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(0L).build();
+        Nest nest = Nest.builder().id(1L).creator(user).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(user).likeCount(0L).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
         given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
@@ -376,7 +377,8 @@ class NestServiceTest {
     @DisplayName("댓글 좋아요 취소 성공")
     void handleCommentLike_cancel() {
         Long commentId = 10L;
-        NestComment comment = NestComment.builder().id(commentId).user(user).likeCount(1L).build();
+        Nest nest = Nest.builder().id(1L).creator(user).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(user).likeCount(1L).build();
         CommentLike like = CommentLike.builder().user(user).comment(comment).build();
 
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
@@ -521,6 +523,76 @@ class NestServiceTest {
 
         assertThat(existingReaction.getReactionType()).isEqualTo(ReactionType.LIKE);
         verify(nestNotificationService).sendNestLikeNotification(eq(user), eq(nest));
+    }
+
+    @Test
+    @DisplayName("둥지 댓글 리스트 조회 성공 - 광고 둥지는 미해금 시에도 조회 성공")
+    void getCommentsByNestId_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+        NestComment comment = NestComment.builder().id(10L).user(creator).content("광고댓글").children(new ArrayList<>()).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCommentRepository.findAllByNestId(nestId)).willReturn(List.of(comment));
+        given(userProfileRepository.findAllByUserIn(any())).willReturn(new ArrayList<>());
+        given(commentLikeRepository.findAllByUserAndCommentIn(any(), any())).willReturn(new ArrayList<>());
+
+        List<CommentResponseDto> result = nestService.getCommentsByNestId(user.getId(), nestId, "DEFAULT");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getContent()).isEqualTo("광고댓글");
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 등록 성공 - 광고 둥지는 미해금 시에도 가능")
+    void handleCommentLike_ad_success() {
+        Long commentId = 10L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(1L).creator(creator).isAd(true).build();
+        NestComment comment = NestComment.builder().id(commentId).nest(nest).user(creator).likeCount(0L).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestCommentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
+
+        nestService.handleCommentLike(user.getId(), commentId);
+
+        assertThat(comment.getLikeCount()).isEqualTo(1L);
+        verify(commentLikeRepository).save(any(CommentLike.class));
+    }
+
+    @Test
+    @DisplayName("댓글 작성 성공 - 광고 둥지는 미해금 시에도 가능")
+    void createComment_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+        CommentCreateRequestDto requestDto = new CommentCreateRequestDto("광고댓글", null);
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+
+        nestService.createComment(user.getId(), nestId, requestDto);
+
+        verify(nestCommentRepository).save(any(NestComment.class));
+    }
+
+    @Test
+    @DisplayName("리액션 등록 성공 - 광고 둥지는 미해금 시에도 가능")
+    void handleReaction_ad_success() {
+        Long nestId = 1L;
+        User creator = User.builder().id(2L).build();
+        Nest nest = Nest.builder().id(nestId).creator(creator).isAd(true).build();
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestReactionRepository.findByUserAndNest(user, nest)).willReturn(Optional.empty());
+
+        nestService.handleReaction(user.getId(), nestId, ReactionType.LIKE);
+
+        verify(nestReactionRepository).save(any(NestReaction.class));
     }
 
     // --- 조회 (Search) 테스트 ---

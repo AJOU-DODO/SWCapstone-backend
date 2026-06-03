@@ -132,6 +132,27 @@ class PostcardServiceTest {
     }
 
     @Test
+    @DisplayName("엽서 교환 성공 - 광고 둥지인 경우 해금 이력 없이도 가능")
+    void exchangePostcard_success_adNest() {
+        // given
+        nest.setAd(true); // 광고 둥지
+        PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
+
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(nestRepository.findById(nest.getId())).willReturn(Optional.of(nest));
+        // unlockHistoryRepository.existsByUserAndNest 호출하지 않아도 성공해야 함
+        given(postcardRepository.findByIdForUpdate(myPostcard.getId())).willReturn(Optional.of(myPostcard));
+        given(postcardRepository.findSharedPostcardByNestForUpdate(nest)).willReturn(Optional.of(targetPostcard));
+
+        // when
+        PostcardResponseDto response = postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto);
+
+        // then
+        assertThat(response.getId()).isEqualTo(targetPostcard.getId());
+        assertThat(targetPostcard.getCurrentOwner()).isEqualTo(user);
+    }
+
+    @Test
     @DisplayName("엽서 교환 실패 - 본인 엽서인 경우")
     void exchangePostcard_fail_ownPostcard() {
         // given
