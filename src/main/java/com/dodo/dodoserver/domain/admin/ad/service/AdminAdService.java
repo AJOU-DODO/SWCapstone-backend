@@ -2,6 +2,7 @@ package com.dodo.dodoserver.domain.admin.ad.service;
 
 import com.dodo.dodoserver.domain.ad.dao.AdProposalRepository;
 import com.dodo.dodoserver.domain.ad.dao.NestAdInfoRepository;
+import com.dodo.dodoserver.domain.admin.ad.dao.AdAdminRepository;
 import com.dodo.dodoserver.domain.ad.entity.AdProposal;
 import com.dodo.dodoserver.domain.ad.entity.AdProposalStatus;
 import com.dodo.dodoserver.domain.ad.entity.NestAdInfo;
@@ -47,6 +48,7 @@ public class AdminAdService {
     private final AdProposalRepository adProposalRepository;
     private final NestRepository nestRepository;
     private final NestAdInfoRepository nestAdInfoRepository;
+    private final AdAdminRepository adAdminRepository;
     private final CategoryRepository categoryRepository;
     private final NestCategoryRepository nestCategoryRepository;
     private final NestCommentRepository nestCommentRepository;
@@ -243,8 +245,8 @@ public class AdminAdService {
      * 게시된 광고 목록 조회
      */
     @Transactional(readOnly = true)
-    public Page<AdNestAdminResponseDto> getAdNests(Pageable pageable) {
-        return nestAdInfoRepository.findAll(pageable)
+    public Page<AdNestAdminResponseDto> getAdNests(AdStatusFilter status, Pageable pageable) {
+        return adAdminRepository.findAllWithFilter(status, pageable)
                 .map(adInfo -> AdNestAdminResponseDto.of(
                         adInfo.getNest(),
                         adInfo.getExpiredAt(),

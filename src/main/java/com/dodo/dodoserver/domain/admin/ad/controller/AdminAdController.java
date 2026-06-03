@@ -88,10 +88,12 @@ public class AdminAdController {
     /**
      * 게시된 광고 목록 조회
      */
-    @Operation(summary = "게시된 광고 목록 조회", description = "현재 활성화되어 게시 중인 광고 둥지 목록과 통계를 조회합니다.")
+    @Operation(summary = "게시된 광고 목록 조회", description = "게시 중이거나 삭제된 광고 둥지 목록과 통계를 조회합니다.")
     @GetMapping("/nests")
-    public ApiResponseDto<Page<AdNestAdminResponseDto>> getAdNests(Pageable pageable) {
-        return ApiResponseDto.success(adminAdService.getAdNests(pageable));
+    public ApiResponseDto<Page<AdNestAdminResponseDto>> getAdNests(
+            @RequestParam(required = false, defaultValue = "ALL") AdStatusFilter status,
+            Pageable pageable) {
+        return ApiResponseDto.success(adminAdService.getAdNests(status, pageable));
     }
 
     /**
