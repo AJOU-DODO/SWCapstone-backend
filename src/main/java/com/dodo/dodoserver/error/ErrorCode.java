@@ -71,7 +71,11 @@ public enum ErrorCode {
     // Inquiry (IQ)
     INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "IQ001", "문의사항을 찾을 수 없습니다."),
     NOT_INQUIRY_OWNER(HttpStatus.FORBIDDEN, "IQ002", "해당 문의사항에 대한 권한이 없습니다."),
-    CANNOT_MODIFY_COMPLETED_INQUIRY(HttpStatus.BAD_REQUEST, "IQ003", "처리 완료된 문의는 수정하거나 삭제할 수 없습니다.");
+    CANNOT_MODIFY_COMPLETED_INQUIRY(HttpStatus.BAD_REQUEST, "IQ003", "처리 완료된 문의는 수정하거나 삭제할 수 없습니다."),
+
+    // Ad (AD)
+    ADVERTISER_AUTHORITY_EXPIRED(HttpStatus.FORBIDDEN, "AD001", "광고주 권한이 만료되었습니다."),
+    AD_COUNT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "AD002", "발행 가능한 광고 개수를 초과했습니다.");
 
 
 

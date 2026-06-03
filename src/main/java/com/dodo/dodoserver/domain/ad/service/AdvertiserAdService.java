@@ -74,21 +74,8 @@ public class AdvertiserAdService {
         User advertiser = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        AdvertiserAuthority authority = advertiserAuthorityRepository.findByUser(advertiser)
-                .orElseThrow(() -> new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED));
-
-        // 권한 만료 체크
-        if (authority.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED); // TODO: 전용 에러코드 필요시 추가
-        }
-
-        // 발행 가능 개수 체크 (현재 승인된 광고 수 + 신청 중인 광고 수)
-        long currentAdCount = nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(advertiser);
-        long pendingCount = adProposalRepository.countByAdvertiserAndStatus(advertiser, AdProposalStatus.PENDING);
-
-        if (currentAdCount + pendingCount >= authority.getAllowedAdCount()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE); // TODO: 광고 개수 초과 에러코드
-        }
+        AdvertiserAuthority authority = getValidAuthority(advertiser);
+        checkAdCountLimit(advertiser, authority);
 
         Point point = geometryFactory.createPoint(new Coordinate(requestDto.getLongitude(), requestDto.getLatitude()));
 
@@ -124,6 +111,14 @@ public class AdvertiserAdService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
+        User advertiser = proposal.getAdvertiser();
+        AdvertiserAuthority authority = getValidAuthority(advertiser);
+
+        // REJECTED 상태에서 PENDING으로 변경되는 경우에만 개수 체크 (기존 PENDING은 이미 카운트에 포함됨)
+        if (proposal.getStatus() == AdProposalStatus.REJECTED) {
+            checkAdCountLimit(advertiser, authority);
+        }
+
         Point point = geometryFactory.createPoint(new Coordinate(requestDto.getLongitude(), requestDto.getLatitude()));
         proposal.setPoint(point);
         proposal.setTitle(requestDto.getTitle());
@@ -137,6 +132,27 @@ public class AdvertiserAdService {
         proposal.setRejectReason(null);
 
         log.info("광고 신청 수정 및 재심사 요청 완료: ProposalId={}", proposalId);
+    }
+
+    private AdvertiserAuthority getValidAuthority(User advertiser) {
+        AdvertiserAuthority authority = advertiserAuthorityRepository.findByUser(advertiser)
+                .orElseThrow(() -> new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED));
+
+        // 권한 만료 체크
+        if (authority.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+        }
+        return authority;
+    }
+
+    private void checkAdCountLimit(User advertiser, AdvertiserAuthority authority) {
+        // 발행 가능 개수 체크 (현재 승인된 광고 수 + 신청 중인 광고 수)
+        long currentAdCount = nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(advertiser);
+        long pendingCount = adProposalRepository.countByAdvertiserAndStatus(advertiser, AdProposalStatus.PENDING);
+
+        if (currentAdCount + pendingCount >= authority.getAllowedAdCount()) {
+            throw new BusinessException(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+        }
     }
 
     /**

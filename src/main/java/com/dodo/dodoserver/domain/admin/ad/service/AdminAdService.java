@@ -136,6 +136,25 @@ public class AdminAdService {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
+        User advertiser = proposal.getAdvertiser();
+        if (advertiser.getRole() != Role.ADVERTISER) {
+            throw new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED);
+        }
+
+        AdvertiserAuthority authority = advertiserAuthorityRepository.findByUser(advertiser)
+                .orElseThrow(() -> new BusinessException(ErrorCode.HANDLE_ACCESS_DENIED));
+
+        // 권한 만료 체크
+        if (authority.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.ADVERTISER_AUTHORITY_EXPIRED);
+        }
+
+        // 발행 가능 개수 체크 (현재 승인된 광고 수)
+        long currentAdCount = nestRepository.countByCreatorAndIsAdTrueAndDeletedAtIsNull(advertiser);
+        if (currentAdCount >= authority.getAllowedAdCount()) {
+            throw new BusinessException(ErrorCode.AD_COUNT_LIMIT_EXCEEDED);
+        }
+
         // 1. Nest 생성
         Nest nest = Nest.builder()
                 .creator(proposal.getAdvertiser())
