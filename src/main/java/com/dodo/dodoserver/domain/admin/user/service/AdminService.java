@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
+import com.dodo.dodoserver.domain.auth.dao.RefreshTokenRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -14,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -24,6 +27,7 @@ public class AdminService {
 
     private final UserAdminRepository userAdminRepository;
     private final SanctionHistoryRepository sanctionHistoryRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 전체 유저 관리자용 정보 조회 (페이징)
@@ -54,6 +58,18 @@ public class AdminService {
                 .build();
         
         sanctionHistoryRepository.save(history);
+
+        // 3. 기존 리프레쉬 토큰 무효화 (Redis에서 삭제 - DB 트랜잭션 커밋 후 실행하여 일관성 보장)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    refreshTokenRepository.deleteById(userId);
+                }
+            });
+        } else {
+            refreshTokenRepository.deleteById(userId);
+        }
     }
 
     /**
