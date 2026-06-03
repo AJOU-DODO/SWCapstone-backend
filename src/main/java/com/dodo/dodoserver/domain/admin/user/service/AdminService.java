@@ -6,6 +6,7 @@ import com.dodo.dodoserver.domain.admin.user.dto.UserAdminResponseDto;
 import com.dodo.dodoserver.domain.admin.user.dto.UserSanctionRequestDto;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionHistory;
 import com.dodo.dodoserver.domain.admin.user.entity.SanctionType;
+import com.dodo.dodoserver.domain.auth.dao.RefreshTokenRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -24,6 +25,7 @@ public class AdminService {
 
     private final UserAdminRepository userAdminRepository;
     private final SanctionHistoryRepository sanctionHistoryRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 전체 유저 관리자용 정보 조회 (페이징)
@@ -54,6 +56,9 @@ public class AdminService {
                 .build();
         
         sanctionHistoryRepository.save(history);
+
+        // 3. 기존 리프레쉬 토큰 무효화 (Redis에서 삭제)
+        refreshTokenRepository.deleteById(userId);
     }
 
     /**
