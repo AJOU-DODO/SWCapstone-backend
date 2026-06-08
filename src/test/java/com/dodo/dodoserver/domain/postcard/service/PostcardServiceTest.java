@@ -303,6 +303,34 @@ class PostcardServiceTest {
     }
 
     @Test
+    @DisplayName("엽서 인벤토리 조회 성공 - 필터링 테스트")
+    void getPostcardInventory_filters_success() {
+        // given
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+        given(postcardRepository.findCreatedByUser(eq(user), any())).willReturn(Page.empty());
+        given(postcardRepository.findCreatedNotSharedByUser(eq(user), any())).willReturn(Page.empty());
+        given(postcardRepository.findCreatedSharedByUser(eq(user), any())).willReturn(Page.empty());
+        given(postcardRepository.findCreatedExchangedByUser(eq(user), any())).willReturn(Page.empty());
+        given(postcardRepository.findAcquiredByUser(eq(user), any())).willReturn(Page.empty());
+
+        // when & then
+        postcardService.getPostcardInventory(user.getId(), "CREATED", Pageable.unpaged());
+        verify(postcardRepository).findCreatedByUser(eq(user), any());
+
+        postcardService.getPostcardInventory(user.getId(), "CREATED_NOT_SHARED", Pageable.unpaged());
+        verify(postcardRepository).findCreatedNotSharedByUser(eq(user), any());
+
+        postcardService.getPostcardInventory(user.getId(), "CREATED_SHARED", Pageable.unpaged());
+        verify(postcardRepository).findCreatedSharedByUser(eq(user), any());
+
+        postcardService.getPostcardInventory(user.getId(), "CREATED_EXCHANGED", Pageable.unpaged());
+        verify(postcardRepository).findCreatedExchangedByUser(eq(user), any());
+
+        postcardService.getPostcardInventory(user.getId(), "ACQUIRED", Pageable.unpaged());
+        verify(postcardRepository).findAcquiredByUser(eq(user), any());
+    }
+
+    @Test
     @DisplayName("엽서 인벤토리 조회 - 빈 목록인 경우")
     void getPostcardInventory_empty() {
         // given
