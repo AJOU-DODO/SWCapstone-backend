@@ -149,6 +149,39 @@ class OAuth2AuthenticationSuccessHandlerTest {
     }
 
     @Test
+    @DisplayName("광고주 웹 로그인 성공 시 리다이렉트한다")
+    void onAuthenticationSuccess_WebAdvertiserRequest_RedirectsToTargetUrl() throws IOException {
+        // given
+        UserPrincipal advertiserPrincipal = UserPrincipal.create(1L, "advertiser@example.com", "ROLE_ADVERTISER");
+        user.setRole(Role.ADVERTISER);
+        
+        when(authentication.getPrincipal()).thenReturn(advertiserPrincipal);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        
+        Cookie redirectCookie = new Cookie("redirect_uri", AUTHORIZED_REDIRECT_URI);
+        when(request.getCookies()).thenReturn(new Cookie[]{redirectCookie});
+        
+        when(tokenProvider.createAccessToken(anyLong(), anyString(), anyString())).thenReturn("access-token");
+        when(tokenProvider.createRefreshToken(anyString())).thenReturn("refresh-token");
+
+        // when
+        successHandler.onAuthenticationSuccess(request, response, authentication);
+
+        // then
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(redirectStrategy).sendRedirect(eq(request), eq(response), captor.capture());
+        String url = captor.getValue();
+        assertTrue(url.contains("status=SUCCESS"));
+        assertTrue(url.contains("accessToken=access-token"));
+        assertTrue(url.contains("role=ROLE_ADVERTISER"));
+        
+        // 쿠키 삭제 확인
+        verify(response).addCookie(argThat(cookie -> 
+            "redirect_uri".equals(cookie.getName()) && cookie.getMaxAge() == 0
+        ));
+    }
+
+    @Test
     @DisplayName("일반 유저가 웹 로그인 시도 시 권한 에러와 함께 리다이렉트한다")
     void onAuthenticationSuccess_WebUserRequest_RedirectsWithError() throws IOException {
         // given

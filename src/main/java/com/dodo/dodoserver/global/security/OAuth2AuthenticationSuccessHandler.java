@@ -62,8 +62,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         Optional<String> redirectUri = getRedirectUriFromCookie(request);
 
-        // 웹 로그인 시도 시 관리자 권한 확인
-        if (redirectUri.isPresent() && !"ROLE_ADMIN".equals(principal.getRole())) {
+        // 웹 로그인 시도 시 권한 확인 (ADMIN 또는 ADVERTISER만 허용)
+        String role = principal.getRole();
+        if (redirectUri.isPresent() && !("ROLE_ADMIN".equals(role) || "ROLE_ADVERTISER".equals(role))) {
             handleWebErrorResponse(request, response, ErrorCode.HANDLE_ACCESS_DENIED, redirectUri.get());
             return;
         }
@@ -77,8 +78,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             }
             return;
         }
-        
-        String role = principal.getRole();
 
         String accessToken = tokenProvider.createAccessToken(user.getId(), user.getEmail(), role);
         String refreshToken = tokenProvider.createRefreshToken(user.getEmail());
