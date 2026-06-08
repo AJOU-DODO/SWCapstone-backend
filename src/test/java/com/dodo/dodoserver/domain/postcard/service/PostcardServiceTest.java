@@ -27,7 +27,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -165,7 +164,7 @@ class PostcardServiceTest {
         // given
         PostcardExchangeRequestDto requestDto = new PostcardExchangeRequestDto(myPostcard.getId());
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
-        given(nestRepository.findById(nest.getId())).willReturn(Optional.ofNullable(null));
+        given(nestRepository.findById(nest.getId())).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> postcardService.exchangePostcard(user.getId(), nest.getId(), requestDto))

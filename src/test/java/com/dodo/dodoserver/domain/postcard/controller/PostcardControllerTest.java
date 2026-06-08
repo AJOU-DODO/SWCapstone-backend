@@ -1,9 +1,7 @@
 package com.dodo.dodoserver.domain.postcard.controller;
 
 import com.dodo.dodoserver.domain.postcard.dto.*;
-import com.dodo.dodoserver.domain.postcard.entity.PostcardReactionType;
 import com.dodo.dodoserver.domain.postcard.service.PostcardService;
-import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.global.config.AppProperties;
 import com.dodo.dodoserver.global.config.SecurityConfig;
 import com.dodo.dodoserver.global.security.CustomOAuth2UserService;
@@ -24,7 +22,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
