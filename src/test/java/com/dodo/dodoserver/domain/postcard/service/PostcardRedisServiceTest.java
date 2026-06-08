@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,7 +59,8 @@ class PostcardRedisServiceTest {
         postcardRedisService.checkAndIncrementExchangeCount(userId);
 
         // then
-        // 1이 아니므로 expire는 호출되지 않아야 함 (엄격한 검증은 아니지만)
+        // 1이 아니므로 expire는 호출되지 않아야 함
+        verify(redisTemplate, never()).expire(anyString(), any(Duration.class));
     }
 
     @Test
