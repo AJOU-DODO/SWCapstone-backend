@@ -1,20 +1,23 @@
 package com.dodo.dodoserver.domain.admin.nest.service;
 
-import com.dodo.dodoserver.domain.admin.nest.dto.AdminCommentDeleteRequestDto;
-import com.dodo.dodoserver.domain.admin.nest.dto.AdminNestDeleteRequestDto;
+import com.dodo.dodoserver.domain.admin.nest.dto.*;
 import com.dodo.dodoserver.domain.nest.dao.*;
-import com.dodo.dodoserver.domain.nest.entity.Nest;
-import com.dodo.dodoserver.domain.nest.entity.NestComment;
+import com.dodo.dodoserver.domain.nest.entity.*;
 import com.dodo.dodoserver.domain.postcard.dao.PostcardRepository;
 import com.dodo.dodoserver.domain.report.dao.ReportRepository;
 import com.dodo.dodoserver.domain.report.entity.ReportStatus;
 import com.dodo.dodoserver.domain.report.entity.ReportType;
 import com.dodo.dodoserver.domain.user.dao.UserDeviceRepository;
+import com.dodo.dodoserver.domain.user.dao.UserProfileRepository;
 import com.dodo.dodoserver.domain.user.dao.UserRepository;
 import com.dodo.dodoserver.domain.user.entity.User;
 import com.dodo.dodoserver.domain.user.entity.UserDevice;
+import com.dodo.dodoserver.domain.user.entity.UserProfile;
 import com.dodo.dodoserver.infrastructure.fcm.FcmService;
-import com.dodo.dodoserver.infrastructure.fcm.NotificationEvent;
+import com.querydsl.core.types.EntityPath;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.dodo.dodoserver.error.ErrorCode;
 import com.dodo.dodoserver.error.exception.BusinessException;
@@ -24,7 +27,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +77,9 @@ class AdminNestServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private UserProfileRepository userProfileRepository;
+
+    @Mock
     private UserDeviceRepository userDeviceRepository;
 
     @Mock
@@ -75,6 +87,110 @@ class AdminNestServiceTest {
 
     @Mock
     private JPAQueryFactory queryFactory;
+
+    @Test
+    @DisplayName("관리자 둥지 목록 조회 성공")
+    void getNestsForAdmin_success() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        LocalDate start = LocalDate.now().minusDays(7);
+        LocalDate end = LocalDate.now();
+        Page<AdminNestResponseDto> expectedPage = new PageImpl<>(Collections.emptyList());
+
+        given(nestRepository.findNestsForAdmin(pageable, start, end, "latest", "Y"))
+                .willReturn(expectedPage);
+
+        // when
+        Page<AdminNestResponseDto> result = adminNestService.getNestsForAdmin(pageable, start, end, "latest", "Y");
+
+        // then
+        assertThat(result).isNotNull();
+        verify(nestRepository).findNestsForAdmin(pageable, start, end, "latest", "Y");
+    }
+
+    @Test
+    @DisplayName("관리자 둥지 상세 조회 성공")
+    @SuppressWarnings("unchecked")
+    void getNestDetailForAdmin_success() {
+        // given
+        Long nestId = 1L;
+        User creator = User.builder().id(10L).nickname("테스터").build();
+        Nest nest = Nest.builder()
+                .id(nestId)
+                .title("제목")
+                .content("내용")
+                .creator(creator)
+                .createdAt(LocalDateTime.now())
+                .images(Collections.emptyList())
+                .build();
+
+        given(nestRepository.findById(nestId)).willReturn(Optional.of(nest));
+        given(nestCategoryRepository.findAllByNest(nest)).willReturn(Collections.emptyList());
+        
+        // Querydsl Mocking
+        JPAQuery mockQuery = mock(JPAQuery.class);
+        given(queryFactory.select(any(Expression.class), any(Expression.class))).willReturn(mockQuery);
+        given(mockQuery.from(any(EntityPath.class))).willReturn(mockQuery);
+        given(mockQuery.where(any(Predicate[].class))).willReturn(mockQuery);
+        given(mockQuery.fetchOne()).willReturn(null);
+
+        given(nestReactionRepository.countByNestAndReactionType(nest, ReactionType.LIKE)).willReturn(5L);
+        given(nestReactionRepository.countByNestAndReactionType(nest, ReactionType.DISLIKE)).willReturn(1L);
+        given(userProfileRepository.findByUser(creator)).willReturn(Optional.of(UserProfile.builder().profileImageUrl("img").build()));
+
+        // when
+        AdminNestDetailResponseDto result = adminNestService.getNestDetailForAdmin(nestId);
+
+        // then
+        assertThat(result.getNestId()).isEqualTo(nestId);
+        assertThat(result.getTitle()).isEqualTo("제목");
+    }
+
+    @Test
+    @DisplayName("둥지 상세 조회 실패 - 존재하지 않음")
+    void getNestDetailForAdmin_fail_notFound() {
+        // given
+        given(nestRepository.findById(1L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> adminNestService.getNestDetailForAdmin(1L))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("둥지 댓글 조회 성공 - 트리 구조 확인")
+    @SuppressWarnings("unchecked")
+    void getNestCommentsForAdmin_success_treeStructure() {
+        // given
+        Long nestId = 1L;
+        User user = User.builder().id(10L).nickname("유저").build();
+        Nest nest = Nest.builder().id(nestId).build();
+        
+        NestComment parent = NestComment.builder().id(100L).user(user).nest(nest).content("부모").createdAt(LocalDateTime.now().minusMinutes(1)).build();
+        NestComment child = NestComment.builder().id(101L).user(user).nest(nest).parent(parent).content("자식").createdAt(LocalDateTime.now()).build();
+        
+        given(nestRepository.existsById(nestId)).willReturn(true);
+        given(nestCommentRepository.findAllByNestId(nestId)).willReturn(List.of(parent, child));
+        given(userRepository.findAllById(any())).willReturn(List.of(user));
+        given(userProfileRepository.findAllByUserIn(any())).willReturn(Collections.emptyList());
+
+        // Querydsl Mocking for reports and likes
+        JPAQuery mockQuery = mock(JPAQuery.class);
+        given(queryFactory.select(any(Expression.class), any(Expression.class))).willReturn(mockQuery);
+        given(mockQuery.from(any(EntityPath.class))).willReturn(mockQuery);
+        lenient().when(mockQuery.where(any(Predicate.class))).thenReturn(mockQuery);
+        lenient().when(mockQuery.where(any(Predicate[].class))).thenReturn(mockQuery);
+        given(mockQuery.groupBy(any(Expression.class))).willReturn(mockQuery);
+        given(mockQuery.fetch()).willReturn(Collections.emptyList());
+
+        // when
+        List<AdminCommentResponseDto> result = adminNestService.getNestCommentsForAdmin(nestId);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getCommentId()).isEqualTo(100L);
+        assertThat(result.get(0).getChildren()).hasSize(1);
+    }
 
     @Test
     @DisplayName("둥지 삭제 성공 - FCM 알림 및 소셜 데이터 정리 포함")
