@@ -24,4 +24,7 @@ public interface NestRepository extends JpaRepository<Nest, Long>, NestRepositor
     List<Nest> findAllByCreatorAndIsAdTrueAndDeletedAtIsNull(User creator);
 
     List<Nest> findAllByCreatorAndIsAdTrue(User creator);
+
+    @Query("SELECT n.creator.id, COUNT(n) FROM Nest n WHERE n.creator IN :creators AND n.isAd = true AND n.deletedAt IS NULL GROUP BY n.creator.id")
+    List<Object[]> countActiveAdsByCreators(@Param("creators") List<User> creators);
 }

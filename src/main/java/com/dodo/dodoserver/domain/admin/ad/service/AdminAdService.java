@@ -98,8 +98,27 @@ public class AdminAdService {
      */
     @Transactional(readOnly = true)
     public Page<AdvertiserResponseDto> getAllAdvertisers(Pageable pageable) {
-        return advertiserAuthorityRepository.findAll(pageable)
-                .map(AdvertiserResponseDto::from);
+        Page<AdvertiserAuthority> authorities = advertiserAuthorityRepository.findAll(pageable);
+        List<User> users = authorities.getContent().stream()
+                .map(AdvertiserAuthority::getUser)
+                .toList();
+
+        if (users.isEmpty()) {
+            return authorities.map(a -> AdvertiserResponseDto.of(a, 0));
+        }
+
+        Map<Long, Long> currentAdCounts = nestRepository.countActiveAdsByCreators(users).stream()
+                .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> (Long) arr[1]));
+        Map<Long, Long> pendingCounts = adProposalRepository.countPendingProposalsByAdvertisers(users, AdProposalStatus.PENDING).stream()
+                .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> (Long) arr[1]));
+
+        return authorities.map(authority -> {
+            User user = authority.getUser();
+            long currentAdCount = currentAdCounts.getOrDefault(user.getId(), 0L);
+            long pendingCount = pendingCounts.getOrDefault(user.getId(), 0L);
+            int remainingAdCount = (int) (authority.getAllowedAdCount() - currentAdCount - pendingCount);
+            return AdvertiserResponseDto.of(authority, Math.max(0, remainingAdCount));
+        });
     }
 
     /**
