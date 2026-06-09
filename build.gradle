@@ -108,3 +108,46 @@ jacocoTestReport {
         }))
     }
 }
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+        }
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    include: [
+                            "**/domain/**/controller/**",
+                            "**/domain/**/service/**"
+                    ],
+                    exclude: [
+                            "**/Q*",
+                            "**/*Dto*",
+                            "**/*Request*",
+                            "**/*Response*",
+                            "**/*Exception*",
+                            "**/*ErrorCode*"
+                    ]
+            )
+        }))
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
