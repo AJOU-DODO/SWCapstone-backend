@@ -3,8 +3,6 @@ name: Java CI/CD with Docker Compose
 on:
   push:
     branches: [ "develop" ]
-  pull_request:
-    branches: [ "develop" ]
 
 jobs:
   test:
