@@ -57,7 +57,7 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
                 .leftJoin(nestReaction).on(nestReaction.nest.eq(nest))
                 .leftJoin(nestComment).on(nestComment.nest.eq(nest).and(nestComment.deletedAt.isNull()))
                 .leftJoin(report).on(report.targetId.eq(nest.id).and(report.reportType.eq(ReportType.NEST)))
-                .where(dateCondition, deletedCondition)
+                .where(dateCondition, deletedCondition, nest.isAd.isFalse())
                 .groupBy(nest.id)
                 .orderBy(getOrderSpecifier(sort))
                 .offset(pageable.getOffset())
@@ -67,7 +67,7 @@ public class AdminNestRepositoryCustomImpl implements AdminNestRepositoryCustom 
         Long total = queryFactory
                 .select(nest.id.count())
                 .from(nest)
-                .where(dateCondition, deletedCondition)
+                .where(dateCondition, deletedCondition, nest.isAd.isFalse())
                 .fetchOne();
 
         if (nestIds.isEmpty()) {
