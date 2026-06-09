@@ -88,7 +88,37 @@ jacocoTestReport {
         xml.required = true
         html.required = true
     }
+}
 
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
+            }
+
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.50
+            }
+        }
+    }
+}
+
+configure([jacocoTestReport, jacocoTestCoverageVerification]) {
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it,
@@ -108,3 +138,5 @@ jacocoTestReport {
         }))
     }
 }
+
+check.dependsOn jacocoTestCoverageVerification
