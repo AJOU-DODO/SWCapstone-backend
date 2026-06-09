@@ -19,7 +19,7 @@ public final class NotificationConstants {
     public static final String TYPE_NEST_DELETED = "NEST_DELETED";
     public static final String TYPE_POSTCARD_DELETED = "POSTCARD_DELETED";
     public static final String TYPE_COMMENT_DELETED = "COMMENT_DELETED";
-    public static final String TYPE_INQUIRY_ANSWERED = "INQUIRY_ANSWERED";
+    public static final String TYPE_INQUIRY_ANSWERED = "INQUIRY";
 
     // Message Templates
     public static final String TITLE_NEST_DELETED = "둥지 삭제 알림";
