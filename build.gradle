@@ -88,25 +88,6 @@ jacocoTestReport {
         xml.required = true
         html.required = true
     }
-
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    include: [
-                            "**/domain/**/controller/**",
-                            "**/domain/**/service/**"
-                    ],
-                    exclude: [
-                            "**/Q*",
-                            "**/*Dto*",
-                            "**/*Request*",
-                            "**/*Response*",
-                            "**/*Exception*",
-                            "**/*ErrorCode*"
-                    ]
-            )
-        }))
-    }
 }
 
 jacocoTestCoverageVerification {
@@ -135,7 +116,9 @@ jacocoTestCoverageVerification {
             }
         }
     }
+}
 
+configure([jacocoTestReport, jacocoTestCoverageVerification]) {
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it,
