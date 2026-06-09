@@ -93,8 +93,8 @@ class AdminNestServiceTest {
     void getNestsForAdmin_success() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        LocalDate start = LocalDate.now().minusDays(7);
-        LocalDate end = LocalDate.now();
+        LocalDate start = LocalDate.of(2025, 1, 1);
+        LocalDate end = LocalDate.of(2025, 1, 8);
         Page<AdminNestResponseDto> expectedPage = new PageImpl<>(Collections.emptyList());
 
         given(nestRepository.findNestsForAdmin(pageable, start, end, "latest", "Y"))
