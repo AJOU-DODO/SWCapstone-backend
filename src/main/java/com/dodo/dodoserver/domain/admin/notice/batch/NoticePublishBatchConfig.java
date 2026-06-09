@@ -90,7 +90,7 @@ public class NoticePublishBatchConfig {
                     title,
                     noticeCategoryName,
                     Map.of(
-                            "type", "NOTICE",
+                            "type", "INQUIRY",
                             "noticeId", String.valueOf(noticeId)
                     )
             );
