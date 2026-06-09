@@ -16,12 +16,12 @@ public class AdvertiserResponseDto {
     private LocalDateTime expiredAt;
     private LocalDateTime createdAt;
 
-    public static AdvertiserResponseDto from(AdvertiserAuthority authority) {
+    public static AdvertiserResponseDto of(AdvertiserAuthority authority, int remainingAdCount) {
         return AdvertiserResponseDto.builder()
                 .userId(authority.getUser().getId())
                 .email(authority.getUser().getEmail())
                 .nickname(authority.getUser().getNickname())
-                .allowedAdCount(authority.getAllowedAdCount())
+                .allowedAdCount(remainingAdCount)
                 .expiredAt(authority.getExpiredAt())
                 .createdAt(authority.getCreatedAt())
                 .build();
