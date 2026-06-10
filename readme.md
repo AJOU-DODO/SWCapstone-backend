@@ -16,6 +16,12 @@
 | **Testing** | JUnit 5, JaCoCo (Coverage 70%+) |
 | **Messaging** | Firebase Cloud Messaging (FCM) |
 
+## 📊 DB 설계 (ERD)
+
+프로젝트의 상세한 데이터베이스 구조 및 ERD는 아래 버튼을 클릭하여 확인할 수 있습니다.
+
+[![ERD](https://img.shields.io/badge/Notion-ERD%20보기-black?style=for-the-badge&logo=notion)](https://ballistic-bone-7be.notion.site/ERD-335119ac972c80b19001c40ec6b06776?source=copy_link)
+
 ## 🏗️ 프로젝트 패키지 구조 (Package Structure)
 
 도메인 주도 설계(DDD)를 지향하며, 각 도메인별로 책임이 분리된 패키지 구조를 가집니다.
