@@ -79,7 +79,7 @@ docker build -t <DOCKERHUB_USERNAME>/dodo-server:latest .
 docker push <DOCKERHUB_USERNAME>/dodo-server:latest
 
 # 4. 컨테이너 실행
-docker-compose up -d
+docker compose up -d
 ```
 
 ## 📊 테스트 커버리지 정책 (Test Coverage Policy)
