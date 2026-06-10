@@ -33,7 +33,7 @@ src/main/java/com/dodo/dodoserver/
 │   ├── 📂 admin          # 어드민 전용 기능 (통계, 제재, 데이터 관리 등)
 │   ├── 📂 auth           # 사용자 인증/인가 (OAuth2, JWT, 토큰 관리)
 │   ├── 📂 nest           # 둥지(게시물) 생성, 위치 기반 탐색 및 해금 로직
-│   ├── 📂 user           # 사용자 프로필, 계정 및 디바이스 정보(fcm) 관리
+│   ├── 📂 user           # 사용자 프로필, 계정 및 디바이스 정보(FCM) 관리
 │   ├── 📂 inquiry        # 사용자 1:1 문의 처리
 │   ├── 📂 category       # 둥지 카테고리 관리
 │   ├── 📂 notice         # 공지사항 관리
