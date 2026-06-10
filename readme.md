@@ -37,7 +37,7 @@ src/main/java/com/dodo/dodoserver/
 │   ├── 📂 inquiry        # 사용자 1:1 문의 처리
 │   ├── 📂 category       # 둥지 카테고리 관리
 │   ├── 📂 notice         # 공지사항 관리
-│   ├── 📂 postcard       # 엽서 crud, 교환
+│   ├── 📂 postcard       # 엽서 CRUD, 교환
 │   ├── 📂 report         # 게시물 및 댓글 신고 처리 시스템
 │   └── 📂 mypage         # 마이페이지 관리
 ├── 📂 global             # 공통 설정 및 보안
